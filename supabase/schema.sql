@@ -16,6 +16,7 @@ create table if not exists public.cases (
   respondent_answers jsonb not null default '{}'::jsonb,
   applicant_questions jsonb not null default '[]'::jsonb,
   respondent_questions jsonb not null default '[]'::jsonb,
+  neutral_summary text not null default '',
   neutral_issues jsonb not null default '[]'::jsonb,
   safety_level text not null default 'none',
   preliminary_result jsonb,

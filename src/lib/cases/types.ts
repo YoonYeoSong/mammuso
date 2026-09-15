@@ -40,6 +40,7 @@ export type MammusoCase = {
   respondentAnswers: Answers;
   applicantQuestions: string[];
   respondentQuestions: string[];
+  neutralSummary: string;
   neutralIssues: string[];
   safetyLevel: "none" | "urgent";
   preliminaryResult: PreliminaryResult | null;

@@ -4,7 +4,7 @@ import type { Answers, CaseStatus, DecisionResult, MammusoCase, PreliminaryResul
 
 type CreateInput = {
   publicCaseNumber: string; relationshipType: RelationshipType; complainantStatement: string;
-  applicantTokenHash: string; applicantQuestions: string[]; neutralIssues: string[]; safetyLevel: "none" | "urgent";
+  applicantTokenHash: string; applicantQuestions: string[]; neutralSummary: string; neutralIssues: string[]; safetyLevel: "none" | "urgent";
   policyVersion: string;
 };
 
@@ -28,7 +28,7 @@ const fieldMap = (row: DbCase): MammusoCase => ({
   relationshipType: row.relationship_type as RelationshipType, status: row.status as CaseStatus,
   complainantStatement: String(row.complainant_statement), complainantAnswers: (row.complainant_answers ?? {}) as Answers,
   respondentStatement: row.respondent_statement as string | null, respondentAnswers: (row.respondent_answers ?? {}) as Answers,
-  applicantQuestions: (row.applicant_questions ?? []) as string[], respondentQuestions: (row.respondent_questions ?? []) as string[],
+  applicantQuestions: (row.applicant_questions ?? []) as string[], respondentQuestions: (row.respondent_questions ?? []) as string[], neutralSummary: String(row.neutral_summary ?? ""),
   neutralIssues: (row.neutral_issues ?? []) as string[], safetyLevel: row.safety_level as "none" | "urgent",
   preliminaryResult: row.preliminary_result as PreliminaryResult | null, finalResult: row.final_result as DecisionResult | null,
   appealText: row.appeal_text as string | null, appealResult: row.appeal_result as DecisionResult | null,
@@ -55,7 +55,7 @@ class SupabaseCaseRepository implements CaseRepository {
     return response.status === 204 ? null : response.json() as Promise<DbCase[]>;
   }
   private async one(path: string, init?: RequestInit) { const rows = await this.request(path, init); return rows?.[0] ? fieldMap(rows[0]) : null; }
-  createCase(input: CreateInput) { return this.one("", { method: "POST", body: JSON.stringify({ public_case_number: input.publicCaseNumber, relationship_type: input.relationshipType, status: input.safetyLevel === "urgent" ? "SAFETY_GUIDANCE" : "FACT_CHECKING", complainant_statement: input.complainantStatement, applicant_token_hash: input.applicantTokenHash, applicant_questions: input.applicantQuestions, neutral_issues: input.neutralIssues, safety_level: input.safetyLevel, applicant_policy_version: input.policyVersion, applicant_policy_agreed_at: new Date().toISOString(), applicant_ai_processing_agreed_at: new Date().toISOString() }) }).then((v) => v!); }
+  createCase(input: CreateInput) { return this.one("", { method: "POST", body: JSON.stringify({ public_case_number: input.publicCaseNumber, relationship_type: input.relationshipType, status: input.safetyLevel === "urgent" ? "SAFETY_GUIDANCE" : "FACT_CHECKING", complainant_statement: input.complainantStatement, applicant_token_hash: input.applicantTokenHash, applicant_questions: input.applicantQuestions, neutral_summary: input.neutralSummary, neutral_issues: input.neutralIssues, safety_level: input.safetyLevel, applicant_policy_version: input.policyVersion, applicant_policy_agreed_at: new Date().toISOString(), applicant_ai_processing_agreed_at: new Date().toISOString() }) }).then((v) => v!); }
   getByApplicantToken(token: string) { return this.one(`?applicant_token_hash=eq.${hashToken(token)}&select=*`); }
   getByRespondentToken(token: string) { return this.one(`?respondent_token_hash=eq.${hashToken(token)}&select=*`); }
   private update(filter: string, body: Record<string, unknown>) { return this.one(`?${filter}&select=*`, { method: "PATCH", body: JSON.stringify(body) }); }
