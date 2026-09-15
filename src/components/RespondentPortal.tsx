@@ -30,6 +30,7 @@ export function RespondentPortal({ item, token }: { item: MammusoCase; token: st
 
   return <form className="paper form" onSubmit={submit}>
     <Hamji mood="friendly" text="신청인의 원문 진술은 공개되지 않습니다. 먼저 왜 출석요구를 받았는지 중립적으로 안내드릴게요." />
+    <aside className="role-guide compact" aria-label="절차 용어 안내"><b>‘상대방’과 ‘출석요구’의 뜻</b><p>상대방은 잘못이 정해진 사람이 아니라, 자신의 입장을 설명할 차례인 사람을 뜻합니다. 출석요구는 의견 제출 페이지를 안내하는 링크이며 법원 소환이나 법적 의무가 아닙니다.</p></aside>
     <section className="respondent-notice">
       <p className="eyebrow">출석요구 사유 · 중립 요약</p>
       <h2>이번 분쟁은 어떤 내용인가요?</h2>
