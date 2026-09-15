@@ -1,0 +1,17 @@
+.stamp {
+  display: inline-block;
+  background: #ec7056;
+  color: white;
+  border: 3px solid #bd4938;
+  border-radius: 50%;
+  padding: 6px 11px;
+  transform: rotate(-5deg);
+  font-weight: 900;
+  margin-bottom: 10px;
+  animation: stamp-in .35s ease-out;
+}
+
+@keyframes stamp-in {
+  from { opacity: 0; transform: scale(1.7) rotate(-12deg); }
+  to { opacity: 1; transform: scale(1) rotate(-5deg); }
+}
