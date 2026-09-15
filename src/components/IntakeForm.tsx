@@ -24,7 +24,7 @@ export function IntakeForm() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message);
       setStage("handoff");
-      await new Promise((resolve) => window.setTimeout(resolve, 1650));
+      await new Promise((resolve) => window.setTimeout(resolve, 2000));
       router.push(`/case/${data.applicantToken}`);
     } catch (error) {
       setStage("idle");
@@ -55,8 +55,8 @@ function ReceptionAnimation({ stage }: { stage: Exclude<ReceptionStage, "idle"> 
       <p className="eyebrow">맘무소 민원 접수처</p>
       <div className="reception-desk"><div className="walking-ham" aria-hidden="true" /><div className="receipt-inbox" aria-hidden="true"><span>접수 서류</span></div></div>
       {handedOff && <span className="receipt-stamp">접수완료</span>}
-      <h2>{handedOff ? "김햄찌 주무관에게 전달 완료!" : "민원 서류를 확인하고 있습니다"}</h2>
-      <p>{handedOff ? "쾅! 접수 도장을 찍고 사건 기록을 만들고 있어요." : "김햄찌 주무관이 서류를 들고 접수 기록함으로 가고 있어요…"}</p>
+      <h2>{handedOff ? "김햄찌 주무관이 서류를 전달하고 있어요" : "민원 서류를 확인하고 있습니다"}</h2>
+      <p>{handedOff ? "기록함 앞까지 천천히 걸어가 접수 도장을 찍는 중이에요." : "김햄찌 주무관이 서류를 들고 접수 기록함으로 가고 있어요…"}</p>
     </section>
   </div>;
 }
