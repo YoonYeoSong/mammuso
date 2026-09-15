@@ -53,7 +53,7 @@ function ReceptionAnimation({ stage }: { stage: Exclude<ReceptionStage, "idle"> 
   return <div className={`reception-overlay ${handedOff ? "handoff" : ""}`} role="status" aria-live="polite">
     <section className="reception-scene">
       <p className="eyebrow">맘무소 민원 접수처</p>
-      <div className="reception-desk"><div className="runner-ham" aria-hidden="true">🐹<span>📄</span></div><div className="flying-paper" aria-hidden="true">📄</div><div className="clerk-ham" aria-hidden="true">🐹🤓</div></div>
+      <div className="reception-desk"><div className="runner-ham" aria-hidden="true"><img src="/illustrations/hamji-clerk.png" alt="" /></div><div className="flying-paper" aria-hidden="true" /><div className="clerk-ham" aria-hidden="true"><img src="/illustrations/hamji-clerk.png" alt="" /></div></div>
       {handedOff && <span className="receipt-stamp">접수완료</span>}
       <h2>{handedOff ? "김햄찌 주무관에게 전달 완료!" : "민원 서류를 확인하고 있습니다"}</h2>
       <p>{handedOff ? "쾅! 접수 도장을 찍고 사건 기록을 만들고 있어요." : "접수 햄찌가 서류를 들고 김햄찌 주무관에게 가고 있어요…"}</p>
