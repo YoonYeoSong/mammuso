@@ -22,6 +22,12 @@ create table if not exists public.cases (
   final_result jsonb,
   appeal_text text,
   appeal_result jsonb,
+  applicant_policy_version text,
+  applicant_policy_agreed_at timestamptz,
+  applicant_ai_processing_agreed_at timestamptz,
+  respondent_policy_version text,
+  respondent_policy_agreed_at timestamptz,
+  respondent_ai_processing_agreed_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

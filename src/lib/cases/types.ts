@@ -46,6 +46,12 @@ export type MammusoCase = {
   finalResult: DecisionResult | null;
   appealText: string | null;
   appealResult: DecisionResult | null;
+  applicantPolicyVersion: string | null;
+  applicantPolicyAgreedAt: string | null;
+  applicantAiProcessingAgreedAt: string | null;
+  respondentPolicyVersion: string | null;
+  respondentPolicyAgreedAt: string | null;
+  respondentAiProcessingAgreedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };

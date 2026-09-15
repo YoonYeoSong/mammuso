@@ -6,7 +6,8 @@ import { createAccessToken, createPublicCaseNumber, hashToken } from "@/lib/secu
 import { classifySafety } from "@/lib/safety";
 import { apiError } from "@/lib/http";
 
-const inputSchema = z.object({ relationshipType: z.enum(["연인/썸", "친구", "가족", "직장", "기타"]), statement: z.string().min(20).max(5000) });
+const policyVersion = "2026-09-15";
+const inputSchema = z.object({ relationshipType: z.enum(["연인/썸", "친구", "가족", "직장", "기타"]), statement: z.string().min(20).max(5000), privacyPolicyAgreed: z.literal(true), aiProcessingAgreed: z.literal(true) });
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
         await getAIProvider().extractNeutralIssues(input.statement),
       ];
     const token = createAccessToken();
-    const caseItem = await getCaseRepository().createCase({ publicCaseNumber: createPublicCaseNumber(), relationshipType: input.relationshipType, complainantStatement: input.statement, applicantTokenHash: hashToken(token), applicantQuestions: questions, neutralIssues: issues, safetyLevel });
+    const caseItem = await getCaseRepository().createCase({ publicCaseNumber: createPublicCaseNumber(), relationshipType: input.relationshipType, complainantStatement: input.statement, applicantTokenHash: hashToken(token), applicantQuestions: questions, neutralIssues: issues, safetyLevel, policyVersion });
     return NextResponse.json({ case: caseItem, applicantToken: token }, { status: 201 });
   } catch (error) { return apiError(error); }
 }
