@@ -17,6 +17,13 @@ export function IntakeForm() {
   const [loading, setLoading] = useState(false);
   const [stage, setStage] = useState<ReceptionStage>("idle");
 
+  function previewReceptionAnimation() {
+    if (stage !== "idle") return;
+    setStage("reviewing");
+    window.setTimeout(() => setStage("handoff"), 550);
+    window.setTimeout(() => setStage("idle"), 2_350);
+  }
+
   async function submit(event: React.FormEvent) {
     event.preventDefault(); setError(""); setLoading(true); setStage("reviewing");
     try {
@@ -42,7 +49,10 @@ export function IntakeForm() {
       <label className="consent"><input type="checkbox" checked={privacyPolicyAgreed} onChange={(event) => setPrivacyPolicyAgreed(event.target.checked)} required /> <span><Link href="/privacy" target="_blank">개인정보처리방침</Link>을 읽었으며, 사건 기록의 수집·이용에 동의합니다.</span></label>
       <label className="consent"><input type="checkbox" checked={aiProcessingAgreed} onChange={(event) => setAiProcessingAgreed(event.target.checked)} required /> <span>조정 의견 생성에 필요한 최소 내용이 국외 AI 제공업체에 전송될 수 있음에 동의합니다.</span></label>
       {error && <p className="error">{error}</p>}
-      <button className="button full" disabled={loading || !privacyPolicyAgreed || !aiProcessingAgreed}>{loading ? "민원 서류를 전달하고 있습니다…" : "동의하고 민원 접수하기"}</button>
+      <div className="form-submit-actions">
+        <button className="button form-submit" disabled={loading || stage !== "idle" || !privacyPolicyAgreed || !aiProcessingAgreed}>{loading ? "민원 서류를 전달하고 있습니다…" : "동의하고 민원 접수하기"}</button>
+        <button type="button" className="button secondary animation-test-button" onClick={previewReceptionAnimation} disabled={stage !== "idle"}>애니메이션 테스트</button>
+      </div>
     </form>
     {stage !== "idle" && <ReceptionAnimation stage={stage} />}
   </>;
