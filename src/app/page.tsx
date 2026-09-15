@@ -11,7 +11,7 @@ export default function Home() {
         <p className="lead">혼자 처리하기 어려운 마음을, 너무 심각해지기 전에 차분히 접수해드립니다.</p>
         <Link href="/intake" className="button">민원 접수하기 <span>→</span></Link>
       </div>
-      <div className="hero-ham"><img src="/illustrations/hamji-clerk.png" alt="서류를 든 김햄찌 주무관" /><i>관계분쟁조정과<br />김햄찌 주무관</i></div>
+      <div className="hero-character"><div className="hero-ham"><img src="/illustrations/hamji-clerk.png" alt="서류를 든 김햄찌 주무관" /></div></div>
     </section>
     <section className="process-strip" aria-label="민원 처리 순서">
       <p className="eyebrow">민원 처리 절차</p>
