@@ -60,7 +60,7 @@ export type MammusoCase = {
 export const statusLabel: Record<CaseStatus, string> = {
   RECEIVED: "접수완료",
   FACT_CHECKING: "사실관계 확인 중",
-  APPLICANT_COMPLETE: "신청인 추가진술 완료",
+  APPLICANT_COMPLETE: "신청인 진술 검토 완료",
   AWAITING_RESPONDENT: "상대방 의견 대기",
   BOTH_STATEMENTS_RECEIVED: "합동심의 중",
   COMPLETED: "처리완료",

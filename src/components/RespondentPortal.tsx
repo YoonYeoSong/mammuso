@@ -9,7 +9,6 @@ import { CaseResult } from "./CaseResult";
 
 export function RespondentPortal({ item, token }: { item: MammusoCase; token: string }) {
   const [statement, setStatement] = useState(item.respondentStatement ?? "");
-  const [answers, setAnswers] = useState<Record<string, string>>(item.respondentAnswers);
   const [privacyPolicyAgreed, setPrivacyPolicyAgreed] = useState(false);
   const [aiProcessingAgreed, setAiProcessingAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -19,7 +18,7 @@ export function RespondentPortal({ item, token }: { item: MammusoCase; token: st
   async function submit(event: React.FormEvent) {
     event.preventDefault(); setBusy(true); setError("");
     try {
-      const response = await fetch("/api/case/respondent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, statement, answers, privacyPolicyAgreed, aiProcessingAgreed }) });
+      const response = await fetch("/api/case/respondent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, statement, answers: {}, privacyPolicyAgreed, aiProcessingAgreed }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message);
       setResult(data.case.finalResult);
@@ -41,11 +40,10 @@ export function RespondentPortal({ item, token }: { item: MammusoCase; token: st
     <section className="independent-statement">
       <p className="eyebrow">상대방의 독립 진술</p>
       <h2>당신의 이야기를 먼저 들려주세요.</h2>
-      <p>아래에 사건을 어떻게 보시는지 자유롭게 적어주세요. 신청인의 주장에 맞춰 답할 필요 없이, 본인이 기억하는 흐름과 사정을 중심으로 작성하면 됩니다.</p>
+      <p>아래 한 장의 진술서에 사건을 어떻게 보시는지 자유롭게 적어주세요. 신청인의 주장에 맞춰 답할 필요 없이, 본인이 기억하는 흐름·당시 사정·내가 전하고 싶은 내용을 중심으로 작성하면 됩니다.</p>
       <label htmlFor="respondent-statement">나의 입장</label>
       <textarea id="respondent-statement" value={statement} onChange={(event) => setStatement(event.target.value)} minLength={20} maxLength={5000} required placeholder="어떤 일이 있었는지, 당시 어떤 사정과 생각이 있었는지 자유롭게 적어주세요." />
     </section>
-    {item.respondentQuestions.length > 0 && <section className="optional-questions"><h3>김햄찌 주무관의 보충 확인사항 <small>선택</small></h3><p>답변하지 않아도 진술은 제출할 수 있습니다. 답하고 싶은 항목만 작성해주세요.</p>{item.respondentQuestions.map((question, index) => <label className="question" key={question}><b>{index + 1}. {question}</b><textarea value={answers[question] ?? ""} onChange={(event) => setAnswers({ ...answers, [question]: event.target.value })} placeholder="선택 입력" /></label>)}</section>}
     <div className="privacy-guard"><b>개인정보 보호 안내</b><p>실명, 연락처, 주소, 주민등록번호, 대화 원문 전체, 제3자의 개인정보는 적지 마세요. 긴급한 안전 위험은 이 서비스 대신 112·119·109 등 전문 도움기관을 이용해야 합니다.</p></div>
     <label className="consent"><input type="checkbox" checked={privacyPolicyAgreed} onChange={(event) => setPrivacyPolicyAgreed(event.target.checked)} required /> <span><Link href="/privacy" target="_blank">개인정보처리방침</Link>을 읽고, 사건 기록의 수집·이용에 동의합니다.</span></label>
     <label className="consent"><input type="checkbox" checked={aiProcessingAgreed} onChange={(event) => setAiProcessingAgreed(event.target.checked)} required /> <span>조정 의견 생성을 위해 필요한 진술이 국외 AI 제공업체에 전송될 수 있음에 동의합니다.</span></label>

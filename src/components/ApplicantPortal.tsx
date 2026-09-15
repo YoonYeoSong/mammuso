@@ -8,7 +8,7 @@ import { Hamji } from "./SiteChrome";
 
 export function ApplicantPortal({ initialCase, token }: { initialCase: MammusoCase; token: string }) {
   const [item, setItem] = useState(initialCase);
-  const [answers, setAnswers] = useState<Record<string, string>>(initialCase.complainantAnswers);
+  const [additionalStatement, setAdditionalStatement] = useState(initialCase.complainantAnswers["추가 진술"] ?? "");
   const [inviteUrl, setInviteUrl] = useState("");
   const [appealText, setAppealText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -57,7 +57,7 @@ export function ApplicantPortal({ initialCase, token }: { initialCase: MammusoCa
     <section className="case-banner"><p className="eyebrow">접수번호</p><h1>{item.publicCaseNumber}</h1><div><span>관계분쟁조정과</span><span className="status">{statusLabel[item.status]}</span></div></section>
     <ApplicantAccessLink />
     {error && <p className="error">{error}</p>}
-    {!item.preliminaryResult ? <section className="paper"><Hamji mood="paper" text="제출하신 내용을 바탕으로 사실관계를 확인하겠습니다. 답변은 아는 범위에서만 적어주세요." /><h2>추가 사실확인</h2><AnswerFields questions={item.applicantQuestions} answers={answers} onChange={setAnswers} /><button className="button full" disabled={busy} onClick={() => request("/api/case/applicant", { token, answers })}>{busy ? "검토 중…" : "추가진술 제출"}</button></section> : <>
+    {!item.preliminaryResult ? <section className="paper"><Hamji mood="paper" text="여러 질문에 나누어 답할 필요 없이, 추가로 적고 싶은 사실만 한 번에 적어주세요." /><h2>추가 진술서</h2><p>처음 작성한 내용에 덧붙일 사실, 당시의 상황, 상대방에게 전하고 싶은 설명이 있다면 자유롭게 적어주세요. 없으면 바로 검토를 요청해도 됩니다.</p><textarea value={additionalStatement} onChange={(event) => setAdditionalStatement(event.target.value)} maxLength={5000} placeholder="추가로 설명하고 싶은 내용을 자유롭게 적어주세요. (선택)" /><button className="button full" disabled={busy} onClick={() => request("/api/case/applicant", { token, answers: additionalStatement.trim() ? { "추가 진술": additionalStatement } : {} })}>{busy ? "검토 중…" : "이 내용으로 검토 요청하기"}</button></section> : <>
       <section className="paper"><Hamji mood="serious" text="현재 의견은 신청인 진술만 기준으로 검토했습니다." /><h2>신청인 진술 기준 검토의견</h2><p>{item.preliminaryResult.summary}</p><h3>현재 확인된 내용</h3><ul>{item.preliminaryResult.knownFacts.map((v, i) => <li key={i}>{v}</li>)}</ul><h3>확인이 더 필요한 내용</h3><ul>{item.preliminaryResult.openQuestions.map((v, i) => <li key={i}>{v}</li>)}</ul><p className="advice">{item.preliminaryResult.opinion}</p><div className="clerk-note"><img className="clerk-mini" src="/illustrations/hamji-clerk.png" alt="" />{item.preliminaryResult.clerkComment}</div><small>현재 검토의견은 신청인의 진술만을 기준으로 작성되었습니다. 상대방의 실제 입장은 아직 확인되지 않았습니다.</small></section>
       {!item.finalResult && <section className="paper invite"><h2>상대방 출석요구서</h2><p>맘무소는 한쪽의 진술만으로 사건을 처리하지 않습니다. 상대방이 자신의 기기에서 독립적으로 의견을 제출할 수 있도록 출석 링크를 발급하세요.</p>{!inviteUrl ? <button className="button full" disabled={busy} onClick={async () => { const data = await request("/api/case/invite", { token }); if (data?.inviteUrl) setInviteUrl(data.inviteUrl); }}>{busy ? "발급 중…" : "상대방 출석요구서 발급"}</button> : <InviteLink url={inviteUrl} />}</section>}
       {!item.finalResult && item.status === "AWAITING_RESPONDENT" && <section className="paper result-waiting"><Hamji mood="waiting" text="상대방의 독립 진술을 기다리고 있습니다." /><h2>상대방 의견을 기다리는 중이에요</h2><p>상대방이 진술을 제출하면 이 페이지가 자동으로 갱신되어 양측 조정결과를 보여드립니다. 이 페이지를 닫아도 아래 관리 링크를 다시 열면 결과를 확인할 수 있어요.</p></section>}
@@ -65,10 +65,6 @@ export function ApplicantPortal({ initialCase, token }: { initialCase: MammusoCa
     </>}
     <section className="paper danger-zone"><h2>사건 기록 삭제</h2><p>이 링크로 접속 가능한 사건의 진술, 결과, 이의신청 기록 전체를 즉시 삭제합니다. 삭제된 기록은 복구할 수 없습니다.</p><button className="text-button" type="button" disabled={busy} onClick={deleteCase}>이 사건 전체 삭제</button></section>
   </div>;
-}
-
-function AnswerFields({ questions, answers, onChange }: { questions: string[]; answers: Record<string, string>; onChange: (value: Record<string, string>) => void }) {
-  return <>{questions.map((question, index) => <label className="question" key={question}><b>{index + 1}. {question}</b><textarea value={answers[question] ?? ""} onChange={(e) => onChange({ ...answers, [question]: e.target.value })} required /></label>)}</>;
 }
 
 function InviteLink({ url }: { url: string }) {
