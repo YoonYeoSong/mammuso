@@ -22,12 +22,15 @@ class GroqAIProvider implements AIProvider {
   private async ask<T>(prompt: string, schema: z.ZodType<T>): Promise<T> {
     for (let attempt = 0; attempt < 3; attempt += 1) {
       try {
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.key}` }, body: JSON.stringify({ model: this.model, temperature: 0.25, response_format: { type: "json_object" }, messages: [{ role: "user", content: `${prompt}\n\nReturn only valid JSON. Do not use markdown.` }] }) });
+        const languageCorrection = attempt > 0 ? "\n이전 응답에 영어가 포함되어 거절되었습니다. JSON 키를 제외한 모든 값은 반드시 자연스러운 한국어 완성 문장으로 다시 작성하세요." : "";
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.key}` }, body: JSON.stringify({ model: this.model, temperature: 0.15, response_format: { type: "json_object" }, messages: [{ role: "system", content: "당신은 맘무소 관계분쟁조정과의 한국어 전담 문서 작성자입니다. 반드시 한국어로만 답하세요. JSON의 키 이름은 요청한 스키마를 따르되, JSON 값으로 들어가는 모든 문장·질문·목록 항목은 자연스러운 한국어로만 작성해야 합니다. Applicant, respondent, overview 같은 영어 단어와 영어 문장을 절대로 값에 쓰지 마세요. 제공되지 않은 사실은 만들지 마세요." }, { role: "user", content: `${prompt}${languageCorrection}\n\n유효한 JSON만 반환하세요. 마크다운을 사용하지 마세요.` }] }) });
         if (!response.ok) throw new Error(`AI_REQUEST_FAILED:${response.status}`);
         const payload = await response.json() as { choices?: { message?: { content?: string } }[] };
         const text = payload.choices?.[0]?.message?.content;
         if (!text) throw new Error("AI_EMPTY_RESPONSE");
-        return schema.parse(JSON.parse(text));
+        const parsed = schema.parse(JSON.parse(text));
+        assertKoreanOutput(parsed);
+        return parsed;
       } catch (error) {
         if (attempt === 2) throw error;
         await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
@@ -44,6 +47,18 @@ class GroqAIProvider implements AIProvider {
   generateJointDecision(input: { applicantStatement: string; applicantAnswers: Answers; respondentStatement: string; respondentAnswers: Answers }) { return this.decision(`양측 관계분쟁 진술을 비교해 조정 의견을 작성하세요. 제공되지 않은 사실을 만들지 말고 불명확하면 판단불가로 적으세요. 이는 법률 판단이 아닙니다. 신청인 진술: ${input.applicantStatement}\n신청인 답변:${JSON.stringify(input.applicantAnswers)}\n상대방 진술:${input.respondentStatement}\n상대방 답변:${JSON.stringify(input.respondentAnswers)}`); }
   generateAppealDecision(input: { applicantStatement: string; applicantAnswers: Answers; respondentStatement: string; respondentAnswers: Answers; previousResult: DecisionResult; appealText: string }) { return this.decision(`아래 관계분쟁을 재심의하세요. 기존 결과, 양측 진술, 새 이의신청만 근거로 하며 새 사실을 만들지 마세요. changedReason에는 기존 결과에서 달라진 이유 또는 변경 없음 사유를 쓰세요. 신청인:${input.applicantStatement}\n신청인답변:${JSON.stringify(input.applicantAnswers)}\n상대방:${input.respondentStatement}\n상대방답변:${JSON.stringify(input.respondentAnswers)}\n기존:${JSON.stringify(input.previousResult)}\n이의신청:${input.appealText}`); }
   private decision(context: string) { return this.ask(`${context}\nSchema: {"overview":"","agreedFacts":[],"complainantClaims":[],"respondentClaims":[],"disputedFacts":[],"unknownFacts":[],"complainantResponsibility":0,"respondentResponsibility":100,"reasoning":"","mediationAdvice":"","clerkComment":"","changedReason":""}`, decisionSchema); }
+}
+
+function assertKoreanOutput(value: unknown): void {
+  const textValues: string[] = [];
+  const collect = (item: unknown) => {
+    if (typeof item === "string") textValues.push(item);
+    else if (Array.isArray(item)) item.forEach(collect);
+    else if (item && typeof item === "object") Object.values(item).forEach(collect);
+  };
+  collect(value);
+  const containsLatinWord = /\b[a-zA-Z]{4,}\b/;
+  if (textValues.some((text) => text.trim() && (!/[가-힣]/.test(text) || containsLatinWord.test(text)))) throw new Error("AI_LANGUAGE_NOT_KOREAN");
 }
 
 export function getAIProvider(): AIProvider { return new GroqAIProvider(); }
