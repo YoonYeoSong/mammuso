@@ -41,13 +41,20 @@ export function IntakeForm() {
 
   return <>
     <form className="paper form" onSubmit={submit}>
-      <label>관계 유형</label>
-      <div className="chips">{relationships.map((type) => <button type="button" className={relationshipType === type ? "chip selected" : "chip"} onClick={() => setRelationshipType(type)} key={type}>{type}</button>)}</div>
-      <label htmlFor="statement">어떤 일이 있었나요?</label>
-      <textarea id="statement" value={statement} onChange={(event) => setStatement(event.target.value)} minLength={20} maxLength={5000} placeholder="사건의 흐름, 약속이나 연락이 오간 시점, 내가 들은 말 등을 편하게 적어주세요." required />
-      <div className="privacy-guard"><b>입력 전 꼭 확인해주세요</b><p>실명, 연락처, 주소, 주민등록번호, 비밀번호, 제3자의 개인정보, 대화 원문 전체는 적지 마세요. 폭력·성폭력·스토킹·자해 등 즉시 위험한 상황은 이 서비스가 아닌 긴급 도움기관을 먼저 이용해야 합니다.</p></div>
-      <label className="consent"><input type="checkbox" checked={privacyPolicyAgreed} onChange={(event) => setPrivacyPolicyAgreed(event.target.checked)} required /> <span><Link href="/privacy" target="_blank">개인정보처리방침</Link>을 읽었으며, 사건 기록의 수집·이용에 동의합니다.</span></label>
-      <label className="consent"><input type="checkbox" checked={aiProcessingAgreed} onChange={(event) => setAiProcessingAgreed(event.target.checked)} required /> <span>조정 의견 생성에 필요한 최소 내용이 국외 AI 제공업체에 전송될 수 있음에 동의합니다.</span></label>
+      <div className="form-progress"><span>1</span><div><b>사연을 정리해볼까요?</b><p>처음부터 완벽하게 쓰지 않아도 괜찮아요. 기억나는 흐름부터 적어주세요.</p></div></div>
+      <section className="form-section">
+        <p className="eyebrow">상황의 테두리</p>
+        <label>어떤 관계에서 생긴 일인가요?</label>
+        <div className="chips">{relationships.map((type) => <button type="button" className={relationshipType === type ? "chip selected" : "chip"} onClick={() => setRelationshipType(type)} key={type}>{type}</button>)}</div>
+      </section>
+      <section className="form-section">
+        <p className="eyebrow">내가 기억하는 이야기</p>
+        <label htmlFor="statement">무슨 일이 있었나요?</label>
+        <p className="field-intro">순서가 완벽하지 않아도 괜찮습니다. 약속·연락·말·느낌 중 기억나는 것부터 적어주세요.</p>
+        <textarea id="statement" value={statement} onChange={(event) => setStatement(event.target.value)} minLength={20} maxLength={5000} placeholder="예: 지난주 약속을 취소한 뒤 연락이 뜸해졌어요. 그때 들은 말이 계속 마음에 남아요." required />
+      </section>
+      <div className="privacy-guard"><b>안전하게 적어주세요</b><p>실명, 연락처, 주소, 비밀번호, 제3자의 개인정보와 대화 원문 전체는 적지 마세요. 지금 안전이 위급하다면 이 서비스보다 긴급 도움기관을 먼저 이용해야 합니다.</p></div>
+      <section className="consent-block"><p className="eyebrow">마지막 확인</p><label className="consent"><input type="checkbox" checked={privacyPolicyAgreed} onChange={(event) => setPrivacyPolicyAgreed(event.target.checked)} required /> <span><Link href="/privacy" target="_blank">개인정보처리방침</Link>을 읽었으며, 사건 기록의 수집·이용에 동의합니다.</span></label><label className="consent"><input type="checkbox" checked={aiProcessingAgreed} onChange={(event) => setAiProcessingAgreed(event.target.checked)} required /> <span>조정 의견 생성에 필요한 최소 내용이 국외 AI 제공업체에 전송될 수 있음에 동의합니다.</span></label></section>
       {error && <p className="error">{error}</p>}
       <div className="form-submit-actions">
         <button className="button form-submit" disabled={loading || stage !== "idle" || !privacyPolicyAgreed || !aiProcessingAgreed}>{loading ? "민원 서류를 전달하고 있습니다…" : "동의하고 민원 접수하기"}</button>
