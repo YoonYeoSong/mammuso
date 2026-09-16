@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DailyHeartLetter } from "@/components/DailyHeartLetter";
 import { Disclaimer, Hamji, SiteFooter, SiteHeader } from "@/components/SiteChrome";
 
 export default function Home() {
@@ -13,7 +14,8 @@ export default function Home() {
       </div>
       <div className="hero-character"><div className="hero-ham"><img src="/illustrations/hamji-clerk.png" alt="서류를 든 김햄찌 주무관" /></div></div>
     </section>
-    <section className="process-strip" aria-label="민원 처리 순서">
+    <DailyHeartLetter />
+    <section id="process" className="process-strip" aria-label="민원 처리 순서">
       <p className="eyebrow">민원 처리 절차</p>
       <ol>
         <li><b>01</b><span>사연 접수</span></li>
