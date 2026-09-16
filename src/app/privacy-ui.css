@@ -17,6 +17,7 @@
 .privacy-short { margin-top: 12px; }
 .spicy-consent { margin-top: 14px !important; border: 1px solid #e8c8bd; border-radius: 12px; padding: 10px; background: #fff4ef; }
 .spicy-choice { margin-top: 20px; border: 1px solid #e7c8bf; border-radius: 16px; padding: 15px; background: #fff6f2; }.spicy-choice .eyebrow { margin-bottom: 2px; color: #a44b28; }.spicy-choice>p:not(.eyebrow) { margin:2px 0 12px; color:var(--muted); font-size:14px; }.spicy-choice>div { display:grid; gap:8px; }.spicy-option { display:flex; align-items:center; gap:8px; border:1px solid #ead7d0; border-radius:11px; padding:10px; background:#fff; cursor:pointer; font-size:14px; font-weight:800; }.spicy-option input { accent-color:#a44b28; }.spicy-option.selected { border-color:#d7876f; background:#fff0ea; }.spicy-choice small { margin-top:10px; }
+.spicy-choice .spicy-example { margin:12px 0; border-left:3px solid #d7876f; padding:8px 10px; background:#fff; color:#71483c; line-height:1.6; }.spicy-example b { display:block; margin-bottom:2px; color:#a44b28; font-size:12px; }
 .optional-questions { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 18px; }
 .optional-questions h3 small { display: inline; margin-left: 6px; border-radius: 999px; padding: 3px 7px; background: #f3eee4; font-weight: 700; }
 .applicant-access { display: flex; align-items: center; justify-content: space-between; gap: 14px; max-width: 700px; margin: -5px auto 20px; border: 1px dashed #d2c198; border-radius: 15px; padding: 13px 16px; background: rgba(255,252,239,.8); font-size: 13px; }
