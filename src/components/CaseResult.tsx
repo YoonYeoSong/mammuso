@@ -3,14 +3,14 @@
 import { useId, useState } from "react";
 import type { DecisionResult } from "@/lib/cases/types";
 
-export function CaseResult({ result, rehearing = false }: { result: DecisionResult; rehearing?: boolean; caseNumber?: string }) {
+export function CaseResult({ result, rehearing = false, spicyMode = false }: { result: DecisionResult; rehearing?: boolean; caseNumber?: string; spicyMode?: boolean }) {
   const [showDetails, setShowDetails] = useState(false);
   const detailsId = useId();
   const complainantResponsibility = Math.min(80, Math.max(20, result.complainantResponsibility));
   const respondentResponsibility = 100 - complainantResponsibility;
 
   return <section className="result-card">
-    <p className="eyebrow">{rehearing ? "재심의 결과" : "조정 결과"}</p>
+    <p className="eyebrow">{spicyMode ? "매운맛 결과" : rehearing ? "재심의 결과" : "조정 결과"}</p>
     <h2>{rehearing ? "다시 본 결론" : "이번 일의 결론"}</h2>
     <p className="result-overview">{result.overview}</p>
     <section className="responsibility-card" aria-label="갈등 영향 비중">

@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { MammusoCase } from "@/lib/cases/types";
-import { statusLabel } from "@/lib/cases/types";
+import { SPICY_MODE_CONSENT_KEY, type MammusoCase, statusLabel } from "@/lib/cases/types";
 import { CaseResult } from "./CaseResult";
 
 export function ApplicantPortal({ initialCase, token }: { initialCase: MammusoCase; token: string }) {
@@ -60,7 +59,7 @@ export function ApplicantPortal({ initialCase, token }: { initialCase: MammusoCa
       <section className="paper preliminary-result"><p className="eyebrow">내 진술 기준</p><h2>현재 정리</h2><p>{item.preliminaryResult.summary}</p><p className="advice">{item.preliminaryResult.opinion}</p><details className="statement-reference"><summary>확인한 내용 보기</summary>{item.preliminaryResult.knownFacts.length > 0 && <ul>{item.preliminaryResult.knownFacts.map((fact, index) => <li key={index}>{fact}</li>)}</ul>}{item.preliminaryResult.openQuestions.length > 0 && <><b>더 확인할 내용</b><ul>{item.preliminaryResult.openQuestions.map((question, index) => <li key={index}>{question}</li>)}</ul></>}</details></section>
       {!item.finalResult && <section className="paper invite"><p className="eyebrow">다음 단계</p><h2>상대방 의견 요청</h2><p>상대방이 자기 입장을 적을 수 있는 링크입니다.</p>{!inviteUrl ? <button className="button full" disabled={busy} onClick={async () => { const data = await request("/api/case/invite", { token }); if (data?.inviteUrl) setInviteUrl(data.inviteUrl); }}>{busy ? "링크 만드는 중…" : "링크 만들기"}</button> : <InviteLink url={inviteUrl} />}</section>}
       {!item.finalResult && item.status === "AWAITING_RESPONDENT" && <section className="paper result-waiting"><h2>상대방 의견 대기 중</h2><p>제출되면 결과가 여기 표시됩니다.</p></section>}
-      {item.finalResult && <><CaseResult result={item.finalResult} caseNumber={item.publicCaseNumber} />{item.appealResult ? <CaseResult result={item.appealResult} caseNumber={item.publicCaseNumber} rehearing /> : <section className="paper appeal-request"><p className="eyebrow">재심의</p><h2>다시 검토 요청</h2><p>빠진 사실이나 잘못된 부분만 적어주세요.</p><textarea value={appealText} onChange={(e) => setAppealText(e.target.value)} minLength={10} placeholder="다시 봐야 할 내용을 적어주세요." /><button className="button full" disabled={busy || appealText.length < 10} onClick={() => request("/api/case/appeal", { token, appealText })}>{busy ? "검토 중…" : "다시 검토 요청"}</button></section>}</>}
+      {item.finalResult && <><CaseResult result={item.finalResult} caseNumber={item.publicCaseNumber} spicyMode={item.complainantAnswers[SPICY_MODE_CONSENT_KEY] === "동의" && item.respondentAnswers[SPICY_MODE_CONSENT_KEY] === "동의"} />{item.appealResult ? <CaseResult result={item.appealResult} caseNumber={item.publicCaseNumber} rehearing spicyMode={item.complainantAnswers[SPICY_MODE_CONSENT_KEY] === "동의" && item.respondentAnswers[SPICY_MODE_CONSENT_KEY] === "동의"} /> : <section className="paper appeal-request"><p className="eyebrow">재심의</p><h2>다시 검토 요청</h2><p>빠진 사실이나 잘못된 부분만 적어주세요.</p><textarea value={appealText} onChange={(e) => setAppealText(e.target.value)} minLength={10} placeholder="다시 봐야 할 내용을 적어주세요." /><button className="button full" disabled={busy || appealText.length < 10} onClick={() => request("/api/case/appeal", { token, appealText })}>{busy ? "검토 중…" : "다시 검토 요청"}</button></section>}</>}
     </>}
     <section className="paper danger-zone"><h2>기록 삭제</h2><p>삭제 후 복구할 수 없습니다.</p><button className="text-button" type="button" disabled={busy} onClick={deleteCase}>이 사건 삭제</button></section>
   </div>;

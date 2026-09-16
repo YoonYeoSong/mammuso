@@ -14,6 +14,7 @@ export function IntakeForm() {
   const [statement, setStatement] = useState("");
   const [privacyPolicyAgreed, setPrivacyPolicyAgreed] = useState(false);
   const [aiProcessingAgreed, setAiProcessingAgreed] = useState(false);
+  const [spicyModeAgreed, setSpicyModeAgreed] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [stage, setStage] = useState<ReceptionStage>("idle");
@@ -31,7 +32,7 @@ export function IntakeForm() {
   async function submit(event: React.FormEvent) {
     event.preventDefault(); setError(""); setLoading(true); setStage("reviewing");
     try {
-      const response = await fetch("/api/cases", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ relationshipType, statement, privacyPolicyAgreed, aiProcessingAgreed }) });
+      const response = await fetch("/api/cases", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ relationshipType, statement, privacyPolicyAgreed, aiProcessingAgreed, spicyModeAgreed }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message);
       setAssignedJudge(judgeForCase(data.case.publicCaseNumber));
@@ -61,7 +62,7 @@ export function IntakeForm() {
         <textarea id="statement" value={statement} onChange={(event) => setStatement(event.target.value)} minLength={20} maxLength={5000} placeholder="예: 지난주 약속을 취소한 뒤 연락이 뜸해졌어요. 그때 들은 말이 계속 마음에 남아요." required />
       </section>
       <div className="privacy-guard"><b>안전하게 적어주세요</b><p>실명, 연락처, 주소, 비밀번호, 제3자의 개인정보와 대화 원문 전체는 적지 마세요. 지금 안전이 위급하다면 이 서비스보다 긴급 도움기관을 먼저 이용해야 합니다.</p></div>
-      <section className="consent-block"><p className="eyebrow">마지막 확인</p><label className="consent"><input type="checkbox" checked={privacyPolicyAgreed} onChange={(event) => setPrivacyPolicyAgreed(event.target.checked)} required /> <span><Link href="/privacy" target="_blank">개인정보처리방침</Link>을 읽었으며, 사건 기록의 수집·이용에 동의합니다.</span></label><label className="consent"><input type="checkbox" checked={aiProcessingAgreed} onChange={(event) => setAiProcessingAgreed(event.target.checked)} required /> <span>조정 의견 생성에 필요한 최소 내용이 국외 AI 제공업체에 전송될 수 있음에 동의합니다.</span></label></section>
+      <section className="consent-block"><p className="eyebrow">마지막 확인</p><label className="consent"><input type="checkbox" checked={privacyPolicyAgreed} onChange={(event) => setPrivacyPolicyAgreed(event.target.checked)} required /> <span><Link href="/privacy" target="_blank">개인정보처리방침</Link>을 읽었으며, 사건 기록의 수집·이용에 동의합니다.</span></label><label className="consent"><input type="checkbox" checked={aiProcessingAgreed} onChange={(event) => setAiProcessingAgreed(event.target.checked)} required /> <span>조정 의견 생성에 필요한 최소 내용이 국외 AI 제공업체에 전송될 수 있음에 동의합니다.</span></label><label className="consent spicy-consent"><input type="checkbox" checked={spicyModeAgreed} onChange={(event) => setSpicyModeAgreed(event.target.checked)} /> <span>매운맛 결과의 욕설·강한 표현에 동의합니다. 상대방도 동의해야 적용됩니다.</span></label></section>
       {error && <p className="error">{error}</p>}
       <div className="form-submit-actions">
         <button className="button form-submit" disabled={loading || stage !== "idle" || !privacyPolicyAgreed || !aiProcessingAgreed}>{loading ? "민원 서류를 전달하고 있습니다…" : "동의하고 민원 접수하기"}</button>

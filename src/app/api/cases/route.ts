@@ -6,9 +6,10 @@ import { createAccessToken, createPublicCaseNumber, hashToken } from "@/lib/secu
 import { classifySafety } from "@/lib/safety";
 import { apiError } from "@/lib/http";
 import { assertNoSensitiveIdentifier } from "@/lib/sensitive-data";
+import { SPICY_MODE_CONSENT_KEY } from "@/lib/cases/types";
 
 const policyVersion = "2026-09-15";
-const inputSchema = z.object({ relationshipType: z.enum(["연인/썸", "친구", "가족", "직장", "기타"]), statement: z.string().min(20).max(5000), privacyPolicyAgreed: z.literal(true), aiProcessingAgreed: z.literal(true) });
+const inputSchema = z.object({ relationshipType: z.enum(["연인/썸", "친구", "가족", "직장", "기타"]), statement: z.string().min(20).max(5000), privacyPolicyAgreed: z.literal(true), aiProcessingAgreed: z.literal(true), spicyModeAgreed: z.boolean().optional().default(false) });
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
         getAIProvider().generatePreliminaryOpinion({ statement: input.statement, answers: {} }),
       ]);
     const token = createAccessToken();
-    const caseItem = await getCaseRepository().createCase({ publicCaseNumber: createPublicCaseNumber(), relationshipType: input.relationshipType, complainantStatement: input.statement, applicantTokenHash: hashToken(token), applicantQuestions: [], neutralSummary: notice.summary, neutralIssues: notice.issues, preliminaryResult, safetyLevel, policyVersion });
+    const caseItem = await getCaseRepository().createCase({ publicCaseNumber: createPublicCaseNumber(), relationshipType: input.relationshipType, complainantStatement: input.statement, applicantTokenHash: hashToken(token), applicantQuestions: [], neutralSummary: notice.summary, neutralIssues: notice.issues, preliminaryResult, safetyLevel, policyVersion, applicantAnswers: { [SPICY_MODE_CONSENT_KEY]: input.spicyModeAgreed ? "동의" : "미동의" } });
     return NextResponse.json({ case: caseItem, applicantToken: token }, { status: 201 });
   } catch (error) { return apiError(error); }
 }
