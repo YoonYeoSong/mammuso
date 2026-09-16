@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { judgeForCase, type Judge } from "@/lib/cases/judges";
 
 const relationships = ["연인/썸", "친구", "가족", "직장", "기타"] as const;
-type ReceptionStage = "idle" | "reviewing" | "handoff";
+type ReceptionStage = "idle" | "reviewing" | "handoff" | "assigned";
 
 export function IntakeForm() {
   const router = useRouter();
@@ -16,12 +17,15 @@ export function IntakeForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [stage, setStage] = useState<ReceptionStage>("idle");
+  const [assignedJudge, setAssignedJudge] = useState<Judge | null>(null);
 
   function previewReceptionAnimation() {
     if (stage !== "idle") return;
+    setAssignedJudge(judgeForCase("ANIMATION-PREVIEW"));
     setStage("reviewing");
     window.setTimeout(() => setStage("handoff"), 550);
-    window.setTimeout(() => setStage("idle"), 2_350);
+    window.setTimeout(() => setStage("assigned"), 2_350);
+    window.setTimeout(() => { setStage("idle"); setAssignedJudge(null); }, 4_450);
   }
 
   async function submit(event: React.FormEvent) {
@@ -30,8 +34,11 @@ export function IntakeForm() {
       const response = await fetch("/api/cases", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ relationshipType, statement, privacyPolicyAgreed, aiProcessingAgreed }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message);
+      setAssignedJudge(judgeForCase(data.case.publicCaseNumber));
       setStage("handoff");
       await new Promise((resolve) => window.setTimeout(resolve, 2000));
+      setStage("assigned");
+      await new Promise((resolve) => window.setTimeout(resolve, 1850));
       router.push(`/case/${data.applicantToken}`);
     } catch (error) {
       setStage("idle");
@@ -61,19 +68,21 @@ export function IntakeForm() {
         <button type="button" className="button secondary animation-test-button" onClick={previewReceptionAnimation} disabled={stage !== "idle"}>애니메이션 테스트</button>
       </div>
     </form>
-    {stage !== "idle" && <ReceptionAnimation stage={stage} />}
+    {stage !== "idle" && <ReceptionAnimation stage={stage} judge={assignedJudge} />}
   </>;
 }
 
-function ReceptionAnimation({ stage }: { stage: Exclude<ReceptionStage, "idle"> }) {
-  const handedOff = stage === "handoff";
+function ReceptionAnimation({ stage, judge }: { stage: Exclude<ReceptionStage, "idle">; judge: Judge | null }) {
+  const handedOff = stage === "handoff" || stage === "assigned";
+  const assigned = stage === "assigned" && judge;
   return <div className={`reception-overlay ${handedOff ? "handoff" : ""}`} role="status" aria-live="polite">
     <section className="reception-scene">
       <p className="eyebrow">맘무소 민원 접수처</p>
       <div className="reception-desk"><div className="walking-ham" aria-hidden="true" /><div className="receipt-inbox" aria-hidden="true"><span>접수 서류</span></div></div>
       {handedOff && <span className="receipt-stamp">접수완료</span>}
-      <h2>{handedOff ? "김햄찌 주무관이 서류를 전달하고 있어요" : "민원 서류를 확인하고 있습니다"}</h2>
-      <p>{handedOff ? "기록함 앞까지 천천히 걸어가 접수 도장을 찍는 중이에요." : "김햄찌 주무관이 서류를 들고 접수 기록함으로 가고 있어요…"}</p>
+      {assigned && <div className={`judge-reveal ${judge.id}`}><img src={judge.image} alt="" /><div><span>사건 배정 완료</span><strong>{judge.name}</strong><p>{judge.title}</p></div></div>}
+      <h2>{assigned ? `${judge.name}에게 사건이 배정됐어요` : handedOff ? "김햄찌 주무관이 서류를 전달하고 있어요" : "민원 서류를 확인하고 있습니다"}</h2>
+      <p>{assigned ? "이제 양쪽 이야기를 읽고 조정 결과를 정리할 거예요." : handedOff ? "기록함 앞까지 천천히 걸어가 접수 도장을 찍는 중이에요." : "김햄찌 주무관이 서류를 들고 접수 기록함으로 가고 있어요…"}</p>
     </section>
   </div>;
 }
