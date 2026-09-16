@@ -26,7 +26,7 @@ export function RespondentPortal({ item, token }: { item: MammusoCase; token: st
     finally { setBusy(false); }
   }
 
-  if (result) return <><section className="paper centered"><Hamji mood="stamp" text="진술이 사건 기록에 접수되었습니다." /><h2>양측 진술 검토가 완료되었습니다.</h2><p>아래는 양측이 제출한 진술을 바탕으로 한 동일한 조정결과입니다.</p></section><CaseResult result={result} /></>;
+  if (result) return <><section className="paper centered"><Hamji mood="stamp" text="진술이 사건 기록에 접수되었습니다. 담당 재판장이 양쪽 기록을 읽고 결과를 정리했어요." /><h2>양쪽 이야기를 모두 들었습니다.</h2><p>아래는 담당 재판장이 양측 진술을 바탕으로 정리한 동일한 조정결과입니다.</p></section><CaseResult result={result} caseNumber={item.publicCaseNumber} /></>;
 
   return <form className="paper form" onSubmit={submit}>
     <header className="flow-heading"><p className="eyebrow">관계 조정 절차 · 내 이야기 남기기</p><h2>당신의 이야기를 먼저 들려주세요.</h2><p>이 화면은 누가 맞고 틀렸는지 정하는 자리가 아닙니다. 서로의 기억을 차분히 비교하기 위한 첫 단계예요.</p></header>
