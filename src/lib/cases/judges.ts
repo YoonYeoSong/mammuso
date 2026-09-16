@@ -7,8 +7,8 @@ export type Judge = {
 };
 
 const judges: Judge[] = [
-  { id: "bodeul", name: "보들 재판장", title: "차분히 양쪽 말을 듣는 재판장", image: "/illustrations/judge-bodeul.png", description: "서로의 기대가 어디에서 엇갈렸는지, 부드럽고 차분하게 정리합니다." },
-  { id: "beoreok", name: "버럭 재판장", title: "답답한 부분은 콕 짚는 재판장", image: "/illustrations/judge-beoreok.png", description: "할 말은 분명히 하지만, 결국은 다음 대화를 돕는 쪽으로 이끕니다." },
+  { id: "bodeul", name: "말랑 판사", title: "차분히 양쪽 말을 듣는 판사", image: "/illustrations/judge-bodeul.png", description: "서로의 기대가 어디에서 엇갈렸는지, 부드럽고 차분하게 정리합니다." },
+  { id: "beoreok", name: "단호 판사", title: "답답한 부분은 콕 짚는 판사", image: "/illustrations/judge-beoreok.png", description: "할 말은 분명히 하지만, 결국은 다음 대화를 돕는 쪽으로 이끕니다." },
 ];
 
 function seedFor(value: string) {
