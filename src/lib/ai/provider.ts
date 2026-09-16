@@ -54,7 +54,7 @@ class GroqAIProvider implements AIProvider {
 }
 
 function applySpicyTone(result: DecisionResult): DecisionResult {
-  return { ...result, overview: `씨발, 이건 진짜 개판입니다. ${result.overview} 존나 답답하게 일을 키웠습니다.`, reasoning: `어처구니가 없습니다. ${result.reasoning} 씨발, 이렇게 꼬아 놓으면 또 개판 납니다.`, mediationAdvice: `이제 그만 좀 하세요. ${result.mediationAdvice} 존나 질질 끌지 말고 이 개판은 이번에 끝내세요.`, changedReason: result.changedReason ? `진짜 달라진 건 이겁니다. ${result.changedReason} 더 개판 내지 마세요.` : result.changedReason };
+  return { ...result, overview: `씨발, 이건 그냥 존나 개판이고 너무 추합니다. ${result.overview} 서로 이따위로 굴면 누가 봐도 빡칠 수밖에 없습니다. 진짜 개같이 꼬였습니다.`, reasoning: `진짜 어처구니없고 존나 답답합니다. ${result.reasoning} 씨발, 말을 이따위로 하고 약속을 이렇게 깨면 관계가 개판 나는 게 당연합니다.`, mediationAdvice: `이제 그만 좀 하세요. ${result.mediationAdvice} 씨발, 또 이따위로 질질 끌고 상대를 긁으면 끝장입니다. 존나 피곤하게 굴지 말고 이번에 정리하세요.`, changedReason: result.changedReason ? `진짜 달라진 건 이겁니다. ${result.changedReason} 이따위로 더 개판 내지 마세요.` : result.changedReason };
 }
 
 function assertKoreanOutput(value: unknown): void {
