@@ -56,10 +56,10 @@ class GroqAIProvider implements AIProvider {
 function applySpicyTone(result: DecisionResult): DecisionResult {
   const equalResponsibility = result.complainantResponsibility === result.respondentResponsibility;
   const blameLine = equalResponsibility
-    ? "책임이 반반이면 둘 다 이번 일에서 븅신같은 새퀴처럼 굴었습니다."
-    : "더 잘못한 쪽은 이번 일에서 씹새퀴처럼 굴었습니다.";
+    ? "책임이 반반이면 둘 다 이번 일에서 븅신같은 새끼처럼 굴었습니다."
+    : "더 잘못한 쪽은 이번 일에서 씹새끼처럼 굴었습니다.";
 
-  return { ...result, overview: `씨발, 이건 그냥 존나 ㅈ같은 상황입니다. ${blameLine} ${result.overview} 서로 이따위로 굴면 누가 봐도 빡칠 수밖에 없습니다.`, reasoning: `진짜 어처구니없고 존나 답답합니다. ${result.reasoning} 씨발새퀴처럼 말을 이따위로 하고 약속을 이렇게 깨면 관계가 꼬이는 게 당연합니다.`, mediationAdvice: `이제 그만 좀 하세요. ${result.mediationAdvice} 씨발, 또 이따위로 질질 끌고 상대를 긁는 ㅈ같은 새퀴처럼 굴면 끝장입니다. 존나 피곤하게 굴지 말고 이번에 정리하세요.`, changedReason: result.changedReason ? `진짜 달라진 건 이겁니다. ${result.changedReason} 이따위로 더 꼬이게 만들지 마세요.` : result.changedReason };
+  return { ...result, overview: `씨발, 이건 그냥 존나 ㅈ같은 상황입니다. ${blameLine} ${result.overview} 서로 이따위로 굴면 누가 봐도 빡칠 수밖에 없습니다.`, reasoning: `진짜 어처구니없고 존나 답답합니다. ${result.reasoning} 씨발새끼처럼 말을 이따위로 하고 약속을 이렇게 깨면 관계가 꼬이는 게 당연합니다.`, mediationAdvice: `이제 그만 좀 하세요. ${result.mediationAdvice} 씨발, 또 이따위로 질질 끌고 상대를 긁는 ㅈ같은 새끼처럼 굴면 끝장입니다. 존나 피곤하게 굴지 말고 이번에 정리하세요.`, changedReason: result.changedReason ? `진짜 달라진 건 이겁니다. ${result.changedReason} 이따위로 더 꼬이게 만들지 마세요.` : result.changedReason };
 }
 
 function assertKoreanOutput(value: unknown): void {
