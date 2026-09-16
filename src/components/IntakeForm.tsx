@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { judgeForCase, type Judge } from "@/lib/cases/judges";
 
 const relationships = ["연인/썸", "친구", "가족", "직장", "기타"] as const;
 type ReceptionStage = "idle" | "reviewing" | "handoff" | "assigned";
+
+const startingGuides = {
+  fact: { intro: "선택한 시작점: 기억나는 사건의 순서부터 적어주세요.", placeholder: "예: 지난주 약속을 취소한 뒤 연락이 뜸해졌어요. 그때 들은 말이 계속 마음에 남아요." },
+  feeling: { intro: "선택한 시작점: 가장 오래 마음에 남은 순간부터 적어주세요.", placeholder: "예: 그 말을 들은 뒤부터 내가 존중받지 못한 것처럼 서운했어요. 그 감정이 아직 남아 있어요." },
+  wish: { intro: "선택한 시작점: 상대가 알아줬으면 하는 한 가지부터 적어주세요.", placeholder: "예: 다음에는 약속이 어려우면 미리 말해줬으면 좋겠어요. 나는 그 점을 이해받고 싶어요." },
+} as const;
 
 export function IntakeForm() {
   const router = useRouter();
@@ -19,6 +25,13 @@ export function IntakeForm() {
   const [loading, setLoading] = useState(false);
   const [stage, setStage] = useState<ReceptionStage>("idle");
   const [assignedJudge, setAssignedJudge] = useState<Judge | null>(null);
+  const [selectedGuideKey, setSelectedGuideKey] = useState<keyof typeof startingGuides | null>(null);
+  const selectedGuide = selectedGuideKey ? startingGuides[selectedGuideKey] : null;
+
+  useEffect(() => {
+    const candidate = new URLSearchParams(window.location.search).get("start");
+    if (candidate && candidate in startingGuides) setSelectedGuideKey(candidate as keyof typeof startingGuides);
+  }, []);
 
   function previewReceptionAnimation() {
     if (stage !== "idle") return;
@@ -58,8 +71,8 @@ export function IntakeForm() {
       <section className="form-section">
         <p className="eyebrow">내가 기억하는 이야기</p>
         <label htmlFor="statement">무슨 일이 있었나요?</label>
-        <p className="field-intro">순서가 완벽하지 않아도 괜찮습니다. 약속·연락·말·느낌 중 기억나는 것부터 적어주세요.</p>
-        <textarea id="statement" value={statement} onChange={(event) => setStatement(event.target.value)} minLength={20} maxLength={5000} placeholder="예: 지난주 약속을 취소한 뒤 연락이 뜸해졌어요. 그때 들은 말이 계속 마음에 남아요." required />
+        <p className="field-intro">{selectedGuide?.intro ?? "순서가 완벽하지 않아도 괜찮습니다. 약속·연락·말·느낌 중 기억나는 것부터 적어주세요."}</p>
+        <textarea id="statement" value={statement} onChange={(event) => setStatement(event.target.value)} minLength={20} maxLength={5000} placeholder={selectedGuide?.placeholder ?? "예: 지난주 약속을 취소한 뒤 연락이 뜸해졌어요. 그때 들은 말이 계속 마음에 남아요."} required />
       </section>
       <div className="privacy-guard"><b>안전하게 적어주세요</b><p>실명, 연락처, 주소, 비밀번호, 제3자의 개인정보와 대화 원문 전체는 적지 마세요. 지금 안전이 위급하다면 이 서비스보다 긴급 도움기관을 먼저 이용해야 합니다.</p></div>
       <section className="consent-block"><p className="eyebrow">마지막 확인</p><label className="consent"><input type="checkbox" checked={privacyPolicyAgreed} onChange={(event) => setPrivacyPolicyAgreed(event.target.checked)} required /> <span><Link href="/privacy" target="_blank">개인정보처리방침</Link>을 읽었으며, 사건 기록의 수집·이용에 동의합니다.</span></label><label className="consent"><input type="checkbox" checked={aiProcessingAgreed} onChange={(event) => setAiProcessingAgreed(event.target.checked)} required /> <span>조정 의견 생성에 필요한 최소 내용이 국외 AI 제공업체에 전송될 수 있음에 동의합니다.</span></label><label className="consent spicy-consent"><input type="checkbox" checked={spicyModeAgreed} onChange={(event) => setSpicyModeAgreed(event.target.checked)} /> <span>매운맛 결과의 욕설·강한 표현에 동의합니다. 상대방도 동의해야 적용됩니다.</span></label></section>
