@@ -26,7 +26,7 @@ export function RespondentPortal({ item, token }: { item: MammusoCase; token: st
     finally { setBusy(false); }
   }
 
-  if (result) return <CaseResult result={result} caseNumber={item.publicCaseNumber} spicyMode={applicantRequestedSpicyMode && (spicyModeAgreed === true || item.respondentAnswers[SPICY_MODE_CONSENT_KEY] === "동의")} />;
+  if (result) return <CaseResult result={result} caseNumber={item.publicCaseNumber} spicyMode={applicantRequestedSpicyMode && (spicyModeAgreed === true || item.respondentAnswers[SPICY_MODE_CONSENT_KEY] === "동의")} respondentStatement={item.respondentStatement ?? statement} />;
 
   return <form className="paper form" onSubmit={submit}>
     <header className="flow-heading"><p className="eyebrow">의견 작성</p><h2>내 이야기를 적어주세요.</h2></header>
