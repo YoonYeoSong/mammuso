@@ -1,5 +1,5 @@
 export type Judge = {
-  id: "bodeul" | "beoreok";
+  id: "bodeul" | "beoreok" | "yokjaengi";
   name: string;
   title: string;
   image: string;
@@ -11,11 +11,14 @@ const judges: Judge[] = [
   { id: "beoreok", name: "단호 판사", title: "답답한 부분은 콕 짚는 판사", image: "/illustrations/judge-beoreok.png", description: "할 말은 분명히 하지만, 결국은 다음 대화를 돕는 쪽으로 이끕니다." },
 ];
 
+const spicyJudge: Judge = { id: "yokjaengi", name: "욕쟁이 판사", title: "잘못한 행동은 사정없이 짚는 판사", image: "/illustrations/judge-yokjaengi-v2.png", description: "매운맛 모드에서만 배정됩니다. 사람의 정체성이 아니라 이번 사건에서 한 행동만 세게 짚습니다." };
+
 function seedFor(value: string) {
   return [...value].reduce((sum, character) => (sum * 31 + character.charCodeAt(0)) >>> 0, 17);
 }
 
-export function judgeForCase(caseNumber: string, rehearing = false) {
+export function judgeForCase(caseNumber: string, rehearing = false, spicyMode = false) {
+  if (spicyMode) return spicyJudge;
   const index = seedFor(caseNumber || "mammuso") % judges.length;
   return judges[rehearing ? (index + 1) % judges.length : index];
 }

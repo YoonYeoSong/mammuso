@@ -2,16 +2,19 @@
 
 import { useId, useState } from "react";
 import type { DecisionResult } from "@/lib/cases/types";
+import { judgeForCase } from "@/lib/cases/judges";
 
-export function CaseResult({ result, rehearing = false, spicyMode = false, respondentStatement }: { result: DecisionResult; rehearing?: boolean; caseNumber?: string; spicyMode?: boolean; respondentStatement?: string | null }) {
+export function CaseResult({ result, rehearing = false, caseNumber, spicyMode = false, respondentStatement }: { result: DecisionResult; rehearing?: boolean; caseNumber?: string; spicyMode?: boolean; respondentStatement?: string | null }) {
   const [showDetails, setShowDetails] = useState(false);
   const detailsId = useId();
   const complainantResponsibility = Math.min(80, Math.max(20, result.complainantResponsibility));
   const respondentResponsibility = 100 - complainantResponsibility;
+  const judge = spicyMode ? judgeForCase(caseNumber ?? "mammuso", rehearing, true) : null;
 
   return <section className="result-card">
     <p className="eyebrow">{spicyMode ? "매운맛 결과" : rehearing ? "재심의 결과" : "조정 결과"}</p>
     <h2>{rehearing ? "다시 본 결론" : "이번 일의 결론"}</h2>
+    {judge && <section className="judge-assignment yokjaengi"><img src={judge.image} alt="" /><div><p className="eyebrow">매운맛 전담 판사</p><b>{judge.name}</b><span>{judge.title}</span></div></section>}
     <p className="result-overview">{result.overview}</p>
     <section className="responsibility-card" aria-label="갈등 영향 비중">
       <h3>갈등 영향</h3>

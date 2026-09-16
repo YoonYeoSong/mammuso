@@ -22,7 +22,7 @@ export function IntakeForm() {
 
   function previewReceptionAnimation() {
     if (stage !== "idle") return;
-    setAssignedJudge(judgeForCase("ANIMATION-PREVIEW"));
+    setAssignedJudge(judgeForCase("ANIMATION-PREVIEW", false, spicyModeAgreed));
     setStage("reviewing");
     window.setTimeout(() => setStage("handoff"), 550);
     window.setTimeout(() => setStage("assigned"), 2_350);
@@ -35,7 +35,7 @@ export function IntakeForm() {
       const response = await fetch("/api/cases", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ relationshipType, statement, privacyPolicyAgreed, aiProcessingAgreed, spicyModeAgreed }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message);
-      setAssignedJudge(judgeForCase(data.case.publicCaseNumber));
+      setAssignedJudge(judgeForCase(data.case.publicCaseNumber, false, spicyModeAgreed));
       setStage("handoff");
       await new Promise((resolve) => window.setTimeout(resolve, 2000));
       setStage("assigned");
@@ -83,7 +83,7 @@ function ReceptionAnimation({ stage, judge }: { stage: Exclude<ReceptionStage, "
       {handedOff && <span className="receipt-stamp">접수완료</span>}
       {assigned && <div className={`judge-reveal ${judge.id}`}><img src={judge.image} alt="" /><div><span>사건 배정 완료</span><strong>{judge.name}</strong><p>{judge.title}</p></div></div>}
       <h2>{assigned ? `${judge.name}에게 사건이 배정됐어요` : handedOff ? "김햄찌 주무관이 서류를 전달하고 있어요" : "민원 서류를 확인하고 있습니다"}</h2>
-      <p>{assigned ? "이제 양쪽 이야기를 읽고 조정 결과를 정리할 거예요." : handedOff ? "기록함 앞까지 천천히 걸어가 접수 도장을 찍는 중이에요." : "김햄찌 주무관이 서류를 들고 접수 기록함으로 가고 있어요…"}</p>
+      <p>{assigned ? judge.id === "yokjaengi" ? "매운맛 동의가 확인되면, 이 판사가 사실관계를 읽고 세게 정리합니다." : "이제 양쪽 이야기를 읽고 조정 결과를 정리할 거예요." : handedOff ? "기록함 앞까지 천천히 걸어가 접수 도장을 찍는 중이에요." : "김햄찌 주무관이 서류를 들고 접수 기록함으로 가고 있어요…"}</p>
     </section>
   </div>;
 }
