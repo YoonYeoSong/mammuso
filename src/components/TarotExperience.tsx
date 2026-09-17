@@ -5,6 +5,7 @@ import type { TarotReading } from "@/lib/ai/provider";
 import { majorArcana, tarotCategories, type TarotCard, type TarotCategory } from "@/lib/tarot/cards";
 
 type Phase = "question" | "shuffling" | "picking" | "confirming" | "revealing" | "loading" | "reading";
+type DrawTestMode = "direct" | "preview";
 const positions = ["지금의 마음", "나를 스치는 것", "다가오는 흐름"];
 
 function shuffle<T>(items: T[]) {
@@ -37,6 +38,9 @@ export function TarotExperience() {
   const [question, setQuestion] = useState("");
   const [deck, setDeck] = useState<TarotCard[]>(majorArcana);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [drawTestMode, setDrawTestMode] = useState<DrawTestMode>("preview");
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [fanOffset, setFanOffset] = useState(0);
   const [revealed, setRevealed] = useState(0);
   const [reading, setReading] = useState<TarotReading | null>(null);
   const [error, setError] = useState("");
@@ -51,6 +55,8 @@ export function TarotExperience() {
   function startShuffle() {
     setDeck(shuffle(majorArcana));
     setSelectedIds([]);
+    setPendingId(null);
+    setFanOffset(0);
     setRevealed(0);
     setReading(null);
     setError("");
@@ -59,6 +65,25 @@ export function TarotExperience() {
 
   function toggleCard(id: string) {
     setSelectedIds((current) => current.includes(id) ? current.filter((cardId) => cardId !== id) : current.length < 3 ? [...current, id] : current);
+  }
+
+  function chooseFanCard(id: string) {
+    if (selectedIds.includes(id)) {
+      setSelectedIds((current) => current.filter((cardId) => cardId !== id));
+      return;
+    }
+    if (selectedIds.length >= 3) return;
+    if (drawTestMode === "direct") {
+      setSelectedIds((current) => [...current, id]);
+      return;
+    }
+    setPendingId(id);
+  }
+
+  function confirmPendingCard() {
+    if (!pendingId || selectedIds.length >= 3) return;
+    setSelectedIds((current) => current.includes(pendingId) ? current : [...current, pendingId]);
+    setPendingId(null);
   }
 
   async function getReading() {
@@ -101,14 +126,33 @@ export function TarotExperience() {
 
   if (phase === "picking") return <section className="tarot-shell pick-screen">
     <div className="pick-heading"><div><p className="step">카드 선택</p><h1>끌리는 카드<br />3장을 골라줘.</h1></div><strong>{selectedIds.length} <small>/ 3</small></strong></div>
-    <p className="pick-copy">선택은 언제든 바꿔도 돼. 첫 느낌을 믿어봐.</p>
-    <div className="deck-grid" aria-label="22장 타로 카드">
-      {deck.map((card, index) => {
-        const selectIndex = selectedIds.indexOf(card.id);
-        return <button key={card.id} type="button" className={`deck-grid-card ${selectIndex >= 0 ? "is-selected" : ""}`} onClick={() => toggleCard(card.id)} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? ", 선택됨" : ""}`}><CardFace card={card} revealed={false} />{selectIndex >= 0 && <span className="selection-index" aria-hidden="true">{selectIndex + 1}</span>}</button>;
+    <p className="pick-copy">테스트 방식은 바꿀 수 있어. 선택 완료 전에는 언제든 다시 골라봐.</p>
+    <div className="draw-test-switch" role="group" aria-label="카드 뽑기 테스트 방식">
+      <button type="button" className={drawTestMode === "direct" ? "active" : ""} onClick={() => { setDrawTestMode("direct"); setPendingId(null); }}><span className="test-card-icon" aria-hidden="true">1</span><span><b>테스트 1</b><small>바로 뽑기</small></span></button>
+      <button type="button" className={drawTestMode === "preview" ? "active" : ""} onClick={() => { setDrawTestMode("preview"); setPendingId(null); }}><span className="test-card-icon" aria-hidden="true">2</span><span><b>테스트 2</b><small>미리 보고 뽑기</small></span></button>
+    </div>
+    <div className="draw-slots" aria-label="뽑은 카드">
+      {[0, 1, 2].map((index) => {
+        const card = selectedCards[index];
+        return card ? <button key={card.id} type="button" className="draw-slot selected" onClick={() => setSelectedIds((current) => current.filter((cardId) => cardId !== card.id))} aria-label={`${index + 1}번째 뽑은 카드, 다시 고르기`}><CardFace card={card} revealed={false} /><span>{index + 1} · 다시 고르기</span></button> : <div className="draw-slot empty" key={index}><b>{index + 1}</b><small>비어 있음</small></div>;
       })}
     </div>
-    <div className="selection-bar"><span>{selectedIds.length === 3 ? "마음이 정해졌다면" : "카드를 고르는 중"}</span><button className="primary-action" onClick={() => setPhase("confirming")} disabled={selectedIds.length !== 3}>이 카드로 볼게 <span>→</span></button></div>
+    <div className="fan-wrap" aria-label="22장 타로 카드">
+      <button className="fan-nav fan-nav-left" type="button" onClick={() => setFanOffset((offset) => Math.min(offset + 150, 300))} disabled={fanOffset >= 300} aria-label="왼쪽 끝 카드 보기">←</button>
+      <button className="fan-nav fan-nav-right" type="button" onClick={() => setFanOffset((offset) => Math.max(offset - 150, -300))} disabled={fanOffset <= -300} aria-label="오른쪽 끝 카드 보기">→</button>
+      <p className="fan-help">{drawTestMode === "preview" ? "카드를 누르면 먼저 미리 볼 수 있어." : "끌리는 카드를 바로 뽑아봐."}</p>
+      <div className="card-fan" style={{ "--fan-offset": `${fanOffset}px` } as React.CSSProperties}>
+        {deck.map((card, index) => {
+          const selectIndex = selectedIds.indexOf(card.id);
+          const isPending = pendingId === card.id;
+          const degree = (index - (deck.length - 1) / 2) * 4.05;
+          const shift = Math.abs(index - (deck.length - 1) / 2) * 1.25;
+          return <button key={card.id} type="button" className={`fan-card ${selectIndex >= 0 ? "is-selected" : ""} ${isPending ? "is-preview" : ""}`} style={{ "--i": index, "--r": `${degree}deg`, "--y": `${shift}px` } as React.CSSProperties} onClick={() => chooseFanCard(card.id)} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? ", 선택됨" : isPending ? ", 미리보기 중" : ""}`}><CardFace card={card} revealed={false} /></button>;
+        })}
+      </div>
+    </div>
+    {pendingId && <div className="draw-preview" aria-live="polite"><span aria-hidden="true">✦</span><div><b>이 카드가 맞아?</b><small>다른 카드를 누르면 미리보기가 바뀌어.</small></div><button type="button" onClick={() => setPendingId(null)}>다시 고르기</button><button type="button" onClick={confirmPendingCard}>이 카드로 뽑기</button></div>}
+    <div className="selection-bar"><span>{pendingId ? "미리보기를 확인해줘" : selectedIds.length === 3 ? "마음이 정해졌다면" : "카드를 고르는 중"}</span><button className="primary-action" onClick={() => setPhase("confirming")} disabled={selectedIds.length !== 3 || Boolean(pendingId)}>이 카드로 볼게 <span>→</span></button></div>
   </section>;
 
   if (phase === "confirming") return <section className="tarot-shell ritual-screen confirm-screen">
