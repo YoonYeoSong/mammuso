@@ -13,7 +13,7 @@ export default function Home() {
     <header className="new-header"><Link href="/" className="new-brand">{brand.name}</Link><span>가볍게 보는 오늘의 마음</span></header>
     <section className="new-hero"><p>AI FORTUNE PLAYGROUND</p><h1>{brand.tagline}</h1><span className="hero-orbit orbit-one" /><span className="hero-orbit orbit-two" /></section>
     <section className="content-list" aria-labelledby="content-title"><div className="section-heading"><p>오늘, 뭘 볼까?</p><h2 id="content-title">마음 가는 걸<br />하나 골라봐.</h2></div>
-      <Link href="/tarot" className="content-card tarot-home-card"><div className="content-icon tarot-icon">✦</div><div><div className="status-line"><span>OPEN</span><small>FREE</small></div><h3>타로</h3><p>고민 하나 생각하고<br />끌리는 카드를 직접 골라보세요.</p></div><i>→</i></Link>
+      <a href="/tarot" className="content-card tarot-home-card"><div className="content-icon tarot-icon">✦</div><div><div className="status-line"><span>OPEN</span><small>FREE</small></div><h3>타로</h3><p>고민 하나 생각하고<br />끌리는 카드를 직접 골라보세요.</p></div><i>→</i></a>
       <div className="coming-grid">{comingSoon.map(([title, copy, icon]) => <button key={title} className="content-card coming-card" onClick={() => setNotice(`${title}, 열심히 준비 중이에요.`)} aria-label={`${title}, 준비 중`}><span className="content-icon">{icon}</span><div><small>COMING SOON</small><h3>{title}</h3><p>{copy}</p></div></button>)}</div>
       {notice && <p className="coming-notice" role="status">{notice}</p>}
     </section>
