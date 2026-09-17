@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { judgeForCase, type Judge } from "@/lib/cases/judges";
@@ -18,6 +18,12 @@ export function IntakeForm() {
   const [loading, setLoading] = useState(false);
   const [stage, setStage] = useState<ReceptionStage>("idle");
   const [assignedJudge, setAssignedJudge] = useState<Judge | null>(null);
+  const calendarRef = useRef<HTMLInputElement>(null);
+
+  function updateTypedDate(value: string) {
+    const digits = value.replace(/\D/g, "").slice(0, 8);
+    setIncidentDate([digits.slice(0, 4), digits.slice(4, 6), digits.slice(6, 8)].filter(Boolean).join("-"));
+  }
   function previewReceptionAnimation() {
     if (stage !== "idle") return;
     setAssignedJudge(judgeForCase("ANIMATION-PREVIEW", false, spicyModeAgreed));
@@ -50,8 +56,8 @@ export function IntakeForm() {
       <div className="form-progress"><span>1</span><div><b>무슨 일이 있었나요?</b><p>날짜와 기억나는 내용을 편하게 적어주세요.</p></div></div>
       <section className="form-section intake-basics">
         <label htmlFor="incident-date">언제 있었던 일인가요?</label>
-        <div className="incident-date-field"><input id="incident-date" type="date" value={incidentDate} onChange={(event) => setIncidentDate(event.target.value)} required /></div>
-        <small>시간은 적지 않아도 됩니다.</small>
+        <div className="incident-date-field" style={{ display: "flex", alignItems: "center", gap: 5 }}><input id="incident-date" type="text" value={incidentDate} onChange={(event) => updateTypedDate(event.target.value)} inputMode="numeric" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" placeholder="YYYY-MM-DD" style={{ flex: 1 }} required /><button type="button" aria-label="달력에서 날짜 선택" onClick={() => calendarRef.current?.showPicker()} style={{ display: "grid", width: 40, height: 40, flex: "none", placeItems: "center", border: "1px solid #d9cdb8", borderRadius: 11, background: "#fffefb", color: "#655c4e", cursor: "pointer", fontSize: 18 }}><span aria-hidden="true">▦</span></button><input ref={calendarRef} type="date" value={/^\d{4}-\d{2}-\d{2}$/.test(incidentDate) ? incidentDate : ""} onChange={(event) => setIncidentDate(event.target.value)} tabIndex={-1} aria-hidden="true" style={{ position: "absolute", width: 1, minWidth: 1, height: 1, minHeight: 1, padding: 0, opacity: 0, pointerEvents: "none" }} /></div>
+        <small>직접 YYYY-MM-DD로 쓰거나, 오른쪽 달력에서 고를 수 있습니다. 시간은 적지 않아도 됩니다.</small>
         <label htmlFor="statement">내용을 적어주세요</label>
         <p className="field-intro">누가 무엇을 했는지, 어떤 말이나 일이 남았는지만 적으면 됩니다.</p>
         <textarea id="statement" value={statement} onChange={(event) => setStatement(event.target.value)} minLength={20} maxLength={5000} placeholder="예: 약속한 날에 연락 없이 오지 않았고, 나중에도 이유를 제대로 설명하지 않았어요." required />
