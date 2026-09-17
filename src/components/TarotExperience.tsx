@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { TarotReading } from "@/lib/ai/provider";
 import { majorArcana, tarotCategories, type TarotCard, type TarotCategory } from "@/lib/tarot/cards";
 
-type Phase = "question" | "shuffling" | "picking" | "confirming" | "revealing" | "reading";
+type Phase = "question" | "shuffling" | "picking" | "confirming" | "revealing" | "loading" | "reading";
 const positions = ["지금의 마음", "나를 스치는 것", "다가오는 흐름"];
 
 function shuffle<T>(items: T[]) {
@@ -37,6 +37,7 @@ export function TarotExperience() {
   const [question, setQuestion] = useState("");
   const [deck, setDeck] = useState<TarotCard[]>(majorArcana);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [fanOffset, setFanOffset] = useState(0);
   const [revealed, setRevealed] = useState(0);
   const [reading, setReading] = useState<TarotReading | null>(null);
   const [error, setError] = useState("");
@@ -51,6 +52,7 @@ export function TarotExperience() {
   function startShuffle() {
     setDeck(shuffle(majorArcana));
     setSelectedIds([]);
+    setFanOffset(0);
     setRevealed(0);
     setReading(null);
     setError("");
@@ -63,14 +65,19 @@ export function TarotExperience() {
 
   async function getReading() {
     setError("");
+    setPhase("loading");
     try {
       const response = await fetch("/api/tarot/reading", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category, question, cardIds: selectedIds }) });
-      if (!response.ok) throw new Error("reading failed");
-      const result = await response.json() as { reading: TarotReading };
+      const result = await response.json() as { reading?: TarotReading; error?: string };
+      if (!response.ok || !result.reading) {
+        if (result.error === "AI_NOT_CONFIGURED") throw new Error("AI_NOT_CONFIGURED");
+        throw new Error("reading failed");
+      }
       setReading(result.reading);
       setPhase("reading");
-    } catch {
-      setError("해석을 불러오지 못했어요. 잠시 후 다시 눌러봐.");
+    } catch (requestError) {
+      setError(requestError instanceof Error && requestError.message === "AI_NOT_CONFIGURED" ? "AI 해석 연결이 아직 준비되지 않았어요. 잠시 후 다시 눌러봐." : "해석을 불러오지 못했어요. 잠시 후 다시 눌러봐.");
+      setPhase("revealing");
     }
   }
 
@@ -98,7 +105,10 @@ export function TarotExperience() {
     <div className="pick-heading"><div><p className="step">카드 선택</p><h1>끌리는 카드<br />3장을 골라줘.</h1></div><strong>{selectedIds.length} <small>/ 3</small></strong></div>
     <p className="pick-copy">선택은 언제든 바꿔도 돼. 첫 느낌을 믿어봐.</p>
     <div className="fan-wrap" aria-label="22장 타로 카드">
-      <div className="card-fan">
+      <button className="fan-nav fan-nav-left" type="button" onClick={() => setFanOffset((offset) => Math.min(offset + 150, 300))} disabled={fanOffset >= 300} aria-label="왼쪽 끝 카드 보기">←</button>
+      <button className="fan-nav fan-nav-right" type="button" onClick={() => setFanOffset((offset) => Math.max(offset - 150, -300))} disabled={fanOffset <= -300} aria-label="오른쪽 끝 카드 보기">→</button>
+      <p className="fan-help">양끝 카드가 궁금하면 화살표로 팬을 옮겨봐.</p>
+      <div className="card-fan" style={{ "--fan-offset": `${fanOffset}px` } as React.CSSProperties}>
         {deck.map((card, index) => {
           const selectIndex = selectedIds.indexOf(card.id);
           const degree = (index - (deck.length - 1) / 2) * 4.05;
@@ -114,6 +124,15 @@ export function TarotExperience() {
     <p className="step">선택 완료</p><h1>세 장이<br />앞에 놓였어.</h1><p>천천히, 한 장씩 열어봐.</p>
     <div className="chosen-row">{selectedCards.map((card) => <CardFace key={card.id} card={card} revealed={false} />)}</div>
     <button className="primary-action" onClick={() => setPhase("revealing")}>첫 번째 카드를 열어봐 <span>→</span></button>
+  </section>;
+
+  if (phase === "loading") return <section className="tarot-shell ritual-screen reading-loading" aria-live="polite" aria-busy="true">
+    <p className="step">AI READING</p>
+    <div className="reading-loader" aria-hidden="true"><span /><span /><span /></div>
+    <h1>카드의 이야기를<br />읽고 있어.</h1>
+    <p>세 장이 만든 흐름을 천천히 이어보고 있어.</p>
+    <div className="loader-dots" aria-hidden="true"><i /><i /><i /></div>
+    <small>조금만 기다려줘.</small>
   </section>;
 
   if (phase === "revealing") return <section className="tarot-shell reveal-screen">
