@@ -67,7 +67,8 @@
   .selection-index { top:-7px; right:-7px; width:21px; height:21px; font-size:10px; }
 }
 
-/* Temporary draw-flow tests: a small control deck, a hand, and a tactile fan. */
+/* Two ways to browse the same deck: a hand-like fan or an even card array. */
+.view-mode-label { margin:17px 0 -10px; color:var(--muted); font-size:11px; font-weight:900; letter-spacing:.08em; }
 .draw-test-switch { display:grid; grid-template-columns:repeat(2,1fr); gap:9px; margin:17px 0 12px; }
 .draw-test-switch button { display:flex; min-height:65px; align-items:center; gap:10px; border:1px solid var(--line); border-radius:15px; padding:8px 10px; background:var(--surface); color:var(--ink); cursor:pointer; text-align:left; transition:border-color .16s,background .16s,transform .16s; }
 .draw-test-switch button.active { border-color:#736bd1; background:#f0eeff; box-shadow:0 5px 13px rgba(91,82,186,.13); }
@@ -77,12 +78,9 @@
 .draw-slot { position:relative; display:flex; width:62px; height:91px; flex-direction:column; align-items:center; justify-content:center; border:0; border-radius:9px; padding:0; background:transparent; color:var(--muted); }
 .draw-slot.selected { cursor:pointer; }.draw-slot.selected .tarot-card { width:54px; height:78px; }.draw-slot.selected>span { position:absolute; z-index:2; bottom:-4px; border-radius:999px; padding:3px 5px; background:var(--ink); color:#fff; font-size:8px; font-weight:800; white-space:nowrap; }.draw-slot.selected:hover { transform:translateY(-2px); }
 .draw-slot.empty { border:1px dashed #cdc9da; background:#fbfafe; }.draw-slot.empty b { color:#aaa5bb; font-size:17px; }.draw-slot.empty small { margin-top:3px; font-size:9px; }
-.fan-card.is-preview { z-index:31; filter:drop-shadow(0 10px 17px rgba(93,81,197,.38)); transform:rotate(var(--r)) translateY(calc(var(--y) - 48px)); }
-.fan-card.is-preview .tarot-card { outline:3px solid #8e80ff; outline-offset:5px; box-shadow:0 0 20px rgba(116,94,255,.42); }
-.draw-preview { display:grid; grid-template-columns:auto 1fr auto auto; gap:8px; align-items:center; border:1px solid #bdb6f1; border-radius:16px; margin:9px 0 5px; padding:9px 10px; background:#f2f0ff; color:#3e396f; }
-.draw-preview>span { display:grid; width:28px; height:28px; place-items:center; border-radius:50%; background:#766ed2; color:#fff; }.draw-preview b,.draw-preview small { display:block; }.draw-preview b { font-size:12px; }.draw-preview small { margin-top:2px; color:#676289; font-size:9px; }.draw-preview button { border:0; border-radius:10px; padding:8px 9px; background:#dedaf7; color:#544e9a; cursor:pointer; font-size:10px; font-weight:900; white-space:nowrap; }.draw-preview button:last-child { background:#746bce; color:#fff; }
+.selection-confirm { position:fixed; z-index:100; inset:0; display:grid; place-items:end center; padding:17px; background:rgba(35,33,57,.35); }.selection-confirm>div { width:min(100%,480px); border-radius:25px; padding:25px; background:var(--surface); box-shadow:0 18px 50px rgba(34,31,60,.24); }.selection-confirm .step { margin:0 0 8px; }.selection-confirm h2 { margin:0; font-size:29px; line-height:1.14; letter-spacing:-.07em; }.selection-confirm p:not(.step) { margin:12px 0 21px; color:var(--muted); font-size:13px; }.selection-confirm>div>div { display:grid; grid-template-columns:1fr 1.45fr; gap:8px; }.secondary-action,.confirm-action { min-height:48px; border:0; border-radius:14px; padding:0 12px; cursor:pointer; font-size:12px; font-weight:900; }.secondary-action { background:#f0eff4; color:#666776; }.confirm-action { background:var(--coral); color:#fff; }.loading-retry { display:flex; width:min(100%,300px); min-height:48px; align-items:center; justify-content:space-between; border:1px solid rgba(233,229,255,.55); border-radius:14px; margin-top:20px; padding:0 15px; background:rgba(255,255,255,.1); color:#fff; cursor:pointer; font-size:12px; font-weight:900; }
 
 @media(max-width:560px) {
-  .draw-test-switch { margin-top:12px; }.draw-test-switch button { min-height:59px; gap:8px; padding:7px 8px; }.test-card-icon { width:26px; height:38px; }.draw-slots { gap:9px; }.draw-slot { width:57px; height:84px; }.draw-slot.selected .tarot-card { width:49px; height:71px; }
-  .fan-wrap { margin-top:-8px; }.fan-card.is-preview { transform:rotate(var(--r)) translateY(calc(var(--y) - 42px)); }.draw-preview { grid-template-columns:auto 1fr; gap:7px; }.draw-preview button { grid-row:2; }.draw-preview button:nth-last-child(2) { grid-column:1 / 2; }.draw-preview button:last-child { grid-column:2; }
+  .view-mode-label { margin-top:12px; }.draw-test-switch { margin-top:12px; }.draw-test-switch button { min-height:59px; gap:8px; padding:7px 8px; }.test-card-icon { width:26px; height:38px; }.draw-slots { gap:9px; }.draw-slot { width:57px; height:84px; }.draw-slot.selected .tarot-card { width:49px; height:71px; }
+  .fan-wrap { margin-top:-8px; }.selection-confirm>div { padding:22px 19px; }.selection-confirm h2 { font-size:27px; }
 }
