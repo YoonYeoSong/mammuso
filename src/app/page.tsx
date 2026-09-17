@@ -1,23 +1,22 @@
+"use client";
+
 import Link from "next/link";
-import { Disclaimer, SiteFooter, SiteHeader } from "@/components/SiteChrome";
+import { useState } from "react";
+import { brand } from "@/lib/brand";
 
 export default function Home() {
-  return <main>
-    <SiteHeader />
-    <section className="hero home-menu-hero">
-      <div>
-        <p className="eyebrow">맘무소 · 관계 민원 창구</p>
-        <h1>마음에 일이<br /><em>생기셨나요?</em></h1>
-        <p className="lead">아래 메뉴에서 필요한 곳으로 들어가세요.</p>
-      </div>
-      <div className="hero-character"><div className="hero-ham"><img src="/illustrations/hamji-clerk.png" alt="서류를 든 김햄찌 주무관" /></div></div>
+  const [notice, setNotice] = useState("");
+  const comingSoon = [
+    ["오늘점", "오늘 하루, 뭐가 기다리고 있을까?", "☼"], ["될까?", "그거 진짜 될지 한번 볼까?", "?"], ["꿈값", "어젯밤 그 꿈, 얼마짜리였을까?", "☁"], ["궁합", "우리 둘, 얼마나 맞을까?", "♡"], ["시비점", "그래서 누구 잘못이 더 큰데?", "↯"],
+  ];
+  return <main className="home-page">
+    <header className="new-header"><Link href="/" className="new-brand">{brand.name}</Link><span>가볍게 보는 오늘의 마음</span></header>
+    <section className="new-hero"><p>AI FORTUNE PLAYGROUND</p><h1>{brand.tagline}</h1><span className="hero-orbit orbit-one" /><span className="hero-orbit orbit-two" /></section>
+    <section className="content-list" aria-labelledby="content-title"><div className="section-heading"><p>오늘, 뭘 볼까?</p><h2 id="content-title">마음 가는 걸<br />하나 골라봐.</h2></div>
+      <Link href="/tarot" className="content-card tarot-home-card"><div className="content-icon tarot-icon">✦</div><div><div className="status-line"><span>OPEN</span><small>FREE</small></div><h3>타로</h3><p>고민 하나 생각하고<br />끌리는 카드를 직접 골라보세요.</p></div><i>→</i></Link>
+      <div className="coming-grid">{comingSoon.map(([title, copy, icon]) => <button key={title} className="content-card coming-card" onClick={() => setNotice(`${title}, 열심히 준비 중이에요.`)} aria-label={`${title}, 준비 중`}><span className="content-icon">{icon}</span><div><small>COMING SOON</small><h3>{title}</h3><p>{copy}</p></div></button>)}</div>
+      {notice && <p className="coming-notice" role="status">{notice}</p>}
     </section>
-    <nav className="home-menu" aria-label="메인 메뉴">
-      <Link href="/intake" className="home-menu-item primary"><span aria-hidden="true">✎</span><div><b>민원 접수</b><p>날짜와 있었던 일을 적습니다.</p></div><i aria-hidden="true">→</i></Link>
-      <Link href="/terms" className="home-menu-item"><span aria-hidden="true">?</span><div><b>이용 안내</b><p>어떻게 진행되는지 확인합니다.</p></div><i aria-hidden="true">→</i></Link>
-      <Link href="/privacy" className="home-menu-item"><span aria-hidden="true">⌑</span><div><b>개인정보 안내</b><p>기록과 동의 내용을 확인합니다.</p></div><i aria-hidden="true">→</i></Link>
-    </nav>
-    <Disclaimer />
-    <SiteFooter />
+    <footer className="new-footer"><span>{brand.shortDescription}</span><nav><Link href="/privacy">개인정보처리방침</Link><Link href="/terms">이용안내</Link></nav></footer>
   </main>;
 }

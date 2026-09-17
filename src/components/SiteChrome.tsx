@@ -1,5 +1,8 @@
 import Link from "next/link";
-export function SiteHeader() { return <header className="site-header"><Link href="/" className="brand"><img src="/illustrations/hamji-clerk.png" alt="" /> 맘무소 <small>MAMMUSO</small></Link><span className="beta">무료 베타 운영 중</span></header>; }
-export function Disclaimer() { return <aside className="disclaimer">맘무소는 실제 행정기관과 관련이 없는 AI 기반 콘텐츠 서비스입니다. 제공되는 결과는 법률적 판단이나 실제 행정처분이 아닌 참고용 조정 의견입니다.</aside>; }
-export function SiteFooter() { return <footer className="site-footer"><span>© Mammuso beta</span><nav><Link href="/privacy">개인정보처리방침</Link><Link href="/terms">이용안내</Link></nav></footer>; }
-export function Hamji({ mood = "friendly", text }: { mood?: "friendly" | "paper" | "waiting" | "serious" | "stamp" | "surprised"; text: string }) { return <div className="hamji" data-mood={mood}><img className="hamji-face" src="/illustrations/hamji-clerk.png" alt="" /><p><b>김햄찌 주무관</b><br />{text}</p></div>; }
+import { brand } from "@/lib/brand";
+
+/** Legacy case routes keep their logic, but no longer carry the former character world. */
+export function SiteHeader() { return <header className="new-header"><Link href="/" className="new-brand">{brand.name}</Link><span>기존 기록 관리</span></header>; }
+export function Disclaimer() { return <aside className="legacy-note">이 기록은 기존 서비스 기능으로 보관됩니다. 제공되는 내용은 참고용 AI 콘텐츠입니다.</aside>; }
+export function SiteFooter() { return <footer className="new-footer"><span>© {brand.name}</span><nav><Link href="/privacy">개인정보처리방침</Link><Link href="/terms">이용안내</Link></nav></footer>; }
+export function Hamji({ text }: { mood?: "friendly" | "paper" | "waiting" | "serious" | "stamp" | "surprised"; text: string }) { return <aside className="legacy-note"><b>안내</b><br />{text}</aside>; }
