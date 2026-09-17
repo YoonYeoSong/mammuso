@@ -102,12 +102,16 @@ export function TarotExperience() {
   if (phase === "picking") return <section className="tarot-shell pick-screen">
     <div className="pick-heading"><div><p className="step">카드 선택</p><h1>끌리는 카드<br />3장을 골라줘.</h1></div><strong>{selectedIds.length} <small>/ 3</small></strong></div>
     <p className="pick-copy">선택은 언제든 바꿔도 돼. 첫 느낌을 믿어봐.</p>
-    <div className="card-stack" aria-label="22장 타로 카드">
-      {[deck.slice(0, 11), deck.slice(11)].map((cards, rowIndex) => <div className="card-row" key={rowIndex}>
+    <div className="fan-stack" aria-label="22장 타로 카드">
+      {[deck.slice(0, 11), deck.slice(11)].map((cards, fanIndex) => <div className="fan-wrap split-fan" key={fanIndex}>
+        <div className="card-fan">
           {cards.map((card, index) => {
             const selectIndex = selectedIds.indexOf(card.id);
-            return <button key={card.id} type="button" className={`deck-card ${selectIndex >= 0 ? "is-selected" : ""}`} onClick={() => toggleCard(card.id)} aria-label={`${rowIndex === 0 ? "윗줄" : "아랫줄"} 카드 ${index + 1}${selectIndex >= 0 ? ", 선택됨" : ""}`}><CardFace card={card} revealed={false} /></button>;
+            const degree = (index - 5) * 3.5;
+            const shift = Math.abs(index - 5) * 1.2;
+            return <button key={card.id} type="button" className={`fan-card ${selectIndex >= 0 ? "is-selected" : ""}`} style={{ "--i": index, "--r": `${degree}deg`, "--y": `${shift}px` } as React.CSSProperties} onClick={() => toggleCard(card.id)} aria-label={`${fanIndex === 0 ? "윗줄" : "아랫줄"} 카드 ${index + 1}${selectIndex >= 0 ? ", 선택됨" : ""}`}><CardFace card={card} revealed={false} /></button>;
           })}
+        </div>
       </div>)}
     </div>
     <div className="selection-bar"><span>{selectedIds.length === 3 ? "마음이 정해졌다면" : "카드를 고르는 중"}</span><button className="primary-action" onClick={() => setPhase("confirming")} disabled={selectedIds.length !== 3}>이 카드로 볼게 <span>→</span></button></div>
