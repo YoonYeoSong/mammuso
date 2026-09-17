@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { TarotReading } from "@/lib/ai/provider";
 import { majorArcana, tarotCategories, type TarotCard, type TarotCategory } from "@/lib/tarot/cards";
 
 type Phase = "question" | "shuffling" | "picking" | "confirming" | "revealing" | "loading" | "reading";
 type ViewMode = "fan" | "grid";
+type CardRect = { left: number; top: number; width: number; height: number };
+type CardFlight = { card: TarotCard; id: string; from: CardRect; to: CardRect; fromRotation: number; toRotation: number; direction: "to-slot" | "to-fan" };
 const positions = ["지금의 마음", "나를 스치는 것", "다가오는 흐름"];
 
 function shuffle<T>(items: T[]) {
@@ -41,10 +43,14 @@ export function TarotExperience() {
   const [viewMode, setViewMode] = useState<ViewMode>("fan");
   const [isSelectionConfirmOpen, setIsSelectionConfirmOpen] = useState(false);
   const [fanOffset, setFanOffset] = useState(0);
+  const [flight, setFlight] = useState<CardFlight | null>(null);
+  const [isFlightMoving, setIsFlightMoving] = useState(false);
   const [revealed, setRevealed] = useState(0);
   const [reading, setReading] = useState<TarotReading | null>(null);
   const [loadingMessage, setLoadingMessage] = useState("세 장이 만든 흐름을 천천히 이어보고 있어.");
   const [readingError, setReadingError] = useState("");
+  const fanCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const slotRefs = useRef<Record<number, HTMLElement | null>>({});
   const selectedCards = useMemo(() => selectedIds.map((id) => deck.find((card) => card.id === id)).filter((card): card is TarotCard => Boolean(card)), [deck, selectedIds]);
 
   useEffect(() => {
@@ -53,11 +59,26 @@ export function TarotExperience() {
     return () => window.clearTimeout(timer);
   }, [phase]);
 
+  useEffect(() => {
+    if (!flight) return;
+    const animationFrame = window.requestAnimationFrame(() => setIsFlightMoving(true));
+    const settleTimer = window.setTimeout(() => {
+      if (flight.direction === "to-fan") setSelectedIds((current) => current.filter((id) => id !== flight.id));
+      setFlight(null);
+      setIsFlightMoving(false);
+    }, 410);
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(settleTimer);
+    };
+  }, [flight]);
+
   function startShuffle() {
     setDeck(shuffle(majorArcana));
     setSelectedIds([]);
     setIsSelectionConfirmOpen(false);
     setFanOffset(0);
+    setFlight(null);
     setRevealed(0);
     setReading(null);
     setReadingError("");
@@ -66,6 +87,41 @@ export function TarotExperience() {
 
   function toggleCard(id: string) {
     setSelectedIds((current) => current.includes(id) ? current.filter((cardId) => cardId !== id) : current.length < 3 ? [...current, id] : current);
+  }
+
+  function cardRect(element: HTMLElement | null): CardRect | null {
+    if (!element) return null;
+    const target = element.querySelector<HTMLElement>(".tarot-card") ?? element;
+    const { left, top, width, height } = target.getBoundingClientRect();
+    return { left, top, width, height };
+  }
+
+  function chooseFanCard(card: TarotCard, degree: number) {
+    if (flight || selectedIds.includes(card.id) || selectedIds.length >= 3) return;
+    const from = cardRect(fanCardRefs.current[card.id]);
+    const to = cardRect(slotRefs.current[selectedIds.length]);
+    if (!from || !to) {
+      toggleCard(card.id);
+      return;
+    }
+    setSelectedIds((current) => [...current, card.id]);
+    setFlight({ card, id: card.id, from, to, fromRotation: degree, toRotation: 0, direction: "to-slot" });
+  }
+
+  function returnSelectedCard(card: TarotCard, index: number) {
+    if (viewMode !== "fan" || flight) {
+      toggleCard(card.id);
+      return;
+    }
+    const deckIndex = deck.findIndex((item) => item.id === card.id);
+    const from = cardRect(slotRefs.current[index]);
+    const to = cardRect(fanCardRefs.current[card.id]);
+    if (!from || !to || deckIndex < 0) {
+      toggleCard(card.id);
+      return;
+    }
+    const degree = (deckIndex - (deck.length - 1) / 2) * 4.05;
+    setFlight({ card, id: card.id, from, to, fromRotation: 0, toRotation: degree, direction: "to-fan" });
   }
 
   async function getReading() {
@@ -126,7 +182,9 @@ export function TarotExperience() {
     <div className="draw-slots" aria-label="뽑은 카드">
       {[0, 1, 2].map((index) => {
         const card = selectedCards[index];
-        return card ? <button key={card.id} type="button" className="draw-slot selected" onClick={() => setSelectedIds((current) => current.filter((cardId) => cardId !== card.id))} aria-label={`${index + 1}번째 뽑은 카드, 다시 고르기`}><CardFace card={card} revealed={false} /><span>{index + 1} · 다시 고르기</span></button> : <div className="draw-slot empty" key={index}><b>{index + 1}</b><small>비어 있음</small></div>;
+        const isArriving = flight?.id === card?.id && flight.direction === "to-slot";
+        const isReturning = flight?.id === card?.id && flight.direction === "to-fan";
+        return card ? <button ref={(element) => { slotRefs.current[index] = element; }} key={card.id} type="button" className={`draw-slot selected ${isArriving ? "is-arriving" : ""} ${isReturning ? "is-returning" : ""}`} onClick={() => returnSelectedCard(card, index)} aria-label={`${index + 1}번째 뽑은 카드, 다시 고르기`}><CardFace card={card} revealed={false} /><span>{index + 1} · 다시 고르기</span></button> : <div ref={(element) => { slotRefs.current[index] = element; }} className="draw-slot empty" key={index}><b>{index + 1}</b><small>비어 있음</small></div>;
       })}
     </div>
     {viewMode === "fan" ? <div className="fan-wrap" aria-label="22장 타로 카드">
@@ -138,7 +196,7 @@ export function TarotExperience() {
           const selectIndex = selectedIds.indexOf(card.id);
           const degree = (index - (deck.length - 1) / 2) * 4.05;
           const shift = Math.abs(index - (deck.length - 1) / 2) * 1.25;
-          return <button key={card.id} type="button" className={`fan-card ${selectIndex >= 0 ? "is-selected" : ""}`} style={{ "--i": index, "--r": `${degree}deg`, "--y": `${shift}px` } as React.CSSProperties} onClick={() => toggleCard(card.id)} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? ", 선택됨" : ""}`}><CardFace card={card} revealed={false} /></button>;
+          return <button ref={(element) => { fanCardRefs.current[card.id] = element; }} key={card.id} type="button" className={`fan-card ${selectIndex >= 0 ? "is-drawn" : ""}`} style={{ "--i": index, "--r": `${degree}deg`, "--y": `${shift}px` } as React.CSSProperties} onClick={() => chooseFanCard(card, degree)} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? ", 뽑힘" : ""}`}><CardFace card={card} revealed={false} /></button>;
         })}
       </div>
     </div> : <div className="deck-grid" aria-label="22장 타로 카드">
@@ -147,8 +205,9 @@ export function TarotExperience() {
         return <button key={card.id} type="button" className={`deck-grid-card ${selectIndex >= 0 ? "is-selected" : ""}`} onClick={() => toggleCard(card.id)} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? ", 선택됨" : ""}`}><CardFace card={card} revealed={false} />{selectIndex >= 0 && <span className="selection-index" aria-hidden="true">{selectIndex + 1}</span>}</button>;
       })}
     </div>}
-    <div className="selection-bar"><span>{selectedIds.length === 3 ? "마음이 정해졌다면" : "카드를 고르는 중"}</span><button className="primary-action" onClick={() => setIsSelectionConfirmOpen(true)} disabled={selectedIds.length !== 3}>이 카드로 볼게 <span>→</span></button></div>
+    <div className="selection-bar"><span>{selectedIds.length === 3 ? "마음이 정해졌다면" : "카드를 고르는 중"}</span><button className="primary-action" onClick={() => setIsSelectionConfirmOpen(true)} disabled={selectedIds.length !== 3 || Boolean(flight)}>이 카드로 볼게 <span>→</span></button></div>
     {isSelectionConfirmOpen && <div className="selection-confirm" role="dialog" aria-modal="true" aria-labelledby="selection-confirm-title"><div><p className="step">마지막 확인</p><h2 id="selection-confirm-title">이 세 장으로<br />정말 볼까?</h2><p>확인하면 카드 공개와 해석으로 이어져.</p><div><button type="button" className="secondary-action" onClick={() => setIsSelectionConfirmOpen(false)}>다시 고르기</button><button type="button" className="confirm-action" onClick={() => { setIsSelectionConfirmOpen(false); setPhase("confirming"); }}>응, 이 카드로 볼게</button></div></div></div>}
+    {flight && <div className={`flying-card ${isFlightMoving ? "is-moving" : ""}`} aria-hidden="true" style={{ "--flight-left": `${flight.from.left}px`, "--flight-top": `${flight.from.top}px`, "--flight-x": `${flight.to.left - flight.from.left - (flight.from.width - flight.to.width) / 2}px`, "--flight-y": `${flight.to.top - flight.from.top - (flight.from.height - flight.to.height) / 2}px`, "--flight-width": `${flight.from.width}px`, "--flight-height": `${flight.from.height}px`, "--flight-scale": `${flight.to.width / flight.from.width}`, "--flight-from-rotation": `${flight.fromRotation}deg`, "--flight-to-rotation": `${flight.toRotation}deg` } as React.CSSProperties}><CardFace card={flight.card} revealed={false} /></div>}
   </section>;
 
   if (phase === "confirming") return <section className="tarot-shell ritual-screen confirm-screen">
