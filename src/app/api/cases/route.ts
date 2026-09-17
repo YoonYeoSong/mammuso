@@ -9,7 +9,7 @@ import { assertNoSensitiveIdentifier } from "@/lib/sensitive-data";
 import { SPICY_MODE_CONSENT_KEY } from "@/lib/cases/types";
 
 const policyVersion = "2026-09-15";
-const inputSchema = z.object({ relationshipType: z.enum(["연인/썸", "친구", "가족", "직장", "기타"]), statement: z.string().min(20).max(5000), privacyPolicyAgreed: z.literal(true), aiProcessingAgreed: z.literal(true), spicyModeAgreed: z.boolean().optional().default(false) });
+const inputSchema = z.object({ incidentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), statement: z.string().min(20).max(5000), privacyPolicyAgreed: z.literal(true), aiProcessingAgreed: z.literal(true), spicyModeAgreed: z.boolean().optional().default(false) });
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,11 +19,11 @@ export async function POST(request: NextRequest) {
     const [notice, preliminaryResult] = safetyLevel === "urgent"
       ? [{ summary: "안전 관련 표현이 감지되어 일반 조정 절차를 진행하지 않습니다.", issues: [] }, null]
       : await Promise.all([
-        getAIProvider().generateRespondentNotice(input.statement),
-        getAIProvider().generatePreliminaryOpinion({ statement: input.statement, answers: {} }),
+        getAIProvider().generateRespondentNotice({ statement: input.statement, incidentDate: input.incidentDate }),
+        getAIProvider().generatePreliminaryOpinion({ statement: input.statement, incidentDate: input.incidentDate, answers: {} }),
       ]);
     const token = createAccessToken();
-    const caseItem = await getCaseRepository().createCase({ publicCaseNumber: createPublicCaseNumber(), relationshipType: input.relationshipType, complainantStatement: input.statement, applicantTokenHash: hashToken(token), applicantQuestions: [], neutralSummary: notice.summary, neutralIssues: notice.issues, preliminaryResult, safetyLevel, policyVersion, applicantAnswers: { [SPICY_MODE_CONSENT_KEY]: input.spicyModeAgreed ? "동의" : "미동의" } });
+    const caseItem = await getCaseRepository().createCase({ publicCaseNumber: createPublicCaseNumber(), relationshipType: "기타", incidentDate: input.incidentDate, complainantStatement: input.statement, applicantTokenHash: hashToken(token), applicantQuestions: [], neutralSummary: notice.summary, neutralIssues: notice.issues, preliminaryResult, safetyLevel, policyVersion, applicantAnswers: { [SPICY_MODE_CONSENT_KEY]: input.spicyModeAgreed ? "동의" : "미동의" } });
     return NextResponse.json({ case: caseItem, applicantToken: token }, { status: 201 });
   } catch (error) { return apiError(error); }
 }

@@ -3,7 +3,7 @@ import { hashToken } from "@/lib/security";
 import type { Answers, CaseStatus, DecisionResult, MammusoCase, PreliminaryResult, RelationshipType } from "./types";
 
 type CreateInput = {
-  publicCaseNumber: string; relationshipType: RelationshipType; complainantStatement: string;
+  publicCaseNumber: string; relationshipType: RelationshipType; incidentDate: string; complainantStatement: string;
   applicantTokenHash: string; applicantQuestions: string[]; neutralSummary: string; neutralIssues: string[]; safetyLevel: "none" | "urgent";
   preliminaryResult: PreliminaryResult | null; policyVersion: string; applicantAnswers: Answers;
 };
@@ -14,7 +14,8 @@ export interface CaseRepository {
   getByRespondentToken(token: string): Promise<MammusoCase | null>;
   saveApplicantReview(token: string, answers: Answers, result: PreliminaryResult, respondentQuestions: string[]): Promise<MammusoCase>;
   markApplicantSafety(token: string, answers: Answers): Promise<MammusoCase>;
-  issueRespondentInvite(applicantToken: string, respondentTokenHash: string): Promise<MammusoCase>;
+  issueRespondentInvite(applicantToken: string, respondentTokenHash: string, expiresAt: string): Promise<MammusoCase>;
+  revokeRespondentInvite(applicantToken: string): Promise<MammusoCase>;
   saveRespondentStatement(token: string, statement: string, answers: Answers, result: DecisionResult, policyVersion: string): Promise<MammusoCase>;
   markRespondentSafety(token: string, statement: string, answers: Answers): Promise<MammusoCase>;
   saveAppeal(applicantToken: string, appealText: string, result: DecisionResult): Promise<MammusoCase>;
@@ -25,7 +26,7 @@ export interface CaseRepository {
 type DbCase = Record<string, unknown>;
 const fieldMap = (row: DbCase): MammusoCase => ({
   id: String(row.id), publicCaseNumber: String(row.public_case_number), department: String(row.department),
-  relationshipType: row.relationship_type as RelationshipType, status: row.status as CaseStatus,
+  relationshipType: row.relationship_type as RelationshipType, incidentDate: row.incident_date as string | null, status: row.status as CaseStatus,
   complainantStatement: String(row.complainant_statement), complainantAnswers: (row.complainant_answers ?? {}) as Answers,
   respondentStatement: row.respondent_statement as string | null, respondentAnswers: (row.respondent_answers ?? {}) as Answers,
   applicantQuestions: (row.applicant_questions ?? []) as string[], respondentQuestions: (row.respondent_questions ?? []) as string[], neutralSummary: String(row.neutral_summary ?? ""),
@@ -38,6 +39,7 @@ const fieldMap = (row: DbCase): MammusoCase => ({
   respondentPolicyVersion: row.respondent_policy_version as string | null,
   respondentPolicyAgreedAt: row.respondent_policy_agreed_at as string | null,
   respondentAiProcessingAgreedAt: row.respondent_ai_processing_agreed_at as string | null,
+  respondentInviteExpiresAt: row.respondent_invite_expires_at as string | null,
   createdAt: String(row.created_at), updatedAt: String(row.updated_at),
 });
 
@@ -55,15 +57,16 @@ class SupabaseCaseRepository implements CaseRepository {
     return response.status === 204 ? null : response.json() as Promise<DbCase[]>;
   }
   private async one(path: string, init?: RequestInit) { const rows = await this.request(path, init); return rows?.[0] ? fieldMap(rows[0]) : null; }
-  createCase(input: CreateInput) { return this.one("", { method: "POST", body: JSON.stringify({ public_case_number: input.publicCaseNumber, relationship_type: input.relationshipType, status: input.safetyLevel === "urgent" ? "SAFETY_GUIDANCE" : "APPLICANT_COMPLETE", complainant_statement: input.complainantStatement, complainant_answers: input.applicantAnswers, applicant_token_hash: input.applicantTokenHash, applicant_questions: input.applicantQuestions, neutral_summary: input.neutralSummary, neutral_issues: input.neutralIssues, preliminary_result: input.preliminaryResult, safety_level: input.safetyLevel, applicant_policy_version: input.policyVersion, applicant_policy_agreed_at: new Date().toISOString(), applicant_ai_processing_agreed_at: new Date().toISOString() }) }).then((v) => v!); }
+  createCase(input: CreateInput) { return this.one("", { method: "POST", body: JSON.stringify({ public_case_number: input.publicCaseNumber, relationship_type: input.relationshipType, incident_date: input.incidentDate, status: input.safetyLevel === "urgent" ? "SAFETY_GUIDANCE" : "APPLICANT_COMPLETE", complainant_statement: input.complainantStatement, complainant_answers: input.applicantAnswers, applicant_token_hash: input.applicantTokenHash, applicant_questions: input.applicantQuestions, neutral_summary: input.neutralSummary, neutral_issues: input.neutralIssues, preliminary_result: input.preliminaryResult, safety_level: input.safetyLevel, applicant_policy_version: input.policyVersion, applicant_policy_agreed_at: new Date().toISOString(), applicant_ai_processing_agreed_at: new Date().toISOString() }) }).then((v) => v!); }
   getByApplicantToken(token: string) { return this.one(`?applicant_token_hash=eq.${hashToken(token)}&select=*`); }
-  getByRespondentToken(token: string) { return this.one(`?respondent_token_hash=eq.${hashToken(token)}&select=*`); }
+  getByRespondentToken(token: string) { return this.one(`?respondent_token_hash=eq.${hashToken(token)}&respondent_invite_expires_at=gt.${encodeURIComponent(new Date().toISOString())}&select=*`); }
   private update(filter: string, body: Record<string, unknown>) { return this.one(`?${filter}&select=*`, { method: "PATCH", body: JSON.stringify(body) }); }
   saveApplicantReview(token: string, answers: Answers, result: PreliminaryResult, respondentQuestions: string[]) { return this.update(`applicant_token_hash=eq.${hashToken(token)}`, { complainant_answers: answers, preliminary_result: result, respondent_questions: respondentQuestions, status: "APPLICANT_COMPLETE" }).then((v) => v!); }
   markApplicantSafety(token: string, answers: Answers) { return this.update(`applicant_token_hash=eq.${hashToken(token)}`, { complainant_answers: answers, safety_level: "urgent", status: "SAFETY_GUIDANCE" }).then((v) => v!); }
-  issueRespondentInvite(token: string, respondentTokenHash: string) { return this.update(`applicant_token_hash=eq.${hashToken(token)}`, { respondent_token_hash: respondentTokenHash, status: "AWAITING_RESPONDENT" }).then((v) => v!); }
-  saveRespondentStatement(token: string, statement: string, answers: Answers, result: DecisionResult, policyVersion: string) { return this.update(`respondent_token_hash=eq.${hashToken(token)}`, { respondent_statement: statement, respondent_answers: answers, final_result: result, status: "COMPLETED", respondent_policy_version: policyVersion, respondent_policy_agreed_at: new Date().toISOString(), respondent_ai_processing_agreed_at: new Date().toISOString() }).then((v) => v!); }
-  markRespondentSafety(token: string, statement: string, answers: Answers) { return this.update(`respondent_token_hash=eq.${hashToken(token)}`, { respondent_statement: statement, respondent_answers: answers, safety_level: "urgent", status: "SAFETY_GUIDANCE" }).then((v) => v!); }
+  issueRespondentInvite(token: string, respondentTokenHash: string, expiresAt: string) { return this.update(`applicant_token_hash=eq.${hashToken(token)}`, { respondent_token_hash: respondentTokenHash, respondent_invite_expires_at: expiresAt, status: "AWAITING_RESPONDENT" }).then((v) => v!); }
+  revokeRespondentInvite(token: string) { return this.update(`applicant_token_hash=eq.${hashToken(token)}`, { respondent_token_hash: null, respondent_invite_expires_at: null, status: "APPLICANT_COMPLETE" }).then((v) => v!); }
+  saveRespondentStatement(token: string, statement: string, answers: Answers, result: DecisionResult, policyVersion: string) { return this.update(`respondent_token_hash=eq.${hashToken(token)}`, { respondent_statement: statement, respondent_answers: answers, final_result: result, status: "COMPLETED", respondent_token_hash: null, respondent_invite_expires_at: null, respondent_policy_version: policyVersion, respondent_policy_agreed_at: new Date().toISOString(), respondent_ai_processing_agreed_at: new Date().toISOString() }).then((v) => v!); }
+  markRespondentSafety(token: string, statement: string, answers: Answers) { return this.update(`respondent_token_hash=eq.${hashToken(token)}`, { respondent_statement: statement, respondent_answers: answers, safety_level: "urgent", status: "SAFETY_GUIDANCE", respondent_token_hash: null, respondent_invite_expires_at: null }).then((v) => v!); }
   async saveAppeal(token: string, appealText: string, result: DecisionResult) {
     const current = await this.getByApplicantToken(token); if (!current) throw new Error("CASE_NOT_FOUND");
     if (current.appealText) throw new Error("APPEAL_ALREADY_FILED");

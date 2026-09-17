@@ -11,6 +11,7 @@ export default function PrivacyPage() {
   const contact = configured(process.env.PRIVACY_CONTACT_EMAIL, "운영자 문의처 설정 필요");
   const supabaseRegion = configured(process.env.SUPABASE_DATA_REGION, "Supabase 프로젝트 설정 리전");
   const retentionDays = configured(process.env.CASE_RETENTION_DAYS, "30");
+  const inviteDays = configured(process.env.RESPONDENT_INVITE_TTL_DAYS, "7");
 
   return <main><SiteHeader /><article className="paper policy"><p className="eyebrow">MAMMUSO BETA · 버전 {policyVersion}</p><h1>개인정보처리방침</h1><p>맘무소는 관계 갈등을 정리하는 AI 기반 콘텐츠 서비스입니다. 실제 행정기관·법원·법률기관이 아니며, 이 방침은 사건 기록을 처리하는 방식과 이용자의 권리를 설명합니다.</p>
 
@@ -24,7 +25,7 @@ export default function PrivacyPage() {
 
     <h2>5. 파기와 자동 정리</h2><p>신청인은 자신의 사건 관리 링크에서 사건 전체를 즉시 삭제할 수 있습니다. 삭제 요청이 완료되면 해당 사건의 진술·답변·결과·이의신청 기록을 복구할 수 없습니다. 서비스는 마지막 업데이트 후 {retentionDays}일 동안 활동이 없는 사건을 일 1회 정리하도록 구성되어 있습니다. 법령상 별도 보관 의무가 발생하는 경우에는 해당 근거와 기간에 따라 보관할 수 있습니다.</p>
 
-    <h2>6. 상대방 보호와 안전 조치</h2><p>상대방에게는 신청인의 감정적 원문 대신 중립화한 접수 사유와 쟁점을 제공합니다. 신청인·상대방 링크는 서로 다른 임의 토큰을 사용하며 DB에는 토큰 원문 대신 해시값만 보관합니다. DB·AI 비밀키는 브라우저에 전달하지 않고 서버에서만 사용합니다.</p>
+    <h2>6. 상대방 보호와 안전 조치</h2><p>상대방에게는 신청인의 감정적 원문 대신 중립화한 접수 사유와 쟁점을 제공합니다. 신청인·상대방 링크는 서로 다른 임의 토큰을 사용하며 DB에는 토큰 원문 대신 해시값만 보관합니다. 상대방 의견 요청 토큰은 발급 후 {inviteDays}일 동안만 유효하고, 신청인은 공유 전 요청 철회로 즉시 무효화할 수 있습니다. 카카오톡 공유 메시지에는 사건번호·사연·신청인 정보를 포함하지 않습니다. DB·AI 비밀키는 브라우저에 전달하지 않고 서버에서만 사용합니다.</p>
 
     <h2>7. 방침 변경</h2><p>이 방침은 {policyVersion}부터 적용합니다. 처리 목적·외부 처리 서비스·보유 기간 등 중요한 내용이 바뀌면 접수 화면에서 알리고, 변경된 방침과 적용일을 공개합니다.</p>
   </article><Disclaimer /><SiteFooter /></main>;

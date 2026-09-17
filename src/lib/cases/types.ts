@@ -34,6 +34,7 @@ export type MammusoCase = {
   publicCaseNumber: string;
   department: string;
   relationshipType: RelationshipType;
+  incidentDate: string | null;
   status: CaseStatus;
   complainantStatement: string;
   complainantAnswers: Answers;
@@ -54,6 +55,7 @@ export type MammusoCase = {
   respondentPolicyVersion: string | null;
   respondentPolicyAgreedAt: string | null;
   respondentAiProcessingAgreedAt: string | null;
+  respondentInviteExpiresAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
