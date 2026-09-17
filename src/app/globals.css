@@ -24,6 +24,7 @@
 .fan-card { transform-origin:50% 246px; }
 .selection-bar { position:relative; padding:5px 0 3px; background:none; }
 .fan-nav { position:absolute; z-index:40; top:26px; display:grid; width:38px; height:38px; place-items:center; border:1px solid #dddce5; border-radius:50%; background:rgba(255,255,255,.94); color:var(--ink); cursor:pointer; font-size:19px; box-shadow:0 3px 10px rgba(35,38,52,.08); }.fan-nav:disabled { opacity:.32; cursor:default; }.fan-nav-left { left:22px; }.fan-nav-right { right:22px; }.fan-help { position:absolute; z-index:10; top:31px; left:0; right:0; margin:0; color:var(--muted); font-size:11px; text-align:center; }
+.card-spread { display:grid; grid-template-columns:repeat(11,minmax(0,1fr)); column-gap:1px; row-gap:14px; margin:28px auto 16px; padding:0 1px; }.spread-card { position:relative; min-width:0; height:98px; border:0; padding:0 2px 14px; background:transparent; cursor:pointer; transition:transform .24s cubic-bezier(.2,.8,.2,1); }.spread-card .tarot-card { height:84px; }.spread-card:hover { transform:translateY(-4px); }.spread-card.is-selected { z-index:3; transform:translateY(-15px); }.spread-card.is-selected .tarot-card { outline:2px solid #8e80ff; outline-offset:3px; box-shadow:0 7px 15px rgba(85,74,210,.28); }
 
 @media(max-width:560px) {
   .pick-screen { padding-top:14px; }
@@ -31,4 +32,5 @@
   .card-fan { bottom:-4px; width:520px; height:250px; }
   .fan-card { width:70px; height:116px; left:calc(50% - 35px); transform-origin:50% 202px; }
   .fan-nav { top:16px; width:35px; height:35px; }.fan-nav-left { left:8px; }.fan-nav-right { right:8px; }.fan-help { top:26px; font-size:10px; }
+  .card-spread { row-gap:12px; margin:24px -2px 13px; }.spread-card { height:91px; padding-inline:2px; padding-bottom:12px; }.spread-card .tarot-card { height:79px; }.spread-card.is-selected { transform:translateY(-13px); }
 }
