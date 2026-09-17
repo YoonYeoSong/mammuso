@@ -1,6 +1,6 @@
 import type { DecisionResult } from "@/lib/cases/types";
 
-export function CaseResult({ result, rehearing = false }: { result: DecisionResult; rehearing?: boolean; caseNumber?: string; spicyMode?: boolean; respondentStatement?: string | null }) {
+export function CaseResult({ result, rehearing = false }: { result: DecisionResult; rehearing?: boolean }) {
   const complainantResponsibility = Math.min(99, Math.max(1, result.complainantResponsibility === 50 ? 49 : result.complainantResponsibility));
   const respondentResponsibility = 100 - complainantResponsibility;
   const moreResponsible = complainantResponsibility > respondentResponsibility ? "신청인" : "상대방";

@@ -5,7 +5,7 @@ export const CASE_STATUSES = [
 export type CaseStatus = (typeof CASE_STATUSES)[number];
 export type RelationshipType = "연인/썸" | "친구" | "가족" | "직장" | "기타";
 export type Answers = Record<string, string>;
-export const SPICY_MODE_CONSENT_KEY = "매운맛 모드 동의";
+export const STRONG_LANGUAGE_CONSENT_KEY = "강한 표현 동의";
 
 export type PreliminaryResult = {
   summary: string;
