@@ -107,7 +107,7 @@ export function TarotExperience() {
         <div className="card-fan">
           {cards.map((card, index) => {
             const selectIndex = selectedIds.indexOf(card.id);
-            const degree = (index - 5) * 9;
+            const degree = (index - 5) * 7;
             const shift = Math.abs(index - 5) * 1.1;
             return <button key={card.id} type="button" className={`fan-card ${selectIndex >= 0 ? "is-selected" : ""}`} style={{ "--i": index, "--r": `${degree}deg`, "--y": `${shift}px` } as React.CSSProperties} onClick={() => toggleCard(card.id)} aria-label={`${fanIndex === 0 ? "윗줄" : "아랫줄"} 카드 ${index + 1}${selectIndex >= 0 ? ", 선택됨" : ""}`}><CardFace card={card} revealed={false} /></button>;
           })}
