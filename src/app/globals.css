@@ -54,14 +54,16 @@
 
 /* A straightforward card array keeps every choice visible and equally easy to tap. */
 .deck-grid { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin:25px 0 20px; }
-.deck-grid-card { width:calc((100% - 60px) / 6); min-width:0; aspect-ratio:3 / 5; border:0; padding:0; background:transparent; cursor:pointer; transition:transform .2s cubic-bezier(.2,.8,.2,1); }
+.deck-grid-card { position:relative; width:calc((100% - 60px) / 6); min-width:0; aspect-ratio:3 / 5; border:0; padding:0; background:transparent; cursor:pointer; transition:transform .2s cubic-bezier(.2,.8,.2,1); }
 .deck-grid-card .tarot-card { width:100%; height:100%; }
 .deck-grid-card:hover { transform:translateY(-4px); }
-.deck-grid-card.is-selected { z-index:3; transform:translateY(-12px); }
-.deck-grid-card.is-selected .tarot-card { outline:2px solid #8e80ff; outline-offset:3px; box-shadow:0 7px 15px rgba(85,74,210,.28); }
+.deck-grid-card.is-selected { z-index:3; transform:scale(1.045); }
+.deck-grid-card.is-selected .tarot-card { outline:2px solid #8e80ff; outline-offset:3px; box-shadow:0 0 18px rgba(85,74,210,.4); }
+.selection-index { position:absolute; z-index:4; top:-8px; right:-8px; display:grid; width:23px; height:23px; place-items:center; border:2px solid var(--surface); border-radius:50%; background:#8e80ff; color:#fff; font-size:11px; font-weight:900; line-height:1; box-shadow:0 3px 7px rgba(62,53,148,.32); }
 
 @media(max-width:560px) {
   .deck-grid { gap:9px; margin:18px 0 14px; }
   .deck-grid-card { width:calc((100% - 36px) / 5); }
-  .deck-grid-card.is-selected { transform:translateY(-9px); }
+  .deck-grid-card.is-selected { transform:scale(1.045); }
+  .selection-index { top:-7px; right:-7px; width:21px; height:21px; font-size:10px; }
 }

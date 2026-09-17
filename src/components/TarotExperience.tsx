@@ -105,7 +105,7 @@ export function TarotExperience() {
     <div className="deck-grid" aria-label="22장 타로 카드">
       {deck.map((card, index) => {
         const selectIndex = selectedIds.indexOf(card.id);
-        return <button key={card.id} type="button" className={`deck-grid-card ${selectIndex >= 0 ? "is-selected" : ""}`} onClick={() => toggleCard(card.id)} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? ", 선택됨" : ""}`}><CardFace card={card} revealed={false} /></button>;
+        return <button key={card.id} type="button" className={`deck-grid-card ${selectIndex >= 0 ? "is-selected" : ""}`} onClick={() => toggleCard(card.id)} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? ", 선택됨" : ""}`}><CardFace card={card} revealed={false} />{selectIndex >= 0 && <span className="selection-index" aria-hidden="true">{selectIndex + 1}</span>}</button>;
       })}
     </div>
     <div className="selection-bar"><span>{selectedIds.length === 3 ? "마음이 정해졌다면" : "카드를 고르는 중"}</span><button className="primary-action" onClick={() => setPhase("confirming")} disabled={selectedIds.length !== 3}>이 카드로 볼게 <span>→</span></button></div>
