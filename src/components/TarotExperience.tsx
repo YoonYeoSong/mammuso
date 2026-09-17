@@ -37,6 +37,7 @@ export function TarotExperience() {
   const [question, setQuestion] = useState("");
   const [deck, setDeck] = useState<TarotCard[]>(majorArcana);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [fanOffset, setFanOffset] = useState(0);
   const [revealed, setRevealed] = useState(0);
   const [reading, setReading] = useState<TarotReading | null>(null);
   const [error, setError] = useState("");
@@ -51,6 +52,7 @@ export function TarotExperience() {
   function startShuffle() {
     setDeck(shuffle(majorArcana));
     setSelectedIds([]);
+    setFanOffset(0);
     setRevealed(0);
     setReading(null);
     setError("");
@@ -102,14 +104,18 @@ export function TarotExperience() {
   if (phase === "picking") return <section className="tarot-shell pick-screen">
     <div className="pick-heading"><div><p className="step">카드 선택</p><h1>끌리는 카드<br />3장을 골라줘.</h1></div><strong>{selectedIds.length} <small>/ 3</small></strong></div>
     <p className="pick-copy">선택은 언제든 바꿔도 돼. 첫 느낌을 믿어봐.</p>
-    <div className="circle-deck" aria-label="22장 타로 카드">
-      <div className="circle-deck-core" aria-hidden="true"><span>✦</span><small>마음이 가는<br />카드 세 장</small></div>
-      {deck.map((card, index) => {
-        const degree = index * (360 / deck.length);
-        const angle = (degree - 90) * (Math.PI / 180);
-        const selectIndex = selectedIds.indexOf(card.id);
-        return <button key={card.id} type="button" className={`circle-card ${selectIndex >= 0 ? "is-selected" : ""}`} style={{ "--i": index, "--r": `${degree}deg`, "--x": `${(Math.cos(angle) * 41).toFixed(2)}%`, "--y": `${(Math.sin(angle) * 31).toFixed(2)}%` } as React.CSSProperties} onClick={() => toggleCard(card.id)} aria-label={`원형 카드 ${index + 1}${selectIndex >= 0 ? ", 선택됨" : ""}`}><CardFace card={card} revealed={false} /></button>;
-      })}
+    <div className="fan-wrap" aria-label="22장 타로 카드">
+      <button className="fan-nav fan-nav-left" type="button" onClick={() => setFanOffset((offset) => Math.min(offset + 150, 300))} disabled={fanOffset >= 300} aria-label="왼쪽 끝 카드 보기">←</button>
+      <button className="fan-nav fan-nav-right" type="button" onClick={() => setFanOffset((offset) => Math.max(offset - 150, -300))} disabled={fanOffset <= -300} aria-label="오른쪽 끝 카드 보기">→</button>
+      <p className="fan-help">양끝 카드가 궁금하면 화살표로 팬을 옮겨봐.</p>
+      <div className="card-fan" style={{ "--fan-offset": `${fanOffset}px` } as React.CSSProperties}>
+        {deck.map((card, index) => {
+          const selectIndex = selectedIds.indexOf(card.id);
+          const degree = (index - (deck.length - 1) / 2) * 4.05;
+          const shift = Math.abs(index - (deck.length - 1) / 2) * 1.25;
+          return <button key={card.id} type="button" className={`fan-card ${selectIndex >= 0 ? "is-selected" : ""}`} style={{ "--i": index, "--r": `${degree}deg`, "--y": `${shift}px`, "--selected-order": selectIndex } as React.CSSProperties} onClick={() => toggleCard(card.id)} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? ", 선택됨" : ""}`}><CardFace card={card} revealed={false} /></button>;
+        })}
+      </div>
     </div>
     <div className="selection-bar"><span>{selectedIds.length === 3 ? "마음이 정해졌다면" : "카드를 고르는 중"}</span><button className="primary-action" onClick={() => setPhase("confirming")} disabled={selectedIds.length !== 3}>이 카드로 볼게 <span>→</span></button></div>
   </section>;
