@@ -28,8 +28,8 @@
 
 @media(max-width:560px) {
   .pick-screen { padding-top:14px; }
-  .fan-wrap { min-height:254px; margin:-12px -17px 0; }
-  .card-fan { bottom:-4px; width:520px; height:250px; }
+  .fan-wrap { min-height:204px; margin:-12px -17px 0; }
+  .card-fan { bottom:0; width:520px; height:200px; }
   .fan-card { width:70px; height:116px; left:calc(50% - 35px); transform-origin:50% 202px; }
   .fan-nav { top:16px; width:35px; height:35px; }.fan-nav-left { left:8px; }.fan-nav-right { right:8px; }.fan-help { top:26px; font-size:10px; }
   .card-spread { row-gap:12px; margin:24px -2px 13px; }.spread-card { height:91px; padding-inline:2px; padding-bottom:12px; }.spread-card .tarot-card { height:79px; }.spread-card.is-selected { transform:translateY(-13px); }
@@ -47,3 +47,7 @@
   .spread-card { height:112px; }
   .spread-card .tarot-card { width:calc(100% + 14px); height:98px; margin-left:-7px; }
 }
+
+/* Keep overlapping fan-card edges tonal instead of bright white. */
+.tarot-card-back { border-color:#aaa3d7; }
+.tarot-card-back::before { border-color:rgba(170,163,215,.72); }

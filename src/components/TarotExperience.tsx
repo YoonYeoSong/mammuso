@@ -19,7 +19,7 @@ function shuffle<T>(items: T[]) {
 function CardFace({ card, revealed, label }: { card: TarotCard; revealed: boolean; label?: string }) {
   return <div className={`tarot-card ${revealed ? "is-revealed" : ""}`}>
     <div className="tarot-card-inner">
-      <div className="tarot-card-back" aria-hidden={revealed}><span>✦</span><i>✧</i><span>✦</span></div>
+      <div className="tarot-card-back" aria-hidden={revealed} />
       <div className="tarot-card-front" aria-hidden={!revealed}>
         <span className="tarot-card-number">{String(card.number).padStart(2, "0")}</span>
         <span className="tarot-card-symbol">{card.symbol}</span>
