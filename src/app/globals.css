@@ -85,3 +85,9 @@
   .view-mode-label { margin-top:12px; }.draw-test-switch { margin-top:12px; }.draw-test-switch button { min-height:59px; gap:8px; padding:7px 8px; }.test-card-icon { width:26px; height:38px; }.draw-slots { gap:9px; }.draw-slot { width:57px; height:84px; }.draw-slot.selected .tarot-card { width:49px; height:71px; }
   .fan-wrap { margin-top:-8px; }.selection-confirm>div { padding:22px 19px; }.selection-confirm h2 { font-size:27px; }
 }
+
+/* A card placed in a slot remains in the deck as its muted, non-interactive original. */
+.fan-card.is-picked { cursor:default; filter:grayscale(.7) saturate(.45) opacity(.35); }
+.deck-grid-card.is-picked { cursor:default; }
+.deck-grid-card.is-picked .tarot-card { outline:2px solid rgba(142,128,255,.62); outline-offset:3px; box-shadow:0 0 14px rgba(85,74,210,.2); filter:grayscale(.7) saturate(.45) opacity(.4); }
+.deck-grid-card.is-picked .selection-index { inset:0; margin:auto; }
