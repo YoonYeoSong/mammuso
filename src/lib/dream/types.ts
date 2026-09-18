@@ -37,4 +37,4 @@ export type DreamAnalysis = z.infer<typeof dreamAnalysisSchema>;
 export type DreamReading = z.infer<typeof dreamReadingSchema>;
 
 export type DreamTurn = { question: string; answer: string };
-export type DreamValue = { score: number; amount: number; label: string; factors: string[] };
+export type DreamValue = { score: number; amount: number; verdict: string; tier: string; label: string; factors: string[] };

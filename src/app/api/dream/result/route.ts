@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   try {
     const input = inputSchema.parse(await request.json());
     const value = calculateDreamValue(input.extracted);
-    const reading = await getAIProvider().generateDreamReading({ ...input, scoreFactors: value.factors, amount: value.amount });
+    const reading = await getAIProvider().generateDreamReading({ ...input, scoreFactors: value.factors, amount: value.amount, verdict: value.verdict });
     return NextResponse.json({ reading, value });
   } catch (error) {
     return apiError(error);
