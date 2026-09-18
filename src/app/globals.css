@@ -18,6 +18,13 @@
 @media(max-width:560px) { .home-page,.tarot-page { padding:0 17px 36px; }.new-hero { min-height:307px; padding:43px 24px; border-radius:25px; }.content-list { padding-top:51px; }.tarot-home-card { grid-template-columns:72px 1fr auto; min-height:151px; padding:19px; }.tarot-icon { width:62px; height:95px; }.tarot-home-card h3 { font-size:24px; }.coming-grid { gap:9px; }.coming-card { min-height:135px; gap:9px; padding:14px; }.coming-card .content-icon { width:34px; height:34px; font-size:16px; }.coming-card h3 { font-size:18px; }.coming-card p { font-size:11px; }.tarot-header .new-brand { font-size:18px; }.tarot-header>span { display:none; }.tarot-shell { margin-top:8px; }.category-grid { grid-template-columns:repeat(2,1fr); }.fan-wrap { min-height:400px; margin-inline:-17px; }.reveal-row { gap:10px; }.reveal-card { width:28vw; height:43vw; }.result-opening { font-size:15px; }.reading-card { grid-template-columns:83px 1fr; gap:10px; padding:12px; }.reading-card .tarot-card { width:69px; height:103px; } }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important; animation-duration:.01ms!important; transition-duration:.01ms!important; } }
 
+/* A chosen topic stays visibly selected until the user continues. */
+.category-grid button { position:relative; transition:border-color .15s,background .15s,box-shadow .15s,transform .15s; }
+.category-grid button.is-selected { border:2px solid #4f47a5; background:#5a52b7; color:#fff; box-shadow:0 5px 0 #373178; transform:translateY(-2px); }
+.category-grid button.is-selected:hover { transform:translateY(-3px); }
+.category-check { position:absolute; top:7px; right:8px; display:grid; width:16px; height:16px; place-items:center; border-radius:50%; background:#fff; color:#4f47a5; font-size:11px; font-weight:900; }
+.category-next { margin-top:22px; }
+
 /* Keep the tactile fan in the active reading area instead of pinning it below the fold. */
 .fan-wrap { min-height:344px; margin:-8px -24px 0; }
 .card-fan { bottom:-12px; height:294px; transform:translateX(calc(-50% + var(--fan-offset, 0px))); transition:transform .3s cubic-bezier(.2,.8,.2,1); }

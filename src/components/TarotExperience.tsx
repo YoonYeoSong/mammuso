@@ -39,6 +39,7 @@ function CardFace({ card, revealed, label }: { card: TarotCard; revealed: boolea
 export function TarotExperience() {
   const [phase, setPhase] = useState<Phase>("question");
   const [category, setCategory] = useState<TarotCategory>("연애");
+  const [chosenCategory, setChosenCategory] = useState<TarotCategory | null>(null);
   const [question, setQuestion] = useState("");
   const [deck, setDeck] = useState<TarotCard[]>(majorArcana);
   const [selectedSlots, setSelectedSlots] = useState<Array<string | null>>([null, null, null]);
@@ -132,6 +133,11 @@ export function TarotExperience() {
     setPhase("money-chat");
   }
 
+  function beginChosenCategory() {
+    if (chosenCategory === "연애") beginLoveChat();
+    if (chosenCategory === "돈") beginMoneyChat();
+  }
+
   function selectMoneyFocus(focus: MoneyFocus) {
     setMoneyFocus(focus);
   }
@@ -205,9 +211,11 @@ export function TarotExperience() {
     <div className="category-grid" role="group" aria-label="타로 주제">
       {tarotCategories.map((item) => {
         const isAvailable = item === "연애" || item === "돈";
-        return <button key={item} className={isAvailable ? "available" : ""} onClick={() => { setQuestion(""); setCategory(item); if (item === "연애") beginLoveChat(); if (item === "돈") beginMoneyChat(); }} disabled={!isAvailable}>{item}<small>{isAvailable ? "바로 시작" : "준비 중"}</small></button>;
+        const isSelected = chosenCategory === item;
+        return <button key={item} type="button" className={`${isAvailable ? "available" : ""} ${isSelected ? "is-selected" : ""}`} onClick={() => { setQuestion(""); setCategory(item); setChosenCategory(item); }} disabled={!isAvailable} aria-pressed={isSelected}>{isSelected && <span className="category-check" aria-hidden="true">✓</span>}{item}<small>{isAvailable ? isSelected ? "선택됨" : "선택하기" : "준비 중"}</small></button>;
       })}
     </div>
+    <button type="button" className="primary-action category-next" onClick={beginChosenCategory} disabled={!chosenCategory}>선택한 주제로 시작하기 <span>→</span></button>
     <p className="gentle-note">가벼운 재미와 생각 정리를 위한 타로예요.</p>
   </section>;
 
