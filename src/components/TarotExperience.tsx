@@ -47,6 +47,7 @@ export function TarotExperience() {
   const [loadingMessage, setLoadingMessage] = useState("세 장이 만든 흐름을 천천히 이어보고 있어.");
   const [readingError, setReadingError] = useState("");
   const selectedCards = useMemo(() => selectedIds.map((id) => deck.find((card) => card.id === id)).filter((card): card is TarotCard => Boolean(card)), [deck, selectedIds]);
+  const availableCards = useMemo(() => deck.filter((card) => !selectedIds.includes(card.id)), [deck, selectedIds]);
 
   useEffect(() => {
     if (phase !== "shuffling") return;
@@ -153,11 +154,10 @@ export function TarotExperience() {
       <button className="fan-nav fan-nav-right" type="button" onClick={() => setFanOffset((offset) => Math.max(offset - 150, -300))} disabled={fanOffset <= -300} aria-label="오른쪽 끝 카드 보기">→</button>
       <p className="fan-help">끌리는 카드를 바로 뽑아봐.</p>
       <div className="card-fan" style={{ "--fan-offset": `${fanOffset}px` } as React.CSSProperties}>
-        {deck.map((card, index) => {
-          const selectIndex = selectedIds.indexOf(card.id);
-          const degree = (index - (deck.length - 1) / 2) * 4.05;
-          const shift = Math.abs(index - (deck.length - 1) / 2) * 1.25;
-          return <button key={card.id} type="button" className={`fan-card ${selectIndex >= 0 ? "is-drawn" : ""}`} style={{ "--i": index, "--r": `${degree}deg`, "--y": `${shift}px` } as React.CSSProperties} onClick={() => chooseFanCard(card.id)} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? ", 뽑힘" : ""}`}><CardFace card={card} revealed={false} /></button>;
+        {availableCards.map((card, index) => {
+          const degree = (index - (availableCards.length - 1) / 2) * 4.05;
+          const shift = Math.abs(index - (availableCards.length - 1) / 2) * 1.25;
+          return <button key={card.id} type="button" className="fan-card" style={{ "--i": index, "--r": `${degree}deg`, "--y": `${shift}px` } as React.CSSProperties} onClick={() => chooseFanCard(card.id)} aria-label={`카드 ${deck.indexOf(card) + 1}`}><CardFace card={card} revealed={false} /></button>;
         })}
       </div>
     </div> : <div className="deck-grid" aria-label="22장 타로 카드">
