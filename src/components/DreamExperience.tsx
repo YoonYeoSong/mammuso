@@ -2,19 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { symbolEmoji } from "@/lib/dream/scoring";
-import type { DreamAnalysis, DreamExtracted, DreamReading, DreamTurn, DreamValue } from "@/lib/dream/types";
+import type { DreamAnalysis, DreamExtracted, DreamReading, DreamTurn } from "@/lib/dream/types";
 
 type Phase = "input" | "analyzing" | "followup" | "valuating" | "result";
-type DreamResult = { reading: DreamReading; value: DreamValue; extracted: DreamExtracted };
+type DreamResult = { reading: DreamReading; extracted: DreamExtracted };
 type DreamMemory = "또렷해" | "조금 기억나" | "희미해";
 
-const analysisLoadingSteps = ["꿈속에서 중요한 장면을 찾고 있어요.", "등장한 상징과 움직임을 살펴보고 있어요.", "다음에 물어볼 한 가지를 고르고 있어요."];
-const valuationLoadingSteps = ["모은 꿈의 조각을 정리하고 있어요.", "말해준 장면의 흐름을 살펴보고 있어요.", "꿈값을 감정하고 있어요."];
 const dreamMemoryOptions: DreamMemory[] = ["또렷해", "조금 기억나", "희미해"];
-
-function Money({ amount }: { amount: number }) {
-  return <strong className="dream-money">₩{amount.toLocaleString("ko-KR")}</strong>;
-}
 
 export function DreamExperience() {
   const [phase, setPhase] = useState<Phase>("input");
@@ -24,17 +18,8 @@ export function DreamExperience() {
   const [answer, setAnswer] = useState("");
   const [result, setResult] = useState<DreamResult | null>(null);
   const [error, setError] = useState("");
-  const [loadingIndex, setLoadingIndex] = useState(0);
   const [memory, setMemory] = useState<DreamMemory | null>(null);
   const [showMemoryPrompt, setShowMemoryPrompt] = useState(false);
-
-  useEffect(() => {
-    if (phase !== "analyzing" && phase !== "valuating") return;
-    setLoadingIndex(0);
-    const stepCount = phase === "analyzing" ? analysisLoadingSteps.length : valuationLoadingSteps.length;
-    const timer = window.setInterval(() => setLoadingIndex((index) => (index + 1) % stepCount), 850);
-    return () => window.clearInterval(timer);
-  }, [phase]);
 
   useEffect(() => {
     if (phase !== "input") return;
@@ -48,9 +33,9 @@ export function DreamExperience() {
     setError("");
     try {
       const response = await fetch("/api/dream/result", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dream, turns: currentTurns, extracted }) });
-      const data = await response.json() as { reading?: DreamReading; value?: DreamValue; message?: string };
-      if (!response.ok || !data.reading || !data.value) throw new Error(data.message || "꿈값을 감정하지 못했어요.");
-      setResult({ reading: data.reading, value: data.value, extracted });
+      const data = await response.json() as { reading?: DreamReading; message?: string };
+      if (!response.ok || !data.reading) throw new Error(data.message || "꿈을 정리하지 못했어요.");
+      setResult({ reading: data.reading, extracted });
       window.setTimeout(() => setPhase("result"), 360);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "처리 중 문제가 생겼어요.");
@@ -91,43 +76,41 @@ export function DreamExperience() {
     setPhase("input"); setDream(""); setTurns([]); setAnalysis(null); setAnswer(""); setResult(null); setError(""); setMemory(null);
   }
 
-  if (phase === "analyzing" || phase === "valuating") return <section className="dream-shell dream-loading" aria-live="polite" aria-busy="true">
-    <div className="dream-loader"><span>✦</span><i>₩</i><b>☁</b></div><p className="step">{phase === "analyzing" ? "DREAM DETAILS IN PROGRESS" : "DREAM VALUE IN PROGRESS"}</p><h1>{phase === "analyzing" ? "꿈의 조각을\n모으고 있어." : "꿈값을\n감정하고 있어."}</h1><p>{(phase === "analyzing" ? analysisLoadingSteps : valuationLoadingSteps)[loadingIndex]}</p><div className="loader-dots"><i /><i /><i /></div>
-  </section>;
-
-  if (phase === "followup" && analysis) return <section className="dream-shell dream-chat" aria-label="꿈값 추가 질문">
-    <p className="step">DREAM CHAT · {turns.length + 1}/2</p><h1>딱 한 가지만<br />더 물어볼게.</h1>
+  if ((phase === "analyzing" || phase === "valuating" || phase === "followup") && (analysis || phase !== "followup")) {
+    const waiting = phase === "analyzing" || phase === "valuating";
+    const followup = phase === "followup" ? analysis?.followup : null;
+    return <section className="dream-shell dream-chat" aria-label="꿈 이야기">
+    <p className="step">DREAM CHAT · {turns.length + 1}/2</p><h1>{waiting ? "꿈 이야기를\n읽고 있어." : "딱 한 가지만\n더 물어볼게."}</h1>
     <div className="dream-thread">
       <div className="dream-message user"><span>내 꿈</span><p>{dream}</p></div>
       {turns.map((turn, index) => <div key={`${turn.question}-${index}`} className="dream-turn"><div className="dream-message bot"><span>꿈팔이</span><p>{turn.question}</p></div><div className="dream-message user"><p>{turn.answer}</p></div></div>)}
-      <div className="dream-message bot"><span>꿈팔이</span><p>{analysis.followup.question}</p></div>
+      {waiting ? <div className="dream-message bot dream-pending"><span>꿈팔이</span><p>{phase === "analyzing" ? "말해 준 장면을 보고 있어. 잠깐만." : "좋아. 이 꿈을 한 장면으로 정리할게."}</p></div> : followup?.question && <div className="dream-message bot"><span>꿈팔이</span><p>{followup.question}</p></div>}
     </div>
-    <div className="dream-options">{analysis.followup.options.map((option) => <button key={option} type="button" onClick={() => submitAnswer(option)}>{option}</button>)}</div>
-    <label className="dream-answer"><span>직접 적을게</span><textarea value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="기억나는 만큼만 적어줘." maxLength={500} /><button type="button" className="dream-send" disabled={!answer.trim()} onClick={() => submitAnswer(answer)}>보내기 <span>↑</span></button></label>
+    {!waiting && followup && <><div className="dream-options">{followup.options.map((option) => <button key={option} type="button" onClick={() => submitAnswer(option)}>{option}</button>)}</div>
+    <label className="dream-answer"><span>직접 적을게</span><textarea value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="기억나는 만큼만 적어줘." maxLength={500} /><button type="button" className="dream-send" disabled={!answer.trim()} onClick={() => submitAnswer(answer)}>보내기 <span>↑</span></button></label></>}
     {error && <p className="request-error">{error} <button type="button" onClick={() => void analyze()}>다시 시도</button></p>}
   </section>;
+  }
 
   if (phase === "result" && result) {
-    const symbols = [...result.extracted.symbols, ...result.extracted.actions].slice(0, 5);
+    const symbols = result.extracted.symbols.slice(0, 5);
+    const actions = result.extracted.actions.slice(0, 3);
     return <section className="dream-shell dream-result">
-      <div className="dream-value-card">
-        <p>꿈팔이 판정 · {result.value.verdict}</p><span className="dream-tier">오늘의 몽상 등급 · {result.value.tier}</span><Money amount={result.value.amount} /><b>{result.value.label}</b><small>꿈값은 재미로 보는 가상 금액이에요.</small>
+      <div className="dream-scene-card">
+        <p className="step">DREAM SCENE CARD</p><h1>{result.reading.title}</h1><div><span>꿈의 분위기</span><strong>{result.reading.mood}</strong></div>
       </div>
-      <section className="dream-detail"><p className="step">꿈 한 줄 요약</p><h1>{result.reading.summary}</h1></section>
       {symbols.length > 0 && <section className="dream-detail"><p className="step">꿈에서 발견한 핵심 장면</p><div className="dream-tags">{symbols.map((item, index) => <span key={`${item}-${index}`}>{symbolEmoji(item)} {item}</span>)}</div></section>}
-      <section className="dream-detail"><p className="step">꿈값 산정 포인트</p><div className="dream-factors">{result.value.factors.map((factor) => <span key={factor}>✦ {factor}</span>)}</div></section>
-      {result.extracted.fortuneDomains.length > 0 && <section className="dream-detail"><p className="step">가장 강하게 연결되는 영역</p><div className="dream-domains">{result.extracted.fortuneDomains.map((domain, index) => <span key={domain}><i style={{ width: `${Math.max(42, 100 - index * 18)}%` }} /><b>{domain}</b></span>)}</div></section>}
-      <section className="dream-detail dream-why"><p className="step">왜 이 가격이에요?</p><p>{result.reading.valueExplanation}</p></section>
-      <section className="dream-detail dream-interpretation"><p className="step">꿈풀이</p><p>{result.reading.interpretation}</p></section>
+      {actions.length > 0 && <section className="dream-detail"><p className="step">꿈에서 내가 한 선택</p><div className="dream-factors">{actions.map((action, index) => <span key={`${action}-${index}`}>✦ {action}</span>)}</div></section>}
+      <section className="dream-detail dream-interpretation"><p className="step">장면으로 읽어 본 꿈</p><p>{result.reading.interpretation}</p></section>
       <section className="dream-one-liner"><p>한마디로</p><strong>{result.reading.oneLiner}</strong></section>
       <button type="button" className="restart" onClick={restart}>다른 꿈 감정하기</button>
     </section>;
   }
 
-  return <section className="dream-shell dream-chat dream-start-chat" aria-label="꿈값 대화 시작">
-    <p className="step">꿈값 · 짧은 대화</p>
+  return <section className="dream-shell dream-chat dream-start-chat" aria-label="꿈 이야기 시작">
+    <p className="step">꿈 한 장면 · 짧은 대화</p>
     <div className="dream-thread" aria-live="polite">
-      <div className="dream-message bot chat-enter"><span>꿈팔이</span><p>어젯밤 꿈이구나. 같이 꿈값을 매겨보자.</p></div>
+      <div className="dream-message bot chat-enter"><span>꿈팔이</span><p>어젯밤 꿈이구나. 같이 그 장면을 정리해 보자.</p></div>
       {showMemoryPrompt && <div className="chat-enter chat-sequence-two">
         <div className="dream-message bot"><span>꿈팔이</span><p>지금 얼마나 기억나?</p></div>
         {!memory && <div className="dream-options" role="group" aria-label="꿈 기억 선명도">

@@ -14,7 +14,7 @@ export default function Home() {
     <section className="new-hero"><p>AI FORTUNE PLAYGROUND</p><h1>{brand.tagline}</h1><span className="hero-orbit orbit-one" /><span className="hero-orbit orbit-two" /></section>
     <section className="content-list" aria-labelledby="content-title"><div className="section-heading"><p>오늘, 뭘 볼까?</p><h2 id="content-title">마음 가는 걸<br />하나 골라봐.</h2></div>
       <a href="/tarot" className="content-card tarot-home-card"><div className="content-icon tarot-icon">✦</div><div><div className="status-line"><span>OPEN</span><small>FREE</small></div><h3>타로</h3><p>고민 하나 생각하고<br />끌리는 카드를 직접 골라보세요.</p></div><i>→</i></a>
-      <a href="/dream" className="content-card dream-home-card"><div className="content-icon dream-icon">₩</div><div><div className="status-line"><span>OPEN</span><small>FREE</small></div><h3>꿈값</h3><p>어젯밤 그 꿈,<br />얼마짜리였을까?</p></div><i>→</i></a>
+      <a href="/dream" className="content-card dream-home-card"><div className="content-icon dream-icon">☁</div><div><div className="status-line"><span>OPEN</span><small>FREE</small></div><h3>꿈 한 장면</h3><p>어젯밤 그 꿈,<br />어떻게 남았을까?</p></div><i>→</i></a>
       <div className="coming-grid">{comingSoon.map(([title, copy, icon]) => <button key={title} className="content-card coming-card" onClick={() => setNotice(`${title}, 열심히 준비 중이에요.`)} aria-label={`${title}, 준비 중`}><span className="content-icon">{icon}</span><div><small>COMING SOON</small><h3>{title}</h3><p>{copy}</p></div></button>)}</div>
       {notice && <p className="coming-notice" role="status">{notice}</p>}
     </section>
