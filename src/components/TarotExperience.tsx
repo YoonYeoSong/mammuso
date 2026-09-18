@@ -37,7 +37,7 @@ export function TarotExperience() {
   const [category, setCategory] = useState<TarotCategory>("연애");
   const [question, setQuestion] = useState("");
   const [deck, setDeck] = useState<TarotCard[]>(majorArcana);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedSlots, setSelectedSlots] = useState<Array<string | null>>([null, null, null]);
   const [viewMode, setViewMode] = useState<ViewMode>("fan");
   const [isSelectionConfirmOpen, setIsSelectionConfirmOpen] = useState(false);
   const [fanOffset, setFanOffset] = useState(0);
@@ -46,6 +46,7 @@ export function TarotExperience() {
   const [reading, setReading] = useState<TarotReading | null>(null);
   const [loadingMessage, setLoadingMessage] = useState("세 장이 만든 흐름을 천천히 이어보고 있어.");
   const [readingError, setReadingError] = useState("");
+  const selectedIds = useMemo(() => selectedSlots.filter((id): id is string => id !== null), [selectedSlots]);
   const selectedCards = useMemo(() => selectedIds.map((id) => deck.find((card) => card.id === id)).filter((card): card is TarotCard => Boolean(card)), [deck, selectedIds]);
   const availableCards = useMemo(() => deck.filter((card) => !selectedIds.includes(card.id)), [deck, selectedIds]);
 
@@ -57,7 +58,7 @@ export function TarotExperience() {
 
   function startShuffle() {
     setDeck(shuffle(majorArcana));
-    setSelectedIds([]);
+    setSelectedSlots([null, null, null]);
     setIsSelectionConfirmOpen(false);
     setFanOffset(0);
     setReturningId(null);
@@ -67,23 +68,36 @@ export function TarotExperience() {
     setPhase("shuffling");
   }
 
+  function addCardToOpenSlot(id: string) {
+    setSelectedSlots((current) => {
+      if (current.includes(id)) return current;
+      const openSlot = current.findIndex((cardId) => cardId === null);
+      return openSlot === -1 ? current : current.map((cardId, index) => index === openSlot ? id : cardId);
+    });
+  }
+
   function toggleCard(id: string) {
-    setSelectedIds((current) => current.includes(id) ? current.filter((cardId) => cardId !== id) : current.length < 3 ? [...current, id] : current);
+    setSelectedSlots((current) => {
+      const selectedSlot = current.indexOf(id);
+      if (selectedSlot >= 0) return current.map((cardId, index) => index === selectedSlot ? null : cardId);
+      const openSlot = current.findIndex((cardId) => cardId === null);
+      return openSlot === -1 ? current : current.map((cardId, index) => index === openSlot ? id : cardId);
+    });
   }
 
   function chooseFanCard(id: string) {
-    setSelectedIds((current) => current.includes(id) || current.length >= 3 ? current : [...current, id]);
+    addCardToOpenSlot(id);
   }
 
   function removeSelectedCard(id: string) {
     if (viewMode !== "fan") {
-      setSelectedIds((current) => current.filter((cardId) => cardId !== id));
+      setSelectedSlots((current) => current.map((cardId) => cardId === id ? null : cardId));
       return;
     }
     if (returningId) return;
     setReturningId(id);
     window.setTimeout(() => {
-      setSelectedIds((current) => current.filter((cardId) => cardId !== id));
+      setSelectedSlots((current) => current.map((cardId) => cardId === id ? null : cardId));
       setReturningId(null);
     }, 280);
   }
@@ -145,7 +159,8 @@ export function TarotExperience() {
     </div>
     <div className="draw-slots" aria-label="뽑은 카드">
       {[0, 1, 2].map((index) => {
-        const card = selectedCards[index];
+        const selectedId = selectedSlots[index];
+        const card = selectedId ? deck.find((deckCard) => deckCard.id === selectedId) : undefined;
         return card ? <button key={card.id} type="button" className={`draw-slot selected ${returningId === card.id ? "is-returning" : ""}`} onClick={() => removeSelectedCard(card.id)} aria-label={`${index + 1}번째 뽑은 카드, 다시 고르기`}><CardFace card={card} revealed={false} /><span>{index + 1} · 다시 고르기</span></button> : <div className="draw-slot empty" key={index}><b>{index + 1}</b><small>비어 있음</small></div>;
       })}
     </div>
@@ -162,8 +177,8 @@ export function TarotExperience() {
       </div>
     </div> : <div className="deck-grid" aria-label="22장 타로 카드">
       {deck.map((card, index) => {
-        const selectIndex = selectedIds.indexOf(card.id);
-        return <button key={card.id} type="button" className={`deck-grid-card ${selectIndex >= 0 ? "is-selected" : ""}`} onClick={() => toggleCard(card.id)} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? ", 선택됨" : ""}`}><CardFace card={card} revealed={false} />{selectIndex >= 0 && <span className="selection-index" aria-hidden="true">{selectIndex + 1}</span>}</button>;
+        const selectIndex = selectedSlots.indexOf(card.id);
+        return <button key={card.id} type="button" className={`deck-grid-card ${selectIndex >= 0 ? "is-selected" : ""}`} onClick={() => toggleCard(card.id)} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? `, ${selectIndex + 1}번 선택됨` : ""}`}><CardFace card={card} revealed={false} />{selectIndex >= 0 && <span className="selection-index" aria-hidden="true">{selectIndex + 1}</span>}</button>;
       })}
     </div>}
     <div className="selection-bar"><span>{selectedIds.length === 3 ? "마음이 정해졌다면" : "카드를 고르는 중"}</span><button className="primary-action" onClick={() => setIsSelectionConfirmOpen(true)} disabled={selectedIds.length !== 3}>이 카드로 볼게 <span>→</span></button></div>
