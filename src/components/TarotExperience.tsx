@@ -11,13 +11,6 @@ type MoneyFocus = "전반적인 재물운" | "월급·이직" | "사업·부업"
 const positions = ["지금의 마음", "나를 스치는 것", "다가오는 흐름"];
 const loveSituations: LoveSituation[] = ["솔로", "연애 중", "기혼"];
 const moneyFocuses: MoneyFocus[] = ["전반적인 재물운", "월급·이직", "사업·부업", "소비·지출", "투자"];
-const moneyQuestionPrompts: Record<MoneyFocus, string> = {
-  "전반적인 재물운": "요즘 돈과 관련해 마음에 걸리는 걸 적어줘.",
-  "월급·이직": "월급이나 이직과 관련해 고민되는 걸 적어줘.",
-  "사업·부업": "사업이나 부업에서 고민되는 흐름을 적어줘.",
-  "소비·지출": "소비나 지출에서 마음에 걸리는 걸 적어줘.",
-  "투자": "투자와 관련해 고민되는 흐름을 적어줘.",
-};
 
 function shuffle<T>(items: T[]) {
   const shuffled = [...items];
@@ -212,10 +205,9 @@ export function TarotExperience() {
     <div className="category-grid" role="group" aria-label="타로 주제">
       {tarotCategories.map((item) => {
         const isAvailable = item === "연애" || item === "돈";
-        return <button key={item} className={category === item ? "active" : ""} onClick={() => { setQuestion(""); setCategory(item); if (item === "연애") beginLoveChat(); if (item === "돈") beginMoneyChat(); }} disabled={!isAvailable}>{item}{!isAvailable && <small>준비 중</small>}</button>;
+        return <button key={item} className={isAvailable ? "available" : ""} onClick={() => { setQuestion(""); setCategory(item); if (item === "연애") beginLoveChat(); if (item === "돈") beginMoneyChat(); }} disabled={!isAvailable}>{item}<small>{isAvailable ? "바로 시작" : "준비 중"}</small></button>;
       })}
     </div>
-    {category === "연애" || category === "돈" ? <p className="category-guide">{category === "연애" ? "연애를" : "돈을"} 누르면 타로킹과 짧게 대화를 시작해.</p> : <><label className="question-input"><span>{category}에서 무엇이 궁금해?</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={`${category}에서 궁금한 걸 구체적으로 적어줘.`} maxLength={280} /></label><button className="primary-action" onClick={startShuffle} disabled={question.trim().length < 2}>카드 뽑으러 가기 <span>→</span></button></>}
     <p className="gentle-note">가벼운 재미와 생각 정리를 위한 타로예요.</p>
   </section>;
 
@@ -231,7 +223,7 @@ export function TarotExperience() {
       </div>}
       {loveSituation && <>
         <div className="chat-message user chat-enter"><p>{loveSituation}</p></div>
-        {showLoveQuestionPrompt && !isLoveQuestionSent && <div className="chat-enter"><div className="chat-message bot"><span>타로킹</span><p>좋아. 어떤 일이 마음에 걸리는지 편하게 적어줘.</p></div><label className="chat-question"><span>짧게 적어도 괜찮아.</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="예: 썸 타는 사람이 있는데, 먼저 연락해도 될지 궁금해." maxLength={280} /></label><button className="chat-send" type="button" onClick={sendLoveQuestion} disabled={question.trim().length < 2}>보내기 <span>↑</span></button></div>}
+        {showLoveQuestionPrompt && !isLoveQuestionSent && <div className="chat-enter"><div className="chat-message bot"><span>타로킹</span><p>좋아. 마지막으로 무엇이 궁금한지 편하게 적어줘.</p></div><label className="chat-question"><span>짧게 적어도 괜찮아.</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="예: 썸 타는 사람이 있는데, 먼저 연락해도 될지 궁금해." maxLength={280} /></label><button className="chat-send" type="button" onClick={sendLoveQuestion} disabled={question.trim().length < 2}>보내기 <span>↑</span></button></div>}
         {isLoveQuestionSent && <><div className="chat-message user chat-enter"><p>{question.trim()}</p></div><div className="chat-message bot final chat-enter"><span>타로킹</span><p>알겠어. 그 마음을 생각하면서 카드를 섞어볼게.</p></div></>}
       </>}
     </div>
@@ -251,7 +243,7 @@ export function TarotExperience() {
       </div>}
       {moneyFocus && <>
         <div className="chat-message user chat-enter"><p>{moneyFocus}</p></div>
-        {showMoneyQuestionPrompt && !isMoneyQuestionSent && <div className="chat-enter"><div className="chat-message bot"><span>타로킹</span><p>{moneyQuestionPrompts[moneyFocus]}</p></div><label className="chat-question"><span>짧게 적어도 괜찮아.</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="예: 올해 전반적인 재물운이 궁금해." maxLength={280} /></label><button className="chat-send" type="button" onClick={sendMoneyQuestion} disabled={question.trim().length < 2}>보내기 <span>↑</span></button></div>}
+        {showMoneyQuestionPrompt && !isMoneyQuestionSent && <div className="chat-enter"><div className="chat-message bot"><span>타로킹</span><p>좋아. 마지막으로 무엇이 궁금한지 편하게 적어줘.</p></div><label className="chat-question"><span>짧게 적어도 괜찮아.</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="예: 올해 전반적인 재물운이 궁금해." maxLength={280} /></label><button className="chat-send" type="button" onClick={sendMoneyQuestion} disabled={question.trim().length < 2}>보내기 <span>↑</span></button></div>}
         {isMoneyQuestionSent && <><div className="chat-message user chat-enter"><p>{question.trim()}</p></div><div className="chat-message bot final chat-enter"><span>타로킹</span><p>알겠어. 그 흐름을 생각하면서 카드를 섞어볼게.</p></div></>}
       </>}
     </div>
