@@ -44,6 +44,9 @@ export function TarotExperience() {
   const [isSelectionConfirmOpen, setIsSelectionConfirmOpen] = useState(false);
   const [returningId, setReturningId] = useState<string | null>(null);
   const [loveSituation, setLoveSituation] = useState<LoveSituation | null>(null);
+  const [showLoveStatusPrompt, setShowLoveStatusPrompt] = useState(false);
+  const [showLoveQuestionPrompt, setShowLoveQuestionPrompt] = useState(false);
+  const [isLoveQuestionSent, setIsLoveQuestionSent] = useState(false);
   const [revealed, setRevealed] = useState(0);
   const [reading, setReading] = useState<TarotReading | null>(null);
   const [loadingMessage, setLoadingMessage] = useState("세 장이 만든 흐름을 천천히 이어보고 있어.");
@@ -57,6 +60,20 @@ export function TarotExperience() {
     return () => window.clearTimeout(timer);
   }, [phase]);
 
+  useEffect(() => {
+    if (phase !== "love-chat") return;
+    setShowLoveStatusPrompt(false);
+    const timer = window.setTimeout(() => setShowLoveStatusPrompt(true), 320);
+    return () => window.clearTimeout(timer);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "love-chat" || !loveSituation || isLoveQuestionSent) return;
+    setShowLoveQuestionPrompt(false);
+    const timer = window.setTimeout(() => setShowLoveQuestionPrompt(true), 280);
+    return () => window.clearTimeout(timer);
+  }, [phase, loveSituation, isLoveQuestionSent]);
+
   function startShuffle() {
     setDeck(shuffle(majorArcana));
     setSelectedSlots([null, null, null]);
@@ -69,12 +86,21 @@ export function TarotExperience() {
   }
 
   function beginLoveChat() {
+    setQuestion("");
     setLoveSituation(null);
+    setShowLoveStatusPrompt(false);
+    setShowLoveQuestionPrompt(false);
+    setIsLoveQuestionSent(false);
     setPhase("love-chat");
   }
 
   function selectLoveSituation(situation: LoveSituation) {
     setLoveSituation(situation);
+  }
+
+  function sendLoveQuestion() {
+    if (question.trim().length < 2) return;
+    setIsLoveQuestionSent(true);
   }
 
   function addCardToOpenSlot(id: string) {
@@ -137,28 +163,32 @@ export function TarotExperience() {
     <h1>오늘 뭐가<br />궁금해?</h1>
     <p className="tarot-intro">답을 정해두지 않아도 돼. 마음이 가는 주제부터 골라봐.</p>
     <div className="category-grid" role="group" aria-label="타로 주제">
-      {tarotCategories.map((item) => <button key={item} className={category === item ? "active" : ""} onClick={() => { if (category !== item) setQuestion(""); setCategory(item); }}>{item}</button>)}
+      {tarotCategories.map((item) => {
+        const isAvailable = item === "연애" || item === "돈";
+        return <button key={item} className={category === item ? "active" : ""} onClick={() => { setQuestion(""); setCategory(item); if (item === "연애") beginLoveChat(); }} disabled={!isAvailable}>{item}{!isAvailable && <small>준비 중</small>}</button>;
+      })}
     </div>
-    <label className="question-input"><span>{category}에서 무엇이 궁금해?</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={category === "연애" ? "예: 나는 언제쯤 결혼할까?" : category === "돈" ? "예: 올해 돈 흐름은 어떨까?" : `${category}에서 궁금한 걸 구체적으로 적어줘.`} maxLength={280} /></label>
-    <button className="primary-action" onClick={category === "연애" ? beginLoveChat : startShuffle} disabled={question.trim().length < 2}>{category === "연애" ? "다음" : "카드 뽑으러 가기"} <span>→</span></button>
+    {category === "연애" ? <p className="category-guide">연애를 누르면 타로킹과 짧게 대화를 시작해.</p> : <><label className="question-input"><span>{category}에서 무엇이 궁금해?</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={category === "돈" ? "예: 올해 돈 흐름은 어떨까?" : `${category}에서 궁금한 걸 구체적으로 적어줘.`} maxLength={280} /></label><button className="primary-action" onClick={startShuffle} disabled={question.trim().length < 2}>카드 뽑으러 가기 <span>→</span></button></>}
     <p className="gentle-note">가벼운 재미와 생각 정리를 위한 타로예요.</p>
   </section>;
 
   if (phase === "love-chat") return <section className="tarot-shell love-chat-screen" aria-label="연애 타로 대화">
     <p className="step">연애 타로 · 짧은 대화</p>
     <div className="chat-thread" aria-live="polite">
-      <div className="chat-message bot"><span>mammuso</span><p>연애에서 어떤 게 궁금해?</p></div>
-      <div className="chat-message user"><p>{question.trim()}</p></div>
-      <div className="chat-message bot"><span>mammuso</span><p>답을 더 잘 읽으려면, 지금 어떤 상태인지 골라줘.</p></div>
-      {!loveSituation && <div className="chat-options" role="group" aria-label="현재 연애 상태">
-        {loveSituations.map((situation) => <button key={situation} type="button" onClick={() => selectLoveSituation(situation)}>{situation}</button>)}
+      <div className="chat-message bot chat-enter"><span>타로킹</span><p>연애 고민이구나. 같이 마음을 들여다보자.</p></div>
+      {showLoveStatusPrompt && <div className="chat-enter chat-sequence-two">
+        <div className="chat-message bot"><span>타로킹</span><p>지금 어떤 상태야?</p></div>
+        {!loveSituation && <div className="chat-options" role="group" aria-label="현재 연애 상태">
+          {loveSituations.map((situation) => <button key={situation} type="button" onClick={() => selectLoveSituation(situation)}>{situation}</button>)}
+        </div>}
       </div>}
       {loveSituation && <>
-        <div className="chat-message user"><p>{loveSituation}</p></div>
-        <div className="chat-message bot final"><span>mammuso</span><p>좋아. 그 질문을 마음에 두고 카드를 섞어볼게.</p></div>
+        <div className="chat-message user chat-enter"><p>{loveSituation}</p></div>
+        {showLoveQuestionPrompt && !isLoveQuestionSent && <div className="chat-enter"><div className="chat-message bot"><span>타로킹</span><p>좋아. 어떤 일이 마음에 걸리는지 편하게 적어줘.</p></div><label className="chat-question"><span>짧게 적어도 괜찮아.</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="예: 썸 타는 사람이 있는데, 먼저 연락해도 될지 궁금해." maxLength={280} /></label><button className="chat-send" type="button" onClick={sendLoveQuestion} disabled={question.trim().length < 2}>보내기 <span>↑</span></button></div>}
+        {isLoveQuestionSent && <><div className="chat-message user chat-enter"><p>{question.trim()}</p></div><div className="chat-message bot final chat-enter"><span>타로킹</span><p>알겠어. 그 마음을 생각하면서 카드를 섞어볼게.</p></div></>}
       </>}
     </div>
-    <button className="primary-action" onClick={startShuffle} disabled={!loveSituation}>타로 보러 가자 <span>→</span></button>
+    {isLoveQuestionSent && <button className="primary-action" onClick={startShuffle}>타로 보러 가자 <span>→</span></button>}
     <button type="button" className="chat-back" onClick={() => setPhase("question")}>주제 다시 고르기</button>
   </section>;
 
