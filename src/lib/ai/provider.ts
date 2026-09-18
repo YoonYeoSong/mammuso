@@ -2,6 +2,8 @@ import "server-only";
 import { z } from "zod";
 import type { Answers, DecisionResult, PreliminaryResult } from "@/lib/cases/types";
 import type { TarotCard, TarotCategory } from "@/lib/tarot/cards";
+import { dreamAnalysisSchema, dreamReadingSchema, type DreamAnalysis, type DreamExtracted, type DreamReading, type DreamTurn } from "@/lib/dream/types";
+import { dreamAnalysisSystemPrompt, dreamReadingSystemPrompt } from "@/lib/dream/prompts";
 
 const respondentNoticeSchema = z.object({ summary: z.string().min(10).max(140), issues: z.array(z.string().min(4).max(100)).min(1).max(2) });
 const preliminarySchema = z.object({ summary: z.string().min(10).max(140), knownFacts: z.array(z.string().min(2).max(110)).max(2), openQuestions: z.array(z.string().min(2).max(110)).max(2), opinion: z.string().min(20).max(180), clerkComment: z.string().min(12).max(100) });
@@ -26,6 +28,8 @@ export interface AIProvider {
   generateJointDecision(input: { applicantStatement: string; incidentDate: string | null; applicantAnswers: Answers; respondentStatement: string; respondentAnswers: Answers }): Promise<DecisionResult>;
   generateAppealDecision(input: { applicantStatement: string; incidentDate: string | null; applicantAnswers: Answers; respondentStatement: string; respondentAnswers: Answers; previousResult: DecisionResult; appealText: string }): Promise<DecisionResult>;
   generateTarotReading(input: { category: TarotCategory; question: string; cards: TarotCard[] }): Promise<TarotReading>;
+  analyzeDream(input: { dream: string; turns: DreamTurn[]; followupCount: number }): Promise<DreamAnalysis>;
+  generateDreamReading(input: { dream: string; turns: DreamTurn[]; extracted: DreamExtracted; scoreFactors: string[]; amount: number }): Promise<DreamReading>;
 }
 
 class GroqAIProvider implements AIProvider {
@@ -60,6 +64,22 @@ class GroqAIProvider implements AIProvider {
     const question = input.question || `${input.category}에 관한 지금의 흐름`;
     const cardInfo = input.cards.map((card, index) => `${index + 1}번째 ${card.name} (${card.keywords.join(", ")})`).join(" / ");
     return this.ask(`사용자의 질문: ${question}\n카테고리: ${input.category}\n뽑은 카드: ${cardInfo}\n\n카드 순서대로 cardReadings를 작성하세요. 점괘를 사실·예언처럼 단정하거나 불안·의존을 부추기지 마세요. 카드는 생각을 정리하는 가벼운 계기로 다루고, 친한 친구처럼 구체적이되 과장하지 마세요. opening은 세 카드가 함께 비추는 현재 흐름, takeaway는 질문에 대한 균형 잡힌 한 문단, tinyAction은 오늘 할 수 있는 작은 행동 하나입니다.\nSchema: {"headline":"","opening":"","cardReadings":[{"title":"","meaning":""},{"title":"","meaning":""},{"title":"","meaning":""}],"takeaway":"","tinyAction":""}`, tarotReadingSchema, "당신은 밝고 다정한 한국어 타로 리더입니다. 타로는 오락과 자기성찰을 위한 콘텐츠임을 자연스럽게 반영하세요. 반드시 한국어만 사용하고, 건강·법률·금융·안전 관련 결정을 단정하지 마세요. 공포를 유발하거나 미래를 확정하는 표현은 금지합니다. JSON의 값은 짧고 자연스러운 한국어로 작성하세요.");
+  }
+  async analyzeDream(input: { dream: string; turns: DreamTurn[]; followupCount: number }): Promise<DreamAnalysis> {
+    const turns = input.turns.length ? input.turns.map((turn, index) => `${index + 1}. 질문: ${turn.question}\n답변: ${turn.answer}`).join("\n") : "없음";
+    const result = await this.ask(`처음 꿈 이야기:\n${input.dream}\n\n추가 대화:\n${turns}\n\n현재까지 후속 질문 횟수: ${input.followupCount}회\n\nSchema: {"status":"SUFFICIENT 또는 NEEDS_FOLLOWUP","extracted":{"symbols":[],"actions":[],"setting":[],"ending":null,"emotion":null,"fortuneDomains":[],"notableDetails":[],"clarity":"평범함|선명함|상징이 강함|반복됨|강하게 기억남|UNKNOWN","sensitive":false},"missingInformation":[],"followup":{"question":null,"options":[]}}`, dreamAnalysisSchema, dreamAnalysisSystemPrompt);
+    if (input.followupCount >= 2 && result.status === "NEEDS_FOLLOWUP") return { ...result, status: "SUFFICIENT" as const, missingInformation: [], followup: { question: null, options: [] } };
+    if (result.status === "SUFFICIENT") return { ...result, status: "SUFFICIENT" as const, missingInformation: [], followup: { question: null, options: [] } };
+    return result;
+  }
+  async generateDreamReading(input: { dream: string; turns: DreamTurn[]; extracted: DreamExtracted; scoreFactors: string[]; amount: number }): Promise<DreamReading> {
+    const turns = input.turns.length ? input.turns.map((turn, index) => `${index + 1}. 질문: ${turn.question}\n답변: ${turn.answer}`).join("\n") : "없음";
+    const prompt = `사용자가 말한 처음 꿈 이야기:\n${input.dream}\n\n추가 대화:\n${turns}\n\n구조화된 정보(이 범위 밖의 사실을 만들지 마세요):\n${JSON.stringify(input.extracted)}\n\n애플리케이션이 계산한 오락용 꿈값: ₩${input.amount.toLocaleString("ko-KR")}\n가격 근거: ${input.scoreFactors.join(", ") || "말해준 꿈의 구체성"}\n\nSchema: {"summary":"","valueExplanation":"","interpretation":"","oneLiner":""}`;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const reading = await this.ask(`${prompt}${attempt ? "\n\n직전 문안은 미래 가능성·예측 표현 때문에 사용할 수 없습니다. '앞으로', '곧', '될 것', '가능성', '징조', '신호', '새로운 인연', '새로운 관계', '일상에 스며' 없이 현재 꿈 장면의 상징적 인상만 다시 쓰세요." : ""}`, dreamReadingSchema, dreamReadingSystemPrompt);
+      if (!containsDreamPrediction(reading)) return reading;
+    }
+    throw new Error("AI_UNSAFE_RESPONSE");
   }
   private decision(context: string) { const tone = "이 서비스는 강한 표현 동의를 받은 단일 판결 버전입니다. overview와 reasoning에는 진술 속 구체적 행동을 꼬집는 직설적이고 재치 있는 한국어를 쓰세요. '씨발', '존나', '개판', '빡친다'처럼 강한 표현은 한두 번만 자연스럽게 사용할 수 있지만, 사람 자체를 모욕하는 고정 욕설이나 같은 문구 반복은 금지합니다. 강한 표현을 써도 결국 왜 그 쪽이 더 잘못했는지가 선명해야 합니다."; return this.ask(`${context}\n\n양측 진술만 근거로 짧고 분명한 결론을 작성하세요. 제공되지 않은 사실은 만들지 말고, 일반적인 관계 조언·인물 성격 해석·인사말은 금지합니다. overview 첫 문장은 반드시 '더 큰 잘못은 신청인/상대방에게 있습니다.'로 시작하고, 이어서 진술에 나온 구체적 행동 때문에 그런지 적으세요. reasoning은 그 판단의 직접 근거 한두 문장만 쓰세요. 책임지표는 반드시 1~99의 정수이며 50은 금지입니다. 진술에서 더 직접적으로 약속을 어기거나, 무시하거나, 모욕하거나, 일방적으로 행동한 쪽을 더 크게 잡으세요. 극단적인 경우 1:99도 사용할 수 있습니다. claims·facts·advice·clerkComment는 짧게 채우되 화면에는 표시되지 않을 수 있습니다. ${tone}\nSchema: {"overview":"","agreedFacts":[],"complainantClaims":[],"respondentClaims":[],"disputedFacts":[],"unknownFacts":[],"complainantResponsibility":49,"respondentResponsibility":51,"reasoning":"","mediationAdvice":"","clerkComment":"","changedReason":""}`, decisionSchema); }
 }
@@ -102,7 +122,12 @@ function assertKoreanOutput(value: unknown): void {
   };
   collect(value);
   const containsLatinWord = /\b[a-zA-Z]{4,}\b/;
-  if (textValues.some((text) => text.trim() && (!/[가-힣]/.test(text) || containsLatinWord.test(text)))) throw new Error("AI_LANGUAGE_NOT_KOREAN");
+  const allowedEnum = /^(SUFFICIENT|NEEDS_FOLLOWUP|UNKNOWN)$/;
+  if (textValues.some((text) => text.trim() && !allowedEnum.test(text) && (!/[가-힣]/.test(text) || containsLatinWord.test(text)))) throw new Error("AI_LANGUAGE_NOT_KOREAN");
+}
+
+function containsDreamPrediction(reading: DreamReading): boolean {
+  return /앞으로|곧|될 것|일어날|다가올|가능성|당첨|수익|징조|신호|예고|새로운 인연|새로운 관계|일상에 스며|현실에.*(들어오|찾아오)/.test(`${reading.summary} ${reading.valueExplanation} ${reading.interpretation} ${reading.oneLiner}`);
 }
 
 export function getAIProvider(): AIProvider { return new GroqAIProvider(); }
