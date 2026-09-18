@@ -4,11 +4,20 @@ import { useEffect, useMemo, useState } from "react";
 import type { TarotReading } from "@/lib/ai/provider";
 import { majorArcana, tarotCategories, type TarotCard, type TarotCategory } from "@/lib/tarot/cards";
 
-type Phase = "question" | "love-chat" | "shuffling" | "picking" | "confirming" | "revealing" | "loading" | "reading";
+type Phase = "question" | "love-chat" | "money-chat" | "shuffling" | "picking" | "confirming" | "revealing" | "loading" | "reading";
 type ViewMode = "fan" | "grid";
 type LoveSituation = "솔로" | "연애 중" | "기혼";
+type MoneyFocus = "전반적인 재물운" | "월급·이직" | "사업·부업" | "소비·지출" | "투자";
 const positions = ["지금의 마음", "나를 스치는 것", "다가오는 흐름"];
 const loveSituations: LoveSituation[] = ["솔로", "연애 중", "기혼"];
+const moneyFocuses: MoneyFocus[] = ["전반적인 재물운", "월급·이직", "사업·부업", "소비·지출", "투자"];
+const moneyQuestionPrompts: Record<MoneyFocus, string> = {
+  "전반적인 재물운": "요즘 돈과 관련해 마음에 걸리는 걸 적어줘.",
+  "월급·이직": "월급이나 이직과 관련해 고민되는 걸 적어줘.",
+  "사업·부업": "사업이나 부업에서 고민되는 흐름을 적어줘.",
+  "소비·지출": "소비나 지출에서 마음에 걸리는 걸 적어줘.",
+  "투자": "투자와 관련해 고민되는 흐름을 적어줘.",
+};
 
 function shuffle<T>(items: T[]) {
   const shuffled = [...items];
@@ -47,6 +56,10 @@ export function TarotExperience() {
   const [showLoveStatusPrompt, setShowLoveStatusPrompt] = useState(false);
   const [showLoveQuestionPrompt, setShowLoveQuestionPrompt] = useState(false);
   const [isLoveQuestionSent, setIsLoveQuestionSent] = useState(false);
+  const [moneyFocus, setMoneyFocus] = useState<MoneyFocus | null>(null);
+  const [showMoneyFocusPrompt, setShowMoneyFocusPrompt] = useState(false);
+  const [showMoneyQuestionPrompt, setShowMoneyQuestionPrompt] = useState(false);
+  const [isMoneyQuestionSent, setIsMoneyQuestionSent] = useState(false);
   const [revealed, setRevealed] = useState(0);
   const [reading, setReading] = useState<TarotReading | null>(null);
   const [loadingMessage, setLoadingMessage] = useState("세 장이 만든 흐름을 천천히 이어보고 있어.");
@@ -73,6 +86,20 @@ export function TarotExperience() {
     const timer = window.setTimeout(() => setShowLoveQuestionPrompt(true), 280);
     return () => window.clearTimeout(timer);
   }, [phase, loveSituation, isLoveQuestionSent]);
+
+  useEffect(() => {
+    if (phase !== "money-chat") return;
+    setShowMoneyFocusPrompt(false);
+    const timer = window.setTimeout(() => setShowMoneyFocusPrompt(true), 320);
+    return () => window.clearTimeout(timer);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "money-chat" || !moneyFocus || isMoneyQuestionSent) return;
+    setShowMoneyQuestionPrompt(false);
+    const timer = window.setTimeout(() => setShowMoneyQuestionPrompt(true), 280);
+    return () => window.clearTimeout(timer);
+  }, [phase, moneyFocus, isMoneyQuestionSent]);
 
   function startShuffle() {
     setDeck(shuffle(majorArcana));
@@ -101,6 +128,24 @@ export function TarotExperience() {
   function sendLoveQuestion() {
     if (question.trim().length < 2) return;
     setIsLoveQuestionSent(true);
+  }
+
+  function beginMoneyChat() {
+    setQuestion("");
+    setMoneyFocus(null);
+    setShowMoneyFocusPrompt(false);
+    setShowMoneyQuestionPrompt(false);
+    setIsMoneyQuestionSent(false);
+    setPhase("money-chat");
+  }
+
+  function selectMoneyFocus(focus: MoneyFocus) {
+    setMoneyFocus(focus);
+  }
+
+  function sendMoneyQuestion() {
+    if (question.trim().length < 2) return;
+    setIsMoneyQuestionSent(true);
   }
 
   function addCardToOpenSlot(id: string) {
@@ -142,7 +187,9 @@ export function TarotExperience() {
       try {
         const contextualQuestion = category === "연애" && loveSituation
           ? [`현재 상황: ${loveSituation}`, `사용자 질문: ${question.trim()}`].join("\n")
-          : question;
+          : category === "돈" && moneyFocus
+            ? [`관심 분야: ${moneyFocus}`, `사용자 질문: ${question.trim()}`].join("\n")
+            : question;
         const response = await fetch("/api/tarot/reading", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category, question: contextualQuestion, cardIds: selectedIds }) });
         const result = await response.json() as { reading?: TarotReading; error?: string };
         if (!response.ok || !result.reading) throw new Error(result.error ?? "reading failed");
@@ -165,10 +212,10 @@ export function TarotExperience() {
     <div className="category-grid" role="group" aria-label="타로 주제">
       {tarotCategories.map((item) => {
         const isAvailable = item === "연애" || item === "돈";
-        return <button key={item} className={category === item ? "active" : ""} onClick={() => { setQuestion(""); setCategory(item); if (item === "연애") beginLoveChat(); }} disabled={!isAvailable}>{item}{!isAvailable && <small>준비 중</small>}</button>;
+        return <button key={item} className={category === item ? "active" : ""} onClick={() => { setQuestion(""); setCategory(item); if (item === "연애") beginLoveChat(); if (item === "돈") beginMoneyChat(); }} disabled={!isAvailable}>{item}{!isAvailable && <small>준비 중</small>}</button>;
       })}
     </div>
-    {category === "연애" ? <p className="category-guide">연애를 누르면 타로킹과 짧게 대화를 시작해.</p> : <><label className="question-input"><span>{category}에서 무엇이 궁금해?</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={category === "돈" ? "예: 올해 돈 흐름은 어떨까?" : `${category}에서 궁금한 걸 구체적으로 적어줘.`} maxLength={280} /></label><button className="primary-action" onClick={startShuffle} disabled={question.trim().length < 2}>카드 뽑으러 가기 <span>→</span></button></>}
+    {category === "연애" || category === "돈" ? <p className="category-guide">{category === "연애" ? "연애를" : "돈을"} 누르면 타로킹과 짧게 대화를 시작해.</p> : <><label className="question-input"><span>{category}에서 무엇이 궁금해?</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={`${category}에서 궁금한 걸 구체적으로 적어줘.`} maxLength={280} /></label><button className="primary-action" onClick={startShuffle} disabled={question.trim().length < 2}>카드 뽑으러 가기 <span>→</span></button></>}
     <p className="gentle-note">가벼운 재미와 생각 정리를 위한 타로예요.</p>
   </section>;
 
@@ -189,6 +236,26 @@ export function TarotExperience() {
       </>}
     </div>
     {isLoveQuestionSent && <button className="primary-action" onClick={startShuffle}>타로 보러 가자 <span>→</span></button>}
+    <button type="button" className="chat-back" onClick={() => setPhase("question")}>주제 다시 고르기</button>
+  </section>;
+
+  if (phase === "money-chat") return <section className="tarot-shell love-chat-screen" aria-label="돈 타로 대화">
+    <p className="step">돈 타로 · 짧은 대화</p>
+    <div className="chat-thread" aria-live="polite">
+      <div className="chat-message bot chat-enter"><span>타로킹</span><p>돈 이야기가 궁금하구나. 같이 흐름을 들여다보자.</p></div>
+      {showMoneyFocusPrompt && <div className="chat-enter chat-sequence-two">
+        <div className="chat-message bot"><span>타로킹</span><p>어떤 쪽이 궁금해?</p></div>
+        {!moneyFocus && <div className="chat-options" role="group" aria-label="돈 타로 관심 분야">
+          {moneyFocuses.map((focus) => <button key={focus} type="button" onClick={() => selectMoneyFocus(focus)}>{focus}</button>)}
+        </div>}
+      </div>}
+      {moneyFocus && <>
+        <div className="chat-message user chat-enter"><p>{moneyFocus}</p></div>
+        {showMoneyQuestionPrompt && !isMoneyQuestionSent && <div className="chat-enter"><div className="chat-message bot"><span>타로킹</span><p>{moneyQuestionPrompts[moneyFocus]}</p></div><label className="chat-question"><span>짧게 적어도 괜찮아.</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="예: 올해 전반적인 재물운이 궁금해." maxLength={280} /></label><button className="chat-send" type="button" onClick={sendMoneyQuestion} disabled={question.trim().length < 2}>보내기 <span>↑</span></button></div>}
+        {isMoneyQuestionSent && <><div className="chat-message user chat-enter"><p>{question.trim()}</p></div><div className="chat-message bot final chat-enter"><span>타로킹</span><p>알겠어. 그 흐름을 생각하면서 카드를 섞어볼게.</p></div></>}
+      </>}
+    </div>
+    {isMoneyQuestionSent && <button className="primary-action" onClick={startShuffle}>타로 보러 가자 <span>→</span></button>}
     <button type="button" className="chat-back" onClick={() => setPhase("question")}>주제 다시 고르기</button>
   </section>;
 
