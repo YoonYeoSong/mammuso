@@ -4,9 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import type { TarotReading } from "@/lib/ai/provider";
 import { majorArcana, tarotCategories, type TarotCard, type TarotCategory } from "@/lib/tarot/cards";
 
-type Phase = "question" | "shuffling" | "picking" | "confirming" | "revealing" | "loading" | "reading";
+type Phase = "question" | "love-chat" | "shuffling" | "picking" | "confirming" | "revealing" | "loading" | "reading";
 type ViewMode = "fan" | "grid";
+type LoveSituation = "솔로" | "연애 중" | "기혼";
+type LoveFocus = "새 인연" | "마음 가는 사람 있음" | "썸 타는 중" | "결혼은 언제쯤?" | "연애운 전체" | "상대 마음" | "이어질 가능성" | "다가갈 타이밍" | "우리 관계 흐름" | "결혼 / 미래" | "갈등 / 거리감" | "직접 적기";
 const positions = ["지금의 마음", "나를 스치는 것", "다가오는 흐름"];
+
+const loveFocuses: Record<LoveSituation, LoveFocus[]> = {
+  "솔로": ["새 인연", "마음 가는 사람 있음", "썸 타는 중", "결혼은 언제쯤?", "연애운 전체", "직접 적기"],
+  "연애 중": ["우리 관계 흐름", "상대 마음", "이어질 가능성", "갈등 / 거리감", "결혼 / 미래", "직접 적기"],
+  "기혼": ["우리 관계 흐름", "상대 마음", "갈등 / 거리감", "결혼 / 미래", "직접 적기"],
+};
 
 function shuffle<T>(items: T[]) {
   const shuffled = [...items];
@@ -40,8 +48,9 @@ export function TarotExperience() {
   const [selectedSlots, setSelectedSlots] = useState<Array<string | null>>([null, null, null]);
   const [viewMode, setViewMode] = useState<ViewMode>("fan");
   const [isSelectionConfirmOpen, setIsSelectionConfirmOpen] = useState(false);
-  const [fanOffset, setFanOffset] = useState(0);
   const [returningId, setReturningId] = useState<string | null>(null);
+  const [loveSituation, setLoveSituation] = useState<LoveSituation | null>(null);
+  const [loveFocus, setLoveFocus] = useState<LoveFocus | null>(null);
   const [revealed, setRevealed] = useState(0);
   const [reading, setReading] = useState<TarotReading | null>(null);
   const [loadingMessage, setLoadingMessage] = useState("세 장이 만든 흐름을 천천히 이어보고 있어.");
@@ -59,12 +68,24 @@ export function TarotExperience() {
     setDeck(shuffle(majorArcana));
     setSelectedSlots([null, null, null]);
     setIsSelectionConfirmOpen(false);
-    setFanOffset(0);
     setReturningId(null);
     setRevealed(0);
     setReading(null);
     setReadingError("");
     setPhase("shuffling");
+  }
+
+  function beginLoveChat() {
+    setLoveSituation(null);
+    setLoveFocus(null);
+    setQuestion("");
+    setPhase("love-chat");
+  }
+
+  function selectLoveSituation(situation: LoveSituation) {
+    setLoveSituation(situation);
+    setLoveFocus(null);
+    setQuestion("");
   }
 
   function addCardToOpenSlot(id: string) {
@@ -104,7 +125,10 @@ export function TarotExperience() {
     for (let attempt = 0; attempt < messages.length; attempt += 1) {
       setLoadingMessage(messages[attempt]);
       try {
-        const response = await fetch("/api/tarot/reading", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category, question, cardIds: selectedIds }) });
+        const contextualQuestion = category === "연애" && loveSituation
+          ? [`현재 상황: ${loveSituation}`, loveFocus && loveFocus !== "직접 적기" && `궁금한 점: ${loveFocus}`, question.trim() && `사용자가 덧붙인 질문: ${question.trim()}`].filter(Boolean).join("\n")
+          : question;
+        const response = await fetch("/api/tarot/reading", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category, question: contextualQuestion, cardIds: selectedIds }) });
         const result = await response.json() as { reading?: TarotReading; error?: string };
         if (!response.ok || !result.reading) throw new Error(result.error ?? "reading failed");
         setReading(result.reading);
@@ -127,9 +151,32 @@ export function TarotExperience() {
       {tarotCategories.map((item) => <button key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>{item}</button>)}
     </div>
     {category === "직접 질문" && <label className="question-input"><span>질문을 적어줘</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="예: 그 사람한테 다시 연락이 올까?" maxLength={280} /></label>}
-    {category !== "직접 질문" && <label className="question-input optional"><span>조금 더 구체적으로 생각나는 게 있다면</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={`${category}에 대해 마음속으로 떠올린 질문을 적어도 좋아.`} maxLength={280} /></label>}
-    <button className="primary-action" onClick={startShuffle} disabled={category === "직접 질문" && question.trim().length < 2}>카드 뽑으러 가기 <span>→</span></button>
+    {category !== "직접 질문" && category !== "연애" && <label className="question-input optional"><span>조금 더 구체적으로 생각나는 게 있다면</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={`${category}에 대해 마음속으로 떠올린 질문을 적어도 좋아.`} maxLength={280} /></label>}
+    <button className="primary-action" onClick={category === "연애" ? beginLoveChat : startShuffle} disabled={category === "직접 질문" && question.trim().length < 2}>{category === "연애" ? "연애 이야기 시작하기" : "카드 뽑으러 가기"} <span>→</span></button>
     <p className="gentle-note">가벼운 재미와 생각 정리를 위한 타로예요.</p>
+  </section>;
+
+  if (phase === "love-chat") return <section className="tarot-shell love-chat-screen" aria-label="연애 타로 대화">
+    <p className="step">연애 타로 · 짧은 대화</p>
+    <div className="chat-thread" aria-live="polite">
+      <div className="chat-message bot"><span>mammuso</span><p>좋아. 지금은 어떤 상태야?</p></div>
+      {loveSituation && <div className="chat-message user"><p>{loveSituation}</p></div>}
+      {!loveSituation && <div className="chat-options" role="group" aria-label="현재 연애 상태">
+        {(Object.keys(loveFocuses) as LoveSituation[]).map((situation) => <button key={situation} type="button" onClick={() => selectLoveSituation(situation)}>{situation}</button>)}
+      </div>}
+      {loveSituation && <>
+        <div className="chat-message bot"><span>mammuso</span><p>{loveSituation === "솔로" ? "좋아. 솔로인 지금, 무엇이 제일 궁금해?" : loveSituation === "기혼" ? "좋아. 결혼 생활에서 무엇이 제일 궁금해?" : "좋아. 지금 관계에서 무엇이 제일 궁금해?"}</p></div>
+        {loveFocus && <div className="chat-message user"><p>{loveFocus === "직접 적기" ? question || "직접 질문" : loveFocus}</p></div>}
+        {!loveFocus && <div className="chat-options" role="group" aria-label="연애에서 궁금한 점">
+          {loveFocuses[loveSituation].map((focus) => <button key={focus} type="button" onClick={() => setLoveFocus(focus)}>{focus}</button>)}
+        </div>}
+      </>}
+      {loveFocus === "직접 적기" && <label className="chat-question"><span>마음속 질문을 적어줘</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="예: 내년 안에 결혼할 인연을 만날 수 있을까?" maxLength={280} /></label>}
+      {loveFocus && loveFocus !== "직접 적기" && <div className="chat-message bot final"><span>mammuso</span><p>좋아. 그 질문을 마음에 두고 카드를 섞어볼게.</p></div>}
+      {loveFocus === "직접 적기" && question.trim().length >= 2 && <div className="chat-message bot final"><span>mammuso</span><p>좋아. 그 질문을 마음에 두고 카드를 섞어볼게.</p></div>}
+    </div>
+    <button className="primary-action" onClick={startShuffle} disabled={!loveFocus || (loveFocus === "직접 적기" && question.trim().length < 2)}>타로 보러 가자 <span>→</span></button>
+    <button type="button" className="chat-back" onClick={() => setPhase("question")}>주제 다시 고르기</button>
   </section>;
 
   if (phase === "shuffling") return <section className="tarot-shell ritual-screen" aria-live="polite">
@@ -155,10 +202,8 @@ export function TarotExperience() {
       })}
     </div>
     {viewMode === "fan" ? <div className="fan-wrap" aria-label="22장 타로 카드">
-      <button className="fan-nav fan-nav-left" type="button" onClick={() => setFanOffset((offset) => Math.min(offset + 150, 300))} disabled={fanOffset >= 300} aria-label="왼쪽 끝 카드 보기">←</button>
-      <button className="fan-nav fan-nav-right" type="button" onClick={() => setFanOffset((offset) => Math.max(offset - 150, -300))} disabled={fanOffset <= -300} aria-label="오른쪽 끝 카드 보기">→</button>
       <p className="fan-help">끌리는 카드를 바로 뽑아봐.</p>
-      <div className="card-fan" style={{ "--fan-offset": `${fanOffset}px` } as React.CSSProperties}>
+      <div className="card-fan">
         {deck.map((card, index) => {
           const selectIndex = selectedSlots.indexOf(card.id);
           const degree = (index - (deck.length - 1) / 2) * 4.05;
