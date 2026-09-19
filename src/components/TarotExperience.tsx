@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import type { TarotReading } from "@/lib/ai/provider";
 import { majorArcana, tarotCategories, type TarotCard, type TarotCategory } from "@/lib/tarot/cards";
 
@@ -26,8 +27,8 @@ function CardFace({ card, revealed, label }: { card: TarotCard; revealed: boolea
     <div className="tarot-card-inner">
       <div className="tarot-card-back" aria-hidden={revealed} />
       <div className="tarot-card-front" aria-hidden={!revealed}>
+        <Image className="tarot-card-art" src={`/tarot/major-arcana/${card.id}.webp`} alt="" fill sizes="(max-width: 560px) 28vw, 144px" />
         <span className="tarot-card-number">{String(card.number).padStart(2, "0")}</span>
-        <span className="tarot-card-symbol">{card.symbol}</span>
         <span className="tarot-card-name">{card.name}</span>
         <span className="tarot-card-tone">{card.tone}</span>
       </div>
