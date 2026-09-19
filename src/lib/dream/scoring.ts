@@ -54,6 +54,7 @@ export function calculateDreamValue(extracted: DreamExtracted): DreamValue {
   score = Math.max(2, Math.min(70, score));
 
   const amount = Math.max(2_000, Math.round((1_000 + score * score * 120) / 1_000) * 1_000);
+  const rating = Math.max(0.5, Math.min(5, Math.round((score / 14) * 2) / 2));
   const verdict = extracted.sensitive
     ? "조심스럽게 넘겨볼 꿈"
     : score >= 32 && hasWelcome && hasPositiveSymbol ? "길몽 기질"
@@ -75,7 +76,7 @@ export function calculateDreamValue(extracted: DreamExtracted): DreamValue {
         : score <= 27 ? "야식 업그레이드급"
           : score <= 40 ? "통장 미소급"
             : "갑자기 보물상자급";
-  return { score, amount, verdict, tier, label, factors: factors.slice(0, 3) };
+  return { score, amount, rating, verdict, tier, label, factors: factors.slice(0, 3) };
 }
 
 export const dreamSymbolEmoji: Record<string, string> = {

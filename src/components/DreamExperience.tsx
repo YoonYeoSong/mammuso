@@ -16,6 +16,24 @@ function Money({ amount }: { amount: number }) {
   return <strong className="dream-money">₩{amount.toLocaleString("ko-KR")}</strong>;
 }
 
+function StarRating({ rating }: { rating: number }) {
+  return <div className="dream-rating" aria-label={`별점 ${rating.toFixed(1)}점 / 5점`}>
+    <div className="dream-stars" aria-hidden="true">
+      {Array.from({ length: 5 }, (_, index) => {
+        const fill = Math.max(0, Math.min(1, rating - index));
+        return <span key={index}><i style={{ width: `${fill * 100}%` }}>★</i>★</span>;
+      })}
+    </div>
+    <b>{rating.toFixed(1)} / 5</b>
+  </div>;
+}
+
+function keyPoints(extracted: DreamExtracted) {
+  return [...extracted.symbols, ...extracted.actions, ...(extracted.ending ? [extracted.ending] : []), ...(extracted.emotion ? [extracted.emotion] : []), ...extracted.notableDetails]
+    .filter((item, index, items) => items.indexOf(item) === index)
+    .slice(0, 5);
+}
+
 export function DreamExperience() {
   const [phase, setPhase] = useState<Phase>("input");
   const [dream, setDream] = useState("");
@@ -108,18 +126,18 @@ export function DreamExperience() {
   </section>;
 
   if (phase === "result" && result) {
-    const symbols = [...result.extracted.symbols, ...result.extracted.actions].slice(0, 5);
+    const points = keyPoints(result.extracted);
     return <section className="dream-shell dream-result">
       <div className="dream-value-card">
-        <p>꿈팔이 판정 · {result.value.verdict}</p><span className="dream-tier">오늘의 몽상 등급 · {result.value.tier}</span><Money amount={result.value.amount} /><b>{result.value.label}</b><small>꿈값은 재미로 보는 가상 금액이에요.</small>
+        <p>오늘의 꿈값</p><Money amount={result.value.amount} /><StarRating rating={result.value.rating} /><span className="dream-tier">{result.value.tier}</span><b>{result.value.label}</b><small>꿈값은 재미로 보는 가상 금액이에요.</small>
       </div>
-      <section className="dream-detail"><p className="step">꿈 한 줄 요약</p><h1>{result.reading.summary}</h1></section>
-      {symbols.length > 0 && <section className="dream-detail"><p className="step">꿈에서 발견한 핵심 장면</p><div className="dream-tags">{symbols.map((item, index) => <span key={`${item}-${index}`}>{symbolEmoji(item)} {item}</span>)}</div></section>}
-      <section className="dream-detail"><p className="step">꿈값 산정 포인트</p><div className="dream-factors">{result.value.factors.map((factor) => <span key={factor}>✦ {factor}</span>)}</div></section>
-      {result.extracted.fortuneDomains.length > 0 && <section className="dream-detail"><p className="step">가장 강하게 연결되는 영역</p><div className="dream-domains">{result.extracted.fortuneDomains.map((domain, index) => <span key={domain}><i style={{ width: `${Math.max(42, 100 - index * 18)}%` }} /><b>{domain}</b></span>)}</div></section>}
-      <section className="dream-detail dream-why"><p className="step">왜 이 가격이에요?</p><p>{result.reading.valueExplanation}</p></section>
+      <section className="dream-detail dream-type"><p className="step">꿈 유형</p><h1>{result.reading.dreamType}</h1>{result.reading.typeExplanation && <p>{result.reading.typeExplanation}</p>}</section>
+      <section className="dream-one-liner"><p>한줄 꿈풀이</p><strong>{result.reading.oneLiner}</strong></section>
       <section className="dream-detail dream-interpretation"><p className="step">꿈풀이</p><p>{result.reading.interpretation}</p></section>
-      <section className="dream-one-liner"><p>한마디로</p><strong>{result.reading.oneLiner}</strong></section>
+      {points.length > 0 && <section className="dream-detail"><p className="step">꿈에서 중요한 포인트</p><div className="dream-tags">{points.map((item, index) => <span key={`${item}-${index}`}>{symbolEmoji(item)} {item}</span>)}</div></section>}
+      <section className="dream-detail dream-why"><p className="step">왜 이 꿈값이에요?</p><p>{result.reading.valueExplanation}</p><div className="dream-factors">{result.value.factors.map((factor) => <span key={factor}>✦ {factor}</span>)}</div></section>
+      <section className="dream-detail dream-suggestion"><p className="step">오늘은 이렇게</p><p>{result.reading.todaySuggestion}</p></section>
+      <section className="dream-detail dream-suggestion"><p className="step">앞으로는 이렇게</p><p>{result.reading.futureSuggestion}</p></section>
       <button type="button" className="restart" onClick={restart}>다른 꿈 감정하기</button>
     </section>;
   }

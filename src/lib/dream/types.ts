@@ -27,9 +27,13 @@ export const dreamAnalysisSchema = z.object({
 
 export const dreamReadingSchema = z.object({
   summary: z.string().min(10).max(150),
+  dreamType: z.string().min(2).max(42),
+  typeExplanation: z.string().min(10).max(180).nullable(),
   valueExplanation: z.string().min(30).max(330),
-  interpretation: z.string().min(50).max(560),
+  interpretation: z.string().min(120).max(700),
   oneLiner: z.string().min(7).max(90),
+  todaySuggestion: z.string().min(7).max(110),
+  futureSuggestion: z.string().min(7).max(110),
 });
 
 export type DreamExtracted = z.infer<typeof dreamExtractedSchema>;
@@ -37,4 +41,4 @@ export type DreamAnalysis = z.infer<typeof dreamAnalysisSchema>;
 export type DreamReading = z.infer<typeof dreamReadingSchema>;
 
 export type DreamTurn = { question: string; answer: string };
-export type DreamValue = { score: number; amount: number; verdict: string; tier: string; label: string; factors: string[] };
+export type DreamValue = { score: number; amount: number; rating: number; verdict: string; tier: string; label: string; factors: string[] };

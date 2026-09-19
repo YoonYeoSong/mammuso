@@ -74,9 +74,9 @@ class GroqAIProvider implements AIProvider {
   }
   async generateDreamReading(input: { dream: string; turns: DreamTurn[]; extracted: DreamExtracted; scoreFactors: string[]; amount: number; verdict: string }): Promise<DreamReading> {
     const turns = input.turns.length ? input.turns.map((turn, index) => `${index + 1}. 질문: ${turn.question}\n답변: ${turn.answer}`).join("\n") : "없음";
-    const prompt = `사용자가 말한 처음 꿈 이야기:\n${input.dream}\n\n추가 대화:\n${turns}\n\n구조화된 정보(이 범위 밖의 사실을 만들지 마세요):\n${JSON.stringify(input.extracted)}\n\n애플리케이션이 계산한 오락용 꿈값: ₩${input.amount.toLocaleString("ko-KR")}\n꿈팔이 판정: ${input.verdict}\n가격 근거: ${input.scoreFactors.join(", ")}\n\n판정이 '해몽 패스 꿈' 또는 '잠결 알고리즘 꿈'이면 의미를 억지로 부풀리지 말고, 뇌의 자동재생·내부 테스트처럼 가볍고 재치 있게 설명하세요. 사용자를 비난하거나 비꼬지는 마세요.\nSchema: {"summary":"","valueExplanation":"","interpretation":"","oneLiner":""}`;
+    const prompt = `사용자가 말한 처음 꿈 이야기:\n${input.dream}\n\n추가 대화:\n${turns}\n\n구조화된 정보(이 범위 밖의 사실을 만들지 마세요):\n${JSON.stringify(input.extracted)}\n\n애플리케이션이 계산한 오락용 꿈값: ₩${input.amount.toLocaleString("ko-KR")}\n꿈팔이 판정: ${input.verdict}\n가격 근거: ${input.scoreFactors.join(", ")}\n\n판정이 '해몽 패스 꿈' 또는 '잠결 알고리즘 꿈'이면 의미를 억지로 부풀리지 말고, 뇌의 자동재생·내부 테스트처럼 가볍고 재치 있게 설명하세요. 사용자를 비난하거나 비꼬지는 마세요.\nSchema: {"summary":"","dreamType":"","typeExplanation":null,"valueExplanation":"","interpretation":"","oneLiner":"","todaySuggestion":"","futureSuggestion":""}`;
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      const reading = await this.ask(`${prompt}${attempt ? "\n\n직전 문안은 미래 가능성·예측 표현 때문에 사용할 수 없습니다. '앞으로', '곧', '될 것', '가능성', '징조', '신호', '새로운 인연', '새로운 관계', '일상에 스며' 없이 현재 꿈 장면의 상징적 인상만 다시 쓰세요." : ""}`, dreamReadingSchema, dreamReadingSystemPrompt);
+      const reading = await this.ask(`${prompt}${attempt ? "\n\n직전 문안은 미래 예측 표현 때문에 사용할 수 없습니다. '태몽 가능성'이라는 꿈 유형 표기 외에 '앞으로', '곧', '될 것', '가능성', '징조', '신호', '새로운 인연', '새로운 관계', '일상에 스며' 없이 현재 꿈 장면의 상징적 인상과 가벼운 현재 제안만 다시 쓰세요." : ""}`, dreamReadingSchema, dreamReadingSystemPrompt);
       if (!containsDreamPrediction(reading)) return reading;
     }
     throw new Error("AI_UNSAFE_RESPONSE");
@@ -127,7 +127,8 @@ function assertKoreanOutput(value: unknown): void {
 }
 
 function containsDreamPrediction(reading: DreamReading): boolean {
-  return /앞으로|곧|될 것|일어날|다가올|가능성|당첨|수익|징조|신호|예고|새로운 인연|새로운 관계|일상에 스며|현실에.*(들어오|찾아오)/.test(`${reading.summary} ${reading.valueExplanation} ${reading.interpretation} ${reading.oneLiner}`);
+  const text = `${reading.summary} ${reading.valueExplanation} ${reading.interpretation} ${reading.oneLiner} ${reading.todaySuggestion} ${reading.futureSuggestion}`;
+  return /앞으로|곧|될 것|일어날|다가올|당첨|수익|징조|신호|예고|새로운 인연|새로운 관계|일상에 스며|현실에.*(들어오|찾아오)/.test(text) || /(?<!태몽 )가능성/.test(`${reading.dreamType} ${reading.typeExplanation ?? ""} ${text}`);
 }
 
 export function getAIProvider(): AIProvider { return new GroqAIProvider(); }
