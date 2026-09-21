@@ -51,7 +51,7 @@ function CardFace({ card, revealed, label }: { card: TarotCard; revealed: boolea
         <div className="tarot-artwork-viewport" style={viewportStyle} aria-hidden="true"><img className="tarot-card-art" src={tarotArtworkPath(card)} alt="" /></div>
         <img className="tarot-card-frame" src={tarotAssets.frontFrame} alt="" aria-hidden="true" />
         <span className="tarot-card-number">{romanNumerals[card.number]}</span>
-        <span className="tarot-card-name">{card.englishName.toUpperCase()}</span>
+        <span className="tarot-card-name">{card.name}</span>
       </div>
     </div>
     {label && <span className="tarot-card-label">{label}</span>}
