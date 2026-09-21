@@ -285,7 +285,7 @@ export function TarotExperience() {
       {[0, 1, 2].map((index) => {
         const selectedId = selectedSlots[index];
         const card = selectedId ? deck.find((deckCard) => deckCard.id === selectedId) : undefined;
-        return card ? <button key={card.id} type="button" className={`draw-slot selected ${returningId === card.id ? "is-returning" : ""}`} onClick={() => removeSelectedCard(card.id)} aria-label={`${index + 1}번째 뽑은 카드, 다시 고르기`}><CardFace card={card} revealed={false} /><span>{index + 1} · 다시 고르기</span></button> : <div className="draw-slot empty" key={index}><b>{index + 1}</b><small>비어 있음</small></div>;
+        return card ? <button key={card.id} type="button" className={`draw-slot selected ${returningId === card.id ? "is-returning" : ""}`} onClick={() => removeSelectedCard(card.id)} aria-label={`${index + 1}번째 뽑은 카드, 다시 고르기`}><CardFace card={card} revealed /><span>{index + 1} · 다시 고르기</span></button> : <div className="draw-slot empty" key={index}><b>{index + 1}</b><small>비어 있음</small></div>;
       })}
     </div>
     {viewMode === "fan" ? <div className="fan-wrap" aria-label="22장 타로 카드">
@@ -295,13 +295,13 @@ export function TarotExperience() {
           const selectIndex = selectedSlots.indexOf(card.id);
           const degree = (index - (deck.length - 1) / 2) * 4.05;
           const shift = Math.abs(index - (deck.length - 1) / 2) * 1.25;
-          return <button key={card.id} type="button" className={`fan-card ${selectIndex >= 0 ? "is-picked" : ""}`} style={{ "--i": index, "--r": `${degree}deg`, "--y": `${shift}px` } as React.CSSProperties} onClick={() => chooseFanCard(card.id)} disabled={selectIndex >= 0} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? `, ${selectIndex + 1}번 선택됨` : ""}`}><CardFace card={card} revealed={false} /></button>;
+          return <button key={card.id} type="button" className={`fan-card ${selectIndex >= 0 ? "is-picked" : ""}`} style={{ "--i": index, "--r": `${degree}deg`, "--y": `${shift}px` } as React.CSSProperties} onClick={() => chooseFanCard(card.id)} disabled={selectIndex >= 0} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? `, ${selectIndex + 1}번 선택됨` : ""}`}><CardFace card={card} revealed /></button>;
         })}
       </div>
     </div> : <div className="deck-grid" aria-label="22장 타로 카드">
       {deck.map((card, index) => {
         const selectIndex = selectedSlots.indexOf(card.id);
-        return <button key={card.id} type="button" className={`deck-grid-card ${selectIndex >= 0 ? "is-picked" : ""}`} onClick={() => addCardToOpenSlot(card.id)} disabled={selectIndex >= 0} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? `, ${selectIndex + 1}번 선택됨` : ""}`}><CardFace card={card} revealed={false} />{selectIndex >= 0 && <span className="selection-index" aria-hidden="true">{selectIndex + 1}</span>}</button>;
+        return <button key={card.id} type="button" className={`deck-grid-card ${selectIndex >= 0 ? "is-picked" : ""}`} onClick={() => addCardToOpenSlot(card.id)} disabled={selectIndex >= 0} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? `, ${selectIndex + 1}번 선택됨` : ""}`}><CardFace card={card} revealed />{selectIndex >= 0 && <span className="selection-index" aria-hidden="true">{selectIndex + 1}</span>}</button>;
       })}
     </div>}
     <div className="selection-bar"><span>{selectedIds.length === 3 ? "마음이 정해졌다면" : "카드를 고르는 중"}</span><button className="primary-action" onClick={() => setIsSelectionConfirmOpen(true)} disabled={selectedIds.length !== 3}>이 카드로 볼게 <span>→</span></button></div>
