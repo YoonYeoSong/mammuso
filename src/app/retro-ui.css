@@ -125,9 +125,8 @@ body > main {
 
 .today-tarot::before {
   position: absolute;
-  inset: 37px 13px 31px;
-  border: 2px solid var(--clay-ink);
-  border-radius: 7px;
+  inset: 0;
+  border-radius: inherit;
   background: url('/pixel-clay/major-arcana/star.png') center / cover;
   content: "";
 }
@@ -136,6 +135,12 @@ body > main {
 .today-tarot b {
   position: relative;
   z-index: 1;
+  width: fit-content;
+  margin-inline: auto;
+  border-radius: 999px;
+  padding: 3px 5px;
+  background: color-mix(in srgb, var(--clay-paper) 90%, transparent);
+  box-shadow: 1px 1px 0 var(--clay-shadow);
   font-size: 10px;
   font-weight: 1000;
   text-align: center;
@@ -391,15 +396,17 @@ body > main {
   }
 
   .today-tarot::before {
-    inset: 31px 9px 26px;
+    inset: 0;
   }
 
   .today-tarot span {
     font-size: 8px;
+    padding: 2px 4px;
   }
 
   .today-tarot b {
     font-size: 7px;
+    padding: 2px 4px;
   }
 
   .today-tarot i {

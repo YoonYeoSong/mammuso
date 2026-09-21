@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAIProvider } from "@/lib/ai/provider";
+import { createFallbackDreamAnalysis } from "@/lib/dream/fallback";
 import { apiError } from "@/lib/http";
 
 const inputSchema = z.object({
@@ -9,11 +10,18 @@ const inputSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  let input: z.infer<typeof inputSchema>;
   try {
-    const input = inputSchema.parse(await request.json());
+    input = inputSchema.parse(await request.json());
+  } catch (error) {
+    return apiError(error);
+  }
+
+  try {
     const analysis = await getAIProvider().analyzeDream({ ...input, followupCount: input.turns.length });
     return NextResponse.json({ analysis });
   } catch (error) {
-    return apiError(error);
+    console.error("Dream analysis AI failed; returning a local fallback.", error);
+    return NextResponse.json({ analysis: createFallbackDreamAnalysis(input), fallback: true });
   }
 }

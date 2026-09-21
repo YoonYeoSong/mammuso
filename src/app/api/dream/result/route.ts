@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAIProvider } from "@/lib/ai/provider";
 import { dreamExtractedSchema } from "@/lib/dream/types";
 import { calculateDreamValue } from "@/lib/dream/scoring";
+import { createFallbackDreamReading } from "@/lib/dream/fallback";
 import { apiError } from "@/lib/http";
 
 const inputSchema = z.object({
@@ -12,12 +13,19 @@ const inputSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  let input: z.infer<typeof inputSchema>;
   try {
-    const input = inputSchema.parse(await request.json());
-    const value = calculateDreamValue(input.extracted);
+    input = inputSchema.parse(await request.json());
+  } catch (error) {
+    return apiError(error);
+  }
+
+  const value = calculateDreamValue(input.extracted);
+  try {
     const reading = await getAIProvider().generateDreamReading({ ...input, scoreFactors: value.factors, amount: value.amount, verdict: value.verdict });
     return NextResponse.json({ reading, value });
   } catch (error) {
-    return apiError(error);
+    console.error("Dream reading AI failed; returning a local fallback.", error);
+    return NextResponse.json({ reading: createFallbackDreamReading({ ...input, verdict: value.verdict }), value, fallback: true });
   }
 }
