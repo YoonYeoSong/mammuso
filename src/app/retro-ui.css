@@ -1,0 +1,448 @@
+/* Pixel Clay game UI layer: shared controls and the home menu hub. */
+:root {
+  --clay-cream: #fff9ed;
+  --clay-paper: #fffdf7;
+  --clay-pink: #ffb6ca;
+  --clay-yellow: #ffe39a;
+  --clay-mint: #bde6bd;
+  --clay-blue: #bfe5fa;
+  --clay-lavender: #ddd0f7;
+  --clay-ink: #6c4d42;
+  --clay-shadow: #6a4b3f;
+}
+
+body {
+  background-color: var(--clay-cream);
+}
+
+body::before {
+  background-image: radial-gradient(circle at 1px 1px, rgba(212, 151, 139, .15) 1px, transparent 1.5px);
+  background-size: 15px 15px;
+  opacity: .34;
+}
+
+.home-page,
+.tarot-page,
+.dream-page,
+body > main {
+  max-width: 760px;
+}
+
+.new-header,
+.tarot-header {
+  min-height: 82px;
+}
+
+.header-pixel-logo,
+.new-brand {
+  position: relative;
+  color: var(--clay-ink);
+  font-size: 31px !important;
+  letter-spacing: -.14em !important;
+  text-shadow: 3px 3px 0 var(--clay-yellow), 4px 4px 0 var(--clay-shadow);
+}
+
+.new-header.home-header > span:last-child {
+  border: 2px solid var(--clay-ink);
+  padding: 7px 10px;
+  background: var(--clay-paper);
+  box-shadow: 2px 2px 0 rgba(108, 77, 66, .45);
+  color: var(--clay-ink);
+}
+
+.new-hero.home-world {
+  min-height: 390px;
+  border-width: 3px;
+  border-radius: 29px;
+  padding: 31px 30px;
+  background-color: #f7d8d0;
+  background-image: linear-gradient(90deg, rgba(255, 249, 237, .97) 0%, rgba(255, 249, 237, .86) 35%, rgba(255, 249, 237, .13) 73%), url('/pixel-clay/mammuso-sunset-kiosk.png');
+  background-position: center, 76% center;
+  background-size: auto, cover;
+  box-shadow: 6px 6px 0 var(--clay-shadow);
+}
+
+.new-hero.home-world::after {
+  width: 182px;
+  height: 78px;
+  border-width: 3px;
+  background: var(--clay-mint);
+  box-shadow: -8px -7px 0 #e0f6dd, 0 6px 0 var(--clay-shadow);
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 430px);
+}
+
+.new-hero .hero-copy > p {
+  border-width: 2px;
+  border-radius: 10px;
+  padding: 7px 10px;
+  box-shadow: 3px 3px 0 var(--clay-shadow);
+  font-size: 11px;
+}
+
+.new-hero .hero-copy h1 {
+  font-size: clamp(38px, 6.5vw, 52px);
+  text-shadow: 3px 3px 0 rgba(255, 255, 255, .9), 4px 4px 0 rgba(108, 77, 66, .13);
+}
+
+.hero-speech {
+  display: inline-block;
+  margin-top: 18px;
+  border: 2px solid var(--clay-ink);
+  border-radius: 12px;
+  padding: 8px 11px;
+  background: var(--clay-paper);
+  box-shadow: 3px 3px 0 var(--clay-shadow);
+  color: var(--clay-ink);
+  font-size: 13px;
+  font-weight: 1000;
+  transform: rotate(-2deg);
+}
+
+.today-tarot {
+  position: absolute;
+  z-index: 2;
+  right: 25px;
+  top: 33px;
+  display: grid;
+  width: 108px;
+  min-height: 144px;
+  align-content: space-between;
+  overflow: hidden;
+  border: 3px solid var(--clay-ink);
+  border-radius: 15px;
+  padding: 11px;
+  background: var(--clay-paper);
+  box-shadow: 4px 4px 0 var(--clay-shadow);
+  color: var(--clay-ink);
+  text-decoration: none;
+  transform: rotate(2deg);
+}
+
+.today-tarot::before {
+  position: absolute;
+  inset: 37px 13px 31px;
+  border: 2px solid var(--clay-ink);
+  border-radius: 7px;
+  background: url('/tarot/major-arcana/star.webp') center / cover;
+  content: "";
+}
+
+.today-tarot span,
+.today-tarot b {
+  position: relative;
+  z-index: 1;
+  font-size: 10px;
+  font-weight: 1000;
+  text-align: center;
+}
+
+.today-tarot b {
+  font-size: 9px;
+}
+
+.today-tarot i {
+  position: absolute;
+  right: 8px;
+  top: 40px;
+  z-index: 2;
+  color: var(--clay-yellow);
+  font-size: 19px;
+  font-style: normal;
+  text-shadow: 1px 1px 0 var(--clay-ink);
+}
+
+.content-list {
+  padding-top: 43px;
+}
+
+.section-heading {
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-heading h2 {
+  font-size: clamp(29px, 5.5vw, 40px);
+}
+
+.home-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.menu-tile {
+  position: relative;
+  display: grid;
+  min-height: 176px;
+  align-content: center;
+  justify-items: center;
+  gap: 7px;
+  overflow: hidden;
+  border: 3px solid var(--clay-ink);
+  border-radius: 20px;
+  padding: 17px 12px;
+  background: var(--clay-paper);
+  box-shadow: 4px 5px 0 var(--clay-shadow);
+  color: var(--clay-ink);
+  cursor: pointer;
+  text-align: center;
+  transition: transform .14s ease, box-shadow .14s ease;
+}
+
+.menu-tile::before {
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(108, 77, 66, .18);
+  border-radius: 14px;
+  content: "";
+  pointer-events: none;
+}
+
+.menu-tile:hover {
+  transform: translateY(-3px) rotate(-.6deg);
+}
+
+.menu-tile:active {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 2px 0 var(--clay-shadow);
+}
+
+.menu-tile > .feature-art {
+  position: relative;
+  z-index: 1;
+  width: 75px;
+  height: 75px;
+}
+
+.menu-tile > span:last-child {
+  position: relative;
+  z-index: 1;
+}
+
+.menu-tile b,
+.menu-tile small {
+  display: block;
+}
+
+.menu-tile b {
+  font-size: 18px;
+  font-weight: 1000;
+  letter-spacing: -.07em;
+}
+
+.menu-tile small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.menu-tile-dream {
+  background: #e6f4ff;
+}
+
+.menu-tile-tarot {
+  background: #f0e9ff;
+}
+
+.menu-tile:nth-child(3) {
+  background: #e8f7de;
+}
+
+.menu-tile:nth-child(4) {
+  background: #ffe7ed;
+}
+
+.coming-notice {
+  border: 2px solid var(--clay-ink);
+  border-radius: 13px;
+  box-shadow: 3px 3px 0 var(--clay-shadow);
+}
+
+/* Buttons, choices, messages and result cards share the same tactile treatment. */
+.primary-action,
+.button.full,
+.dream-send,
+.chat-send,
+.confirm-action,
+.loading-retry {
+  min-height: 56px;
+  border-width: 3px;
+  border-radius: 16px;
+  background: var(--clay-pink);
+  box-shadow: 4px 5px 0 var(--clay-shadow);
+  color: var(--clay-ink);
+}
+
+.primary-action:hover,
+.button.full:hover,
+.dream-send:hover,
+.chat-send:hover,
+.confirm-action:hover,
+.loading-retry:hover {
+  filter: brightness(1.025);
+  transform: translateY(-2px);
+}
+
+.category-grid button,
+.draw-test-switch button,
+.dream-options button,
+.chat-options button,
+.secondary-action {
+  border-width: 2px;
+  box-shadow: 3px 3px 0 var(--clay-shadow);
+}
+
+.category-grid button.available,
+.dream-options button,
+.chat-options button {
+  background: var(--clay-mint);
+}
+
+.category-grid button.is-selected,
+.draw-test-switch button.active {
+  background: var(--clay-pink);
+}
+
+.dream-message,
+.chat-message,
+.reading-card,
+.dream-interpretation,
+.dream-why,
+.dream-suggestion,
+.paper,
+.role-guide,
+.case-banner,
+.result-card {
+  border-width: 2px;
+  box-shadow: 3px 4px 0 #d7bdab;
+}
+
+.dream-message.bot,
+.chat-message.bot,
+.paper,
+.role-guide {
+  background: var(--clay-paper);
+}
+
+.dream-message.user,
+.chat-message.user {
+  background: var(--clay-blue);
+}
+
+.dream-value-card,
+.takeaway,
+.dream-one-liner {
+  border-width: 3px;
+  box-shadow: 5px 5px 0 var(--clay-shadow);
+}
+
+.new-footer {
+  border-top-width: 2px;
+}
+
+@media (max-width: 560px) {
+  .new-header,
+  .tarot-header {
+    min-height: 72px;
+  }
+
+  .header-pixel-logo,
+  .new-brand {
+    font-size: 28px !important;
+  }
+
+  .new-header.home-header > span:last-child {
+    max-width: 150px;
+    font-size: 9px;
+    text-align: center;
+  }
+
+  .new-hero.home-world {
+    min-height: 353px;
+    padding: 27px 20px;
+    background-position: center, 86% center;
+  }
+
+  .new-hero .hero-copy h1 {
+    max-width: 245px;
+    font-size: 33px;
+  }
+
+  .hero-speech {
+    margin-top: 14px;
+    font-size: 11px;
+  }
+
+  .today-tarot {
+    right: 16px;
+    top: 19px;
+    width: 83px;
+    min-height: 119px;
+    border-width: 2px;
+    padding: 8px;
+    box-shadow: 3px 3px 0 var(--clay-shadow);
+  }
+
+  .today-tarot::before {
+    inset: 31px 9px 26px;
+  }
+
+  .today-tarot span {
+    font-size: 8px;
+  }
+
+  .today-tarot b {
+    font-size: 7px;
+  }
+
+  .today-tarot i {
+    right: 4px;
+    top: 33px;
+    font-size: 14px;
+  }
+
+  .content-list {
+    padding-top: 37px;
+  }
+
+  .home-menu-grid {
+    gap: 10px;
+  }
+
+  .menu-tile {
+    min-height: 155px;
+    border-width: 2px;
+    border-radius: 17px;
+    padding: 13px 8px;
+    box-shadow: 3px 4px 0 var(--clay-shadow);
+  }
+
+  .menu-tile > .feature-art {
+    width: 63px;
+    height: 63px;
+  }
+
+  .menu-tile b {
+    font-size: 16px;
+  }
+
+  .menu-tile small {
+    font-size: 9px;
+  }
+
+  .primary-action,
+  .button.full,
+  .dream-send,
+  .chat-send,
+  .confirm-action,
+  .loading-retry {
+    min-height: 53px;
+  }
+}
