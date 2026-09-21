@@ -22,8 +22,11 @@ function shuffle<T>(items: T[]) {
 }
 
 function CardFace({ card, revealed, label }: { card: TarotCard; revealed: boolean; label?: string }) {
+  const atlasColumn = card.number % 5;
+  const atlasRow = Math.floor(card.number / 5);
   const atlasStyle = {
-    "--card-art": `url("/tarot/major-arcana/${card.id}.webp")`,
+    "--atlas-x": `${atlasColumn * 25}%`,
+    "--atlas-y": `${atlasRow * 25}%`,
   } as React.CSSProperties;
 
   return <div className={`tarot-card ${revealed ? "is-revealed" : ""}`}>
