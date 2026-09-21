@@ -128,7 +128,7 @@ body > main {
   inset: 37px 13px 31px;
   border: 2px solid var(--clay-ink);
   border-radius: 7px;
-  background: url('/tarot/major-arcana/star.webp') center / cover;
+  background: url('/pixel-clay/major-arcana/star.png') center / cover;
   content: "";
 }
 
