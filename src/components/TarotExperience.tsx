@@ -22,11 +22,8 @@ function shuffle<T>(items: T[]) {
 }
 
 function CardFace({ card, revealed, label }: { card: TarotCard; revealed: boolean; label?: string }) {
-  const atlasColumn = card.number % 5;
-  const atlasRow = Math.floor(card.number / 5);
   const atlasStyle = {
-    "--atlas-x": `${(atlasColumn / 4) * 100}%`,
-    "--atlas-y": `${(atlasRow / 4) * 100}%`,
+    "--card-art": `url("/tarot/major-arcana/${card.id}.webp")`,
   } as React.CSSProperties;
 
   return <div className={`tarot-card ${revealed ? "is-revealed" : ""}`}>
@@ -253,7 +250,7 @@ export function TarotExperience() {
       </div>}
       {loveSituation && <>
         <div className="chat-message user chat-enter"><p>{loveSituation}</p></div>
-        {showLoveQuestionPrompt && !isLoveQuestionSent && <div className="chat-enter"><div className="chat-message bot"><span>타로킹</span><p>좋아. 마지막으로 무엇이 궁금한지 편하게 적어줘.</p></div><label className="chat-question"><span>짧게 적어도 괜찮아.</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="예: 썸 타는 사람이 있는데, 먼저 연락해도 될지 궁금해." maxLength={280} /></label><button className="chat-send" type="button" onClick={sendLoveQuestion} disabled={question.trim().length < 2}>보내기 <span>↑</span></button></div>}
+        {showLoveQuestionPrompt && !isLoveQuestionSent && <div className="chat-enter"><div className="chat-message bot"><span>타로킹</span><p>좋아. 마지막으로 무엇이 궁금한지 편하게 적어줘.\n짧게 적어도 괜찮아.</p></div><label className="chat-question"><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="예: 썸 타는 사람이 있는데, 먼저 연락해도 될지 궁금해." maxLength={280} /></label><button className="chat-send" type="button" onClick={sendLoveQuestion} disabled={question.trim().length < 2}>보내기 <span>↑</span></button></div>}
         {isLoveQuestionSent && <><div className="chat-message user chat-enter"><p>{question.trim()}</p></div><div className="chat-message bot final chat-enter"><span>타로킹</span><p>알겠어. 그 마음을 생각하면서 카드를 섞어볼게.</p></div></>}
       </>}
     </div>
@@ -273,7 +270,7 @@ export function TarotExperience() {
       </div>}
       {moneyFocus && <>
         <div className="chat-message user chat-enter"><p>{moneyFocus}</p></div>
-        {showMoneyQuestionPrompt && !isMoneyQuestionSent && <div className="chat-enter"><div className="chat-message bot"><span>타로킹</span><p>좋아. 마지막으로 무엇이 궁금한지 편하게 적어줘.</p></div><label className="chat-question"><span>짧게 적어도 괜찮아.</span><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="예: 올해 전반적인 재물운이 궁금해." maxLength={280} /></label><button className="chat-send" type="button" onClick={sendMoneyQuestion} disabled={question.trim().length < 2}>보내기 <span>↑</span></button></div>}
+        {showMoneyQuestionPrompt && !isMoneyQuestionSent && <div className="chat-enter"><div className="chat-message bot"><span>타로킹</span><p>좋아. 마지막으로 무엇이 궁금한지 편하게 적어줘.\n짧게 적어도 괜찮아.</p></div><label className="chat-question"><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="예: 올해 전반적인 재물운이 궁금해." maxLength={280} /></label><button className="chat-send" type="button" onClick={sendMoneyQuestion} disabled={question.trim().length < 2}>보내기 <span>↑</span></button></div>}
         {isMoneyQuestionSent && <><div className="chat-message user chat-enter"><p>{question.trim()}</p></div><div className="chat-message bot final chat-enter"><span>타로킹</span><p>알겠어. 그 흐름을 생각하면서 카드를 섞어볼게.</p></div></>}
       </>}
     </div>
