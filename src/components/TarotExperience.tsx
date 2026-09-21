@@ -21,19 +21,29 @@ function shuffle<T>(items: T[]) {
   return shuffled;
 }
 
+function shuffleForNewReading(previousDeck: TarotCard[]) {
+  const nextDeck = shuffle(majorArcana);
+
+  // A random shuffle can legitimately leave the top card unchanged. Avoid that
+  // visually confusing repeat between readings while keeping every card unique.
+  if (previousDeck[0] && nextDeck[0]?.id === previousDeck[0].id) {
+    const replacementIndex = 1 + Math.floor(Math.random() * (nextDeck.length - 1));
+    [nextDeck[0], nextDeck[replacementIndex]] = [nextDeck[replacementIndex], nextDeck[0]];
+  }
+
+  return nextDeck;
+}
+
 function CardFace({ card, revealed, label }: { card: TarotCard; revealed: boolean; label?: string }) {
-  const atlasColumn = card.number % 5;
-  const atlasRow = Math.floor(card.number / 5);
-  const atlasStyle = {
-    "--atlas-x": `${atlasColumn * 25}%`,
-    "--atlas-y": `${atlasRow * 25}%`,
+  const artStyle = {
+    "--card-art": `url("/pixel-clay/major-arcana/${card.id}.png")`,
   } as React.CSSProperties;
 
   return <div className={`tarot-card ${revealed ? "is-revealed" : ""}`}>
     <div className="tarot-card-inner">
       <div className="tarot-card-back" aria-hidden={revealed} />
       <div className="tarot-card-front" aria-hidden={!revealed}>
-        <span className="tarot-card-art" style={atlasStyle} aria-hidden="true" />
+        <span className="tarot-card-art" style={artStyle} aria-hidden="true" />
         <span className="tarot-card-number">{String(card.number).padStart(2, "0")}</span>
         <span className="tarot-card-name">{card.name}</span>
         <span className="tarot-card-tone">{card.tone}</span>
@@ -48,7 +58,7 @@ export function TarotExperience() {
   const [category, setCategory] = useState<TarotCategory>("연애");
   const [chosenCategory, setChosenCategory] = useState<TarotCategory | null>(null);
   const [question, setQuestion] = useState("");
-  const [deck, setDeck] = useState<TarotCard[]>(majorArcana);
+  const [deck, setDeck] = useState<TarotCard[]>(() => shuffle(majorArcana));
   const [selectedSlots, setSelectedSlots] = useState<Array<string | null>>([null, null, null]);
   const [viewMode, setViewMode] = useState<ViewMode>("fan");
   const [isSelectionConfirmOpen, setIsSelectionConfirmOpen] = useState(false);
@@ -106,7 +116,7 @@ export function TarotExperience() {
   }, [phase, moneyFocus, isMoneyQuestionSent]);
 
   function startShuffle() {
-    setDeck(shuffle(majorArcana));
+    setDeck((currentDeck) => shuffleForNewReading(currentDeck));
     setSelectedSlots([null, null, null]);
     setIsSelectionConfirmOpen(false);
     setReplacementCandidateId(null);
