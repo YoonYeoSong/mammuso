@@ -4,8 +4,25 @@
 /* Keep the short chat conversational: each thought gets its own airy clay bubble. */
 .chat-question-turn{display:grid;gap:15px}.chat-prompt-stack{display:grid;justify-items:start;gap:11px}.chat-prompt-stack .chat-message{margin:0}.chat-note{width:fit-content;margin:0 0 2px 4px;color:var(--muted);font-size:12px;font-weight:800;line-height:1.45}.chat-question-turn .chat-question{margin-top:1px}.chat-question-turn .chat-send{margin-top:10px}.replacement-confirm h2{max-width:11em}.replacement-slot{gap:2px}.replacement-slot span{color:var(--muted)}
 
-/* Standalone card crops fill their slots without exposing neighboring art. */
-.tarot-card-front>.tarot-card-art{background-image:var(--card-art);background-size:cover;background-position:center}
+/* Tarot cards are a shared flat card system: one frame, one back, 22 artworks. */
+.tarot-card{container-type:inline-size;perspective:700px}
+.tarot-card-inner{transform-style:preserve-3d}
+.tarot-card-back,.tarot-card-front{display:block;overflow:hidden;border:0;border-radius:0;padding:0;box-shadow:none;background:none;backface-visibility:hidden}
+.tarot-card-back{background:url('/tarot/back/tarot-card-back.png') center/100% 100% no-repeat}
+.tarot-card-front{color:#6f4d38;transform:rotateY(180deg)}
+.tarot-card-back::before,.tarot-card-front::after{content:none}
+.tarot-artwork-viewport{position:absolute;z-index:1;left:var(--artwork-left);top:var(--artwork-top);width:var(--artwork-width);height:var(--artwork-height);overflow:hidden}
+.tarot-card-art{display:block;width:100%;height:100%;object-fit:contain;object-position:center}
+.tarot-card-frame{position:absolute;z-index:2;inset:0;width:100%;height:100%;pointer-events:none}
+.tarot-card-front>.tarot-card-number,.tarot-card-front>.tarot-card-name{position:absolute;z-index:3;bottom:7.1%;color:#6f4d38;font-family:Georgia,'Times New Roman',serif;font-weight:800;line-height:1;text-shadow:none;white-space:nowrap}
+.tarot-card-number{left:14%;font-size:max(5px,8cqw);letter-spacing:.02em}
+.tarot-card-name{right:12%;width:61%;overflow:hidden;font-size:max(4px,6.7cqw);letter-spacing:-.08em;text-align:center;text-overflow:ellipsis}
+.tarot-card-tone{display:none!important}
+.fan-card{width:76px;height:114px}
+.deck-grid-card{aspect-ratio:2/3}
+.draw-slot.selected .tarot-card{width:54px;height:81px}
+.reveal-card{height:auto;aspect-ratio:2/3}
+.shuffle-deck span,.reading-loader span{border:0;border-radius:0;background:url('/tarot/back/tarot-card-back.png') center/100% 100% no-repeat;box-shadow:none}
 
 /* Result cards reserve real space for captions and constrain every text block. */
 .result-screen h1{max-width:100%;font-size:clamp(29px,8.5vw,46px);line-height:1.14;overflow-wrap:anywhere;word-break:keep-all}.reading-card{grid-template-columns:82px minmax(0,1fr);align-items:start;gap:13px}.reading-card .tarot-card{height:131px}.reading-card .tarot-card-inner{height:111px}.reading-card .tarot-card-label{top:116px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.reading-card>div{min-width:0}.reading-card p{max-width:100%;overflow-wrap:anywhere;word-break:keep-all}.tarot-card-name,.tarot-card-tone{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.takeaway{overflow:hidden}.takeaway h2,.takeaway b{max-width:100%;overflow-wrap:anywhere;word-break:keep-all}.takeaway h2{font-size:clamp(22px,6.5vw,31px);line-height:1.32}.takeaway b{line-height:1.55}

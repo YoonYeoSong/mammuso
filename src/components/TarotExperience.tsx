@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { TarotReading } from "@/lib/ai/provider";
+import { tarotArtworkPath, tarotAssets } from "@/lib/tarot/assets";
 import { majorArcana, tarotCategories, type TarotCard, type TarotCategory } from "@/lib/tarot/cards";
 
 type Phase = "question" | "love-chat" | "money-chat" | "shuffling" | "picking" | "confirming" | "revealing" | "loading" | "reading";
@@ -9,6 +10,7 @@ type ViewMode = "fan" | "grid";
 type LoveSituation = "솔로" | "연애 중" | "기혼";
 type MoneyFocus = "전반적인 재물운" | "월급·이직" | "사업·부업" | "소비·지출" | "투자";
 const positions = ["지금의 마음", "나를 스치는 것", "다가오는 흐름"];
+const romanNumerals = ["0", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX", "XXI"];
 const loveSituations: LoveSituation[] = ["솔로", "연애 중", "기혼"];
 const moneyFocuses: MoneyFocus[] = ["전반적인 재물운", "월급·이직", "사업·부업", "소비·지출", "투자"];
 
@@ -35,18 +37,21 @@ function shuffleForNewReading(previousDeck: TarotCard[]) {
 }
 
 function CardFace({ card, revealed, label }: { card: TarotCard; revealed: boolean; label?: string }) {
-  const artStyle = {
-    "--card-art": `url("/pixel-clay/major-arcana/${card.id}.png")`,
+  const viewportStyle = {
+    "--artwork-left": tarotAssets.artworkViewport.left,
+    "--artwork-top": tarotAssets.artworkViewport.top,
+    "--artwork-width": tarotAssets.artworkViewport.width,
+    "--artwork-height": tarotAssets.artworkViewport.height,
   } as React.CSSProperties;
 
   return <div className={`tarot-card ${revealed ? "is-revealed" : ""}`}>
     <div className="tarot-card-inner">
       <div className="tarot-card-back" aria-hidden={revealed} />
       <div className="tarot-card-front" aria-hidden={!revealed}>
-        <span className="tarot-card-art" style={artStyle} aria-hidden="true" />
-        <span className="tarot-card-number">{String(card.number).padStart(2, "0")}</span>
-        <span className="tarot-card-name">{card.name}</span>
-        <span className="tarot-card-tone">{card.tone}</span>
+        <div className="tarot-artwork-viewport" style={viewportStyle} aria-hidden="true"><img className="tarot-card-art" src={tarotArtworkPath(card)} alt="" /></div>
+        <img className="tarot-card-frame" src={tarotAssets.frontFrame} alt="" aria-hidden="true" />
+        <span className="tarot-card-number">{romanNumerals[card.number]}</span>
+        <span className="tarot-card-name">{card.englishName.toUpperCase()}</span>
       </div>
     </div>
     {label && <span className="tarot-card-label">{label}</span>}

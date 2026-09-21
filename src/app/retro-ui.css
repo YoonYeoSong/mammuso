@@ -127,7 +127,7 @@ body > main {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: url('/pixel-clay/major-arcana/star.png') center / cover;
+  background: url('/tarot/arcana/17-star.png') center / contain no-repeat;
   content: "";
 }
 
