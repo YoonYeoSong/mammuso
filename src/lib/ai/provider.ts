@@ -36,8 +36,8 @@ class GroqAIProvider implements AIProvider {
   private key = process.env.GROQ_API_KEY;
   private model = process.env.GROQ_MODEL || "openai/gpt-oss-20b";
   constructor() { if (!this.key) throw new Error("AI_NOT_CONFIGURED"); }
-  private async ask<T>(prompt: string, schema: z.ZodType<T>, systemInstruction?: string): Promise<T> {
-    for (let attempt = 0; attempt < 3; attempt += 1) {
+  private async ask<T>(prompt: string, schema: z.ZodType<T>, systemInstruction?: string, attempts = 3): Promise<T> {
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
       try {
         const languageCorrection = attempt > 0 ? "\n이전 응답에 영어가 포함되어 거절되었습니다. JSON 키를 제외한 모든 값은 반드시 자연스러운 한국어 완성 문장으로 다시 작성하세요." : "";
         const system = systemInstruction ?? "당신은 맘무소 관계분쟁조정과의 한국어 전담 판결문 작성자입니다. 반드시 한국어로만 답하세요. JSON의 키 이름은 요청한 스키마를 따르되, JSON 값으로 들어가는 모든 문장·질문·목록 항목은 자연스러운 한국어로만 작성해야 합니다. 제공되지 않은 사실은 만들지 마세요. 흔한 관계 조언, 같은 문장 반복, '서로 대화하세요', '상황을 정리하세요' 같은 뻔한 문구는 금지입니다. 주어진 진술에 실제로 나온 행동·말·순서 중 최소 두 가지를 근거로 문장을 다르게 작성하세요.";
@@ -50,7 +50,7 @@ class GroqAIProvider implements AIProvider {
         assertKoreanOutput(parsed);
         return parsed;
       } catch (error) {
-        if (attempt === 2) throw error;
+        if (attempt === attempts - 1) throw error;
         await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
       }
     }
@@ -63,7 +63,7 @@ class GroqAIProvider implements AIProvider {
   generateTarotReading(input: { category: TarotCategory; question: string; cards: TarotCard[] }) {
     const question = input.question || `${input.category}에 관한 지금의 흐름`;
     const cardInfo = input.cards.map((card, index) => `${index + 1}번째 ${card.name} (${card.keywords.join(", ")})`).join(" / ");
-    return this.ask(`사용자의 질문: ${question}\n카테고리: ${input.category}\n뽑은 카드: ${cardInfo}\n\n카드 순서대로 cardReadings를 작성하세요. 점괘를 사실·예언처럼 단정하거나 불안·의존을 부추기지 마세요. 카드는 생각을 정리하는 가벼운 계기로 다루고, 친한 친구처럼 구체적이되 과장하지 마세요. opening은 세 카드가 함께 비추는 현재 흐름, takeaway는 질문에 대한 균형 잡힌 한 문단, tinyAction은 오늘 할 수 있는 작은 행동 하나입니다.\nSchema: {"headline":"","opening":"","cardReadings":[{"title":"","meaning":""},{"title":"","meaning":""},{"title":"","meaning":""}],"takeaway":"","tinyAction":""}`, tarotReadingSchema, "당신은 밝고 다정한 한국어 타로 리더입니다. 타로는 오락과 자기성찰을 위한 콘텐츠임을 자연스럽게 반영하세요. 반드시 한국어만 사용하고, 건강·법률·금융·안전 관련 결정을 단정하지 마세요. 공포를 유발하거나 미래를 확정하는 표현은 금지합니다. JSON의 값은 짧고 자연스러운 한국어로 작성하세요.");
+    return this.ask(`사용자의 질문: ${question}\n카테고리: ${input.category}\n뽑은 카드: ${cardInfo}\n\n카드 순서대로 cardReadings를 작성하세요. 점괘를 사실·예언처럼 단정하거나 불안·의존을 부추기지 마세요. 카드는 생각을 정리하는 가벼운 계기로 다루고, 친한 친구처럼 구체적이되 과장하지 마세요. opening은 세 카드가 함께 비추는 현재 흐름, takeaway는 질문에 대한 균형 잡힌 한 문단, tinyAction은 오늘 할 수 있는 작은 행동 하나입니다.\nSchema: {"headline":"","opening":"","cardReadings":[{"title":"","meaning":""},{"title":"","meaning":""},{"title":"","meaning":""}],"takeaway":"","tinyAction":""}`, tarotReadingSchema, "당신은 밝고 다정한 한국어 타로 리더입니다. 타로는 오락과 자기성찰을 위한 콘텐츠임을 자연스럽게 반영하세요. 반드시 한국어만 사용하고, 건강·법률·금융·안전 관련 결정을 단정하지 마세요. 공포를 유발하거나 미래를 확정하는 표현은 금지합니다. JSON의 값은 짧고 자연스러운 한국어로 작성하세요.", 1);
   }
   async analyzeDream(input: { dream: string; turns: DreamTurn[]; followupCount: number }): Promise<DreamAnalysis> {
     const turns = input.turns.length ? input.turns.map((turn, index) => `${index + 1}. 질문: ${turn.question}\n답변: ${turn.answer}`).join("\n") : "없음";

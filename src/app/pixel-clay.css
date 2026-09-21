@@ -1,5 +1,5 @@
 /* Raster atlas: one shared 22-card art bible, cropped per card without filters. */
-.tarot-card-art{position:absolute;z-index:0;inset:0;background-image:url('/pixel-clay/major-arcana-atlas.png');background-repeat:no-repeat;background-size:400% 600%;background-position:var(--atlas-x) var(--atlas-y)}
+.tarot-card-art{position:absolute;z-index:0;inset:0;background-image:url('/pixel-clay/major-arcana-atlas.png');background-repeat:no-repeat;background-size:500% 500%;background-position:var(--atlas-x) var(--atlas-y)}
 
 /* Shared homepage game-item sprites. The source artwork has a real alpha channel. */
 .feature-art{display:block;width:68px;height:68px;flex:none;background-image:url('/pixel-clay/feature-items.png');background-repeat:no-repeat;background-size:400% 100%;background-position:0 50%;image-rendering:auto}.feature-art-dream{background-position:0 50%}.feature-art-tarot{background-position:33.333% 50%}.feature-art-luck{background-position:66.667% 50%}.feature-art-diary{background-position:100% 50%}.tarot-home-card,.dream-home-card{grid-template-columns:72px minmax(0,1fr) auto;background-color:var(--lavender);background-image:linear-gradient(130deg,#e9ddfc,#cbb9ef)}.dream-home-card{background-color:var(--butter);background-image:linear-gradient(130deg,#ffe6a7,#ffc990)}.coming-card .feature-art{width:36px;height:36px}

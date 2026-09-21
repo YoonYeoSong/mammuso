@@ -22,11 +22,11 @@ function shuffle<T>(items: T[]) {
 }
 
 function CardFace({ card, revealed, label }: { card: TarotCard; revealed: boolean; label?: string }) {
-  const atlasColumn = card.number % 4;
-  const atlasRow = Math.floor(card.number / 4);
+  const atlasColumn = card.number % 5;
+  const atlasRow = Math.floor(card.number / 5);
   const atlasStyle = {
-    "--atlas-x": `${(atlasColumn / 3) * 100}%`,
-    "--atlas-y": `${(atlasRow / 5) * 100}%`,
+    "--atlas-x": `${(atlasColumn / 4) * 100}%`,
+    "--atlas-y": `${(atlasRow / 4) * 100}%`,
   } as React.CSSProperties;
 
   return <div className={`tarot-card ${revealed ? "is-revealed" : ""}`}>
@@ -52,6 +52,9 @@ export function TarotExperience() {
   const [selectedSlots, setSelectedSlots] = useState<Array<string | null>>([null, null, null]);
   const [viewMode, setViewMode] = useState<ViewMode>("fan");
   const [isSelectionConfirmOpen, setIsSelectionConfirmOpen] = useState(false);
+  const [replacementCandidateId, setReplacementCandidateId] = useState<string | null>(null);
+  const [replacementSlotIndex, setReplacementSlotIndex] = useState<number | null>(null);
+  const [replacementAnimatingSlot, setReplacementAnimatingSlot] = useState<number | null>(null);
   const [returningId, setReturningId] = useState<string | null>(null);
   const [loveSituation, setLoveSituation] = useState<LoveSituation | null>(null);
   const [showLoveStatusPrompt, setShowLoveStatusPrompt] = useState(false);
@@ -106,6 +109,9 @@ export function TarotExperience() {
     setDeck(shuffle(majorArcana));
     setSelectedSlots([null, null, null]);
     setIsSelectionConfirmOpen(false);
+    setReplacementCandidateId(null);
+    setReplacementSlotIndex(null);
+    setReplacementAnimatingSlot(null);
     setReturningId(null);
     setRevealed(0);
     setReading(null);
@@ -162,8 +168,28 @@ export function TarotExperience() {
     });
   }
 
-  function chooseFanCard(id: string) {
-    addCardToOpenSlot(id);
+  function chooseCard(id: string) {
+    if (selectedSlots.includes(id)) return;
+    if (selectedIds.length < 3) {
+      addCardToOpenSlot(id);
+      return;
+    }
+    setReplacementCandidateId(id);
+    setReplacementSlotIndex(null);
+  }
+
+  function closeReplacement() {
+    setReplacementSlotIndex(null);
+    setReplacementCandidateId(null);
+  }
+
+  function confirmReplacement() {
+    if (!replacementCandidateId || replacementSlotIndex === null) return;
+    const slotToAnimate = replacementSlotIndex;
+    setSelectedSlots((current) => current.map((cardId, index) => index === replacementSlotIndex ? replacementCandidateId : cardId));
+    setReplacementAnimatingSlot(slotToAnimate);
+    closeReplacement();
+    window.setTimeout(() => setReplacementAnimatingSlot(null), 420);
   }
 
   function removeSelectedCard(id: string) {
@@ -182,33 +208,22 @@ export function TarotExperience() {
   async function getReading() {
     setReadingError("");
     setPhase("loading");
-    const messages = [
-      "세 장이 만든 흐름을 천천히 이어보고 있어.",
-      "조금 더 시간이 걸리고 있어. 해석을 다시 이어서 읽어볼게.",
-      "죄송해요, 연결이 잠시 늦어지고 있어. 한 번 더 차분히 불러오는 중이야.",
-    ];
-
-    for (let attempt = 0; attempt < messages.length; attempt += 1) {
-      setLoadingMessage(messages[attempt]);
-      try {
-        const contextualQuestion = category === "연애" && loveSituation
-          ? [`현재 상황: ${loveSituation}`, `사용자 질문: ${question.trim()}`].join("\n")
-          : category === "돈" && moneyFocus
-            ? [`관심 분야: ${moneyFocus}`, `사용자 질문: ${question.trim()}`].join("\n")
-            : question;
-        const response = await fetch("/api/tarot/reading", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category, question: contextualQuestion, cardIds: selectedIds }) });
-        const result = await response.json() as { reading?: TarotReading; error?: string };
-        if (!response.ok || !result.reading) throw new Error(result.error ?? "reading failed");
-        setReading(result.reading);
-        setPhase("reading");
-        return;
-      } catch {
-        if (attempt < messages.length - 1) await new Promise((resolve) => window.setTimeout(resolve, 1200 * (attempt + 1)));
-      }
+    setLoadingMessage("세 장이 만든 흐름을 천천히 이어보고 있어.");
+    try {
+      const contextualQuestion = category === "연애" && loveSituation
+        ? [`현재 상황: ${loveSituation}`, `사용자 질문: ${question.trim()}`].join("\n")
+        : category === "돈" && moneyFocus
+          ? [`관심 분야: ${moneyFocus}`, `사용자 질문: ${question.trim()}`].join("\n")
+          : question;
+      const response = await fetch("/api/tarot/reading", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category, question: contextualQuestion, cardIds: selectedIds }) });
+      const result = await response.json() as { reading?: TarotReading; error?: string };
+      if (!response.ok || !result.reading) throw new Error(result.error ?? "reading failed");
+      setReading(result.reading);
+      setPhase("reading");
+    } catch {
+      setLoadingMessage("연결이 잠시 늦어지고 있어. 이 화면에서 바로 다시 시도할 수 있어.");
+      setReadingError("해석을 불러오지 못했어요.");
     }
-
-    setLoadingMessage("죄송해요, 지금은 해석을 끝까지 가져오지 못했어. 이 화면에서 바로 다시 이어서 시도할 수 있어.");
-    setReadingError("응답이 평소보다 오래 걸리고 있어요.");
   }
 
   if (phase === "question") return <section className="tarot-shell question-screen">
@@ -285,7 +300,7 @@ export function TarotExperience() {
       {[0, 1, 2].map((index) => {
         const selectedId = selectedSlots[index];
         const card = selectedId ? deck.find((deckCard) => deckCard.id === selectedId) : undefined;
-        return card ? <button key={card.id} type="button" className={`draw-slot selected ${returningId === card.id ? "is-returning" : ""}`} onClick={() => removeSelectedCard(card.id)} aria-label={`${index + 1}번째 뽑은 카드, 다시 고르기`}><CardFace card={card} revealed={false} /><span>{index + 1} · 다시 고르기</span></button> : <div className="draw-slot empty" key={index}><b>{index + 1}</b><small>비어 있음</small></div>;
+        return card ? <button key={index} type="button" className={`draw-slot selected ${returningId === card.id ? "is-returning" : ""} ${replacementAnimatingSlot === index ? "is-replaced" : ""}`} onClick={() => removeSelectedCard(card.id)} aria-label={`${index + 1}번째 뽑은 카드, 다시 고르기`}><CardFace card={card} revealed={false} /><span>{index + 1} · 다시 고르기</span></button> : <div className="draw-slot empty" key={index}><b>{index + 1}</b><small>비어 있음</small></div>;
       })}
     </div>
     {viewMode === "fan" ? <div className="fan-wrap" aria-label="22장 타로 카드">
@@ -295,16 +310,24 @@ export function TarotExperience() {
           const selectIndex = selectedSlots.indexOf(card.id);
           const degree = (index - (deck.length - 1) / 2) * 4.05;
           const shift = Math.abs(index - (deck.length - 1) / 2) * 1.25;
-          return <button key={card.id} type="button" className={`fan-card ${selectIndex >= 0 ? "is-picked" : ""}`} style={{ "--i": index, "--r": `${degree}deg`, "--y": `${shift}px` } as React.CSSProperties} onClick={() => chooseFanCard(card.id)} disabled={selectIndex >= 0} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? `, ${selectIndex + 1}번 선택됨` : ""}`}><CardFace card={card} revealed={false} /></button>;
+          return <button key={card.id} type="button" className={`fan-card ${selectIndex >= 0 ? "is-picked" : ""} ${replacementCandidateId === card.id ? "is-replacement-candidate" : ""}`} style={{ "--i": index, "--r": `${degree}deg`, "--y": `${shift}px` } as React.CSSProperties} onClick={() => chooseCard(card.id)} disabled={selectIndex >= 0} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? `, ${selectIndex + 1}번 선택됨` : ""}`}><CardFace card={card} revealed={false} /></button>;
         })}
       </div>
     </div> : <div className="deck-grid" aria-label="22장 타로 카드">
       {deck.map((card, index) => {
         const selectIndex = selectedSlots.indexOf(card.id);
-        return <button key={card.id} type="button" className={`deck-grid-card ${selectIndex >= 0 ? "is-picked" : ""}`} onClick={() => addCardToOpenSlot(card.id)} disabled={selectIndex >= 0} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? `, ${selectIndex + 1}번 선택됨` : ""}`}><CardFace card={card} revealed={false} />{selectIndex >= 0 && <span className="selection-index" aria-hidden="true">{selectIndex + 1}</span>}</button>;
+        return <button key={card.id} type="button" className={`deck-grid-card ${selectIndex >= 0 ? "is-picked" : ""} ${replacementCandidateId === card.id ? "is-replacement-candidate" : ""}`} onClick={() => chooseCard(card.id)} disabled={selectIndex >= 0} aria-label={`카드 ${index + 1}${selectIndex >= 0 ? `, ${selectIndex + 1}번 선택됨` : ""}`}><CardFace card={card} revealed={false} />{selectIndex >= 0 && <span className="selection-index" aria-hidden="true">{selectIndex + 1}</span>}</button>;
       })}
     </div>}
     <div className="selection-bar"><span>{selectedIds.length === 3 ? "마음이 정해졌다면" : "카드를 고르는 중"}</span><button className="primary-action" onClick={() => setIsSelectionConfirmOpen(true)} disabled={selectedIds.length !== 3}>이 카드로 볼게 <span>→</span></button></div>
+    {replacementCandidateId && (() => {
+      const candidate = deck.find((card) => card.id === replacementCandidateId);
+      const replacing = replacementSlotIndex === null ? null : selectedCards[replacementSlotIndex];
+      const replacementSlotNumber = replacementSlotIndex === null ? 0 : replacementSlotIndex + 1;
+      if (!candidate) return null;
+      return <div className="selection-confirm replacement-confirm" role="dialog" aria-modal="true" aria-labelledby="replacement-confirm-title"><div>
+        {replacing ? <><p className="step">카드 교체 확인</p><h2 id="replacement-confirm-title">{replacementSlotNumber}번 카드를<br /><b>{candidate.name}</b>로 바꿀까?</h2><p>기존 카드는 다시 카드 더미로 돌아가요.</p><div><button type="button" className="secondary-action" onClick={() => setReplacementSlotIndex(null)}>아니오</button><button type="button" className="confirm-action" onClick={confirmReplacement}>응, 바꿀게</button></div></> : <><p className="step">카드 교체</p><h2 id="replacement-confirm-title"><b>{candidate.name}</b>을<br />어느 카드와 바꿀까?</h2><p>바꿀 자리를 먼저 골라줘.</p><div className="replacement-slots">{selectedCards.map((card, index) => <button key={card.id} type="button" className="replacement-slot" onClick={() => setReplacementSlotIndex(index)}><b>{index + 1}</b><span>{card.name}</span></button>)}</div><button type="button" className="replacement-close" onClick={closeReplacement}>닫기</button></>}</div></div>;
+    })()}
     {isSelectionConfirmOpen && <div className="selection-confirm" role="dialog" aria-modal="true" aria-labelledby="selection-confirm-title"><div><p className="step">마지막 확인</p><h2 id="selection-confirm-title">이 세 장으로<br />정말 볼까?</h2><p>확인하면 카드 공개와 해석으로 이어져.</p><div><button type="button" className="secondary-action" onClick={() => setIsSelectionConfirmOpen(false)}>다시 고르기</button><button type="button" className="confirm-action" onClick={() => { setIsSelectionConfirmOpen(false); setPhase("confirming"); }}>응, 이 카드로 볼게</button></div></div></div>}
   </section>;
 
