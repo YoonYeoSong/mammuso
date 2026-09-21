@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import type { TarotReading } from "@/lib/ai/provider";
 import { majorArcana, tarotCategories, type TarotCard, type TarotCategory } from "@/lib/tarot/cards";
 
@@ -23,11 +22,18 @@ function shuffle<T>(items: T[]) {
 }
 
 function CardFace({ card, revealed, label }: { card: TarotCard; revealed: boolean; label?: string }) {
+  const atlasColumn = card.number % 4;
+  const atlasRow = Math.floor(card.number / 4);
+  const atlasStyle = {
+    "--atlas-x": `${(atlasColumn / 3) * 100}%`,
+    "--atlas-y": `${(atlasRow / 5) * 100}%`,
+  } as React.CSSProperties;
+
   return <div className={`tarot-card ${revealed ? "is-revealed" : ""}`}>
     <div className="tarot-card-inner">
       <div className="tarot-card-back" aria-hidden={revealed} />
       <div className="tarot-card-front" aria-hidden={!revealed}>
-        <Image className="tarot-card-art" src={`/tarot/major-arcana/${card.id}.webp`} alt="" fill sizes="(max-width: 560px) 28vw, 144px" />
+        <span className="tarot-card-art" style={atlasStyle} aria-hidden="true" />
         <span className="tarot-card-number">{String(card.number).padStart(2, "0")}</span>
         <span className="tarot-card-name">{card.name}</span>
         <span className="tarot-card-tone">{card.tone}</span>

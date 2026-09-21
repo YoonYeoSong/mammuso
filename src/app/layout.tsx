@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-export const metadata: Metadata = { title: "타로킹 | AI 타로", description: "궁금한 것을 가볍고 재미있게 카드로 들여다보는 AI 타로 콘텐츠" };
+import "./pixel-clay.css";
+export const metadata: Metadata = { title: "맘무소 | 오늘의 마음 놀이방", description: "꿈과 타로로 오늘의 마음을 가볍고 다정하게 들여다보는 맘무소" };
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="ko"><body>{children}</body></html>; }
