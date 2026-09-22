@@ -10,7 +10,7 @@ const sourceFile = path.join(
   "1840537c-2284-438e-b409-63593a288e34",
   "1-1000005797.jpg",
 );
-const artworkOutputDirectory = path.join(projectRoot, "public", "tarot", "fronts");
+const artworkOutputDirectory = path.join(projectRoot, "public", "tarot", "arcana");
 
 // The supplied sheet is ordered 1–21 across the first three rows, with the
 // Fool (22) in the final row. Each crop includes the complete printed front:
