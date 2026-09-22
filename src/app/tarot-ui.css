@@ -25,7 +25,7 @@
 .shuffle-deck span,.reading-loader span{border:0;border-radius:9%;background:url('/tarot/back/tarot-card-back.png') center/contain no-repeat;box-shadow:none}
 
 /* Preserve the complete card art inside its rounded silhouette at every size. */
-.tarot-card-inner{overflow:hidden;border-radius:9%}
+.tarot-card-inner{border-radius:9%}
 .tarot-card-back,.tarot-card-front{border-radius:9%}
 .tarot-card-back{background-size:contain}
 
