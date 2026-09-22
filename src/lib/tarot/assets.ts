@@ -9,5 +9,5 @@ export const tarotAssets = {
 } as const;
 
 export function tarotArtworkPath(card: TarotCard) {
-  return `/tarot/arcana/${String(card.number).padStart(2, "0")}-${card.id}.png`;
+  return `/tarot/fronts/${String(card.number).padStart(2, "0")}-${card.id}.png`;
 }
