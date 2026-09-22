@@ -88,7 +88,7 @@ export function TarotExperience() {
 
   useEffect(() => {
     if (phase !== "shuffling") return;
-    const timer = window.setTimeout(() => setPhase("picking"), 1500);
+    const timer = window.setTimeout(() => setPhase("picking"), 2400);
     return () => window.clearTimeout(timer);
   }, [phase]);
 
@@ -298,7 +298,7 @@ export function TarotExperience() {
 
   if (phase === "shuffling") return <section className="tarot-shell ritual-screen" aria-live="polite">
     <p className="step">카드를 섞는 중</p>
-    <div className="shuffle-deck" aria-hidden="true"><span /><span /><span /><span /></div>
+    <div className="shuffle-deck" aria-hidden="true"><span /><span /><span /><span /><span /></div>
     <h1>스슥,<br />마음을 섞어볼게.</h1>
     <p>질문을 마음속으로 한 번 생각해봐.</p>
   </section>;

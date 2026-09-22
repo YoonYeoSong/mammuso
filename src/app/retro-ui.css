@@ -106,16 +106,16 @@ body > main {
 .today-tarot {
   position: absolute;
   z-index: 2;
-  right: 25px;
-  top: 33px;
+  right: 22px;
+  top: 24px;
   display: grid;
-  width: 108px;
-  min-height: 144px;
+  width: 140px;
+  min-height: 194px;
   align-content: space-between;
   overflow: hidden;
   border: 3px solid var(--clay-ink);
   border-radius: 15px;
-  padding: 11px;
+  padding: 13px 10px;
   background: var(--clay-paper);
   box-shadow: 4px 4px 0 var(--clay-shadow);
   color: var(--clay-ink);
@@ -386,10 +386,10 @@ body > main {
   }
 
   .today-tarot {
-    right: 16px;
-    top: 19px;
-    width: 83px;
-    min-height: 119px;
+    right: 13px;
+    top: 17px;
+    width: 118px;
+    min-height: 165px;
     border-width: 2px;
     padding: 8px;
     box-shadow: 3px 3px 0 var(--clay-shadow);

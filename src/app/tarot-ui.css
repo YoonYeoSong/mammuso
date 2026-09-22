@@ -4,7 +4,7 @@
 /* Keep the short chat conversational: each thought gets its own airy clay bubble. */
 .chat-question-turn{display:grid;gap:15px}.chat-prompt-stack{display:grid;justify-items:start;gap:11px}.chat-prompt-stack .chat-message{margin:0}.chat-note{width:fit-content;margin:0 0 2px 4px;color:var(--muted);font-size:12px;font-weight:800;line-height:1.45}.chat-question-turn .chat-question{margin-top:1px}.chat-question-turn .chat-send{margin-top:10px}.replacement-confirm h2{max-width:11em}.replacement-slot{gap:2px}.replacement-slot span{color:var(--muted)}
 
-/* Tarot cards are a shared flat card system: one frame, one back, 22 artworks. */
+/* Tarot cards use exactly four layers: artwork → shared frame → HTML number/name. */
 .tarot-card{container-type:inline-size;perspective:700px}
 .tarot-card-inner{transform-style:preserve-3d}
 .tarot-card-back,.tarot-card-front{display:block;overflow:hidden;border:0;border-radius:0;padding:0;box-shadow:none;background:none;backface-visibility:hidden}
@@ -22,7 +22,22 @@
 .deck-grid-card{aspect-ratio:2/3}
 .draw-slot.selected .tarot-card{width:54px;height:81px}
 .reveal-card{height:auto;aspect-ratio:2/3}
-.shuffle-deck span,.reading-loader span{border:0;border-radius:0;background:url('/tarot/back/tarot-card-back.png') center/100% 100% no-repeat;box-shadow:none}
+.shuffle-deck span,.reading-loader span{border:0;border-radius:9%;background:url('/tarot/back/tarot-card-back.png') center/contain no-repeat;box-shadow:none}
+
+/* Preserve the complete card art inside its rounded silhouette at every size. */
+.tarot-card-inner{overflow:hidden;border-radius:9%}
+.tarot-card-back,.tarot-card-front{border-radius:9%}
+.tarot-card-back{background-size:contain}
+
+/* Let five cards fan, cross, and settle over a complete 2.4-second shuffle. */
+.shuffle-deck{width:132px;height:184px;margin-bottom:39px}
+.shuffle-deck span{animation:shuffle-card 2.4s cubic-bezier(.45,.02,.25,1) both}
+.shuffle-deck span:nth-child(1){--shuffle-x:-42px;--shuffle-y:-16px;--shuffle-r:-22deg;animation-delay:0s}
+.shuffle-deck span:nth-child(2){--shuffle-x:40px;--shuffle-y:-27px;--shuffle-r:20deg;animation-delay:.05s}
+.shuffle-deck span:nth-child(3){--shuffle-x:-28px;--shuffle-y:30px;--shuffle-r:-13deg;animation-delay:.1s}
+.shuffle-deck span:nth-child(4){--shuffle-x:30px;--shuffle-y:22px;--shuffle-r:15deg;animation-delay:.15s}
+.shuffle-deck span:nth-child(5){--shuffle-x:0px;--shuffle-y:-37px;--shuffle-r:5deg;animation-delay:.2s}
+@keyframes shuffle-card{0%,12%{transform:translate(0,0) rotate(0)}26%{transform:translate(var(--shuffle-x),var(--shuffle-y)) rotate(var(--shuffle-r))}47%{transform:translate(0,13px) rotate(0)}67%{transform:translate(var(--shuffle-x),var(--shuffle-y)) rotate(var(--shuffle-r))}86%,100%{transform:translate(0,0) rotate(0)}}
 
 /* Result cards reserve real space for captions and constrain every text block. */
 .result-screen h1{max-width:100%;font-size:clamp(29px,8.5vw,46px);line-height:1.14;overflow-wrap:anywhere;word-break:keep-all}.reading-card{grid-template-columns:82px minmax(0,1fr);align-items:start;gap:13px}.reading-card .tarot-card{height:131px}.reading-card .tarot-card-inner{height:111px}.reading-card .tarot-card-label{top:116px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.reading-card>div{min-width:0}.reading-card p{max-width:100%;overflow-wrap:anywhere;word-break:keep-all}.tarot-card-name,.tarot-card-tone{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.takeaway{overflow:hidden}.takeaway h2,.takeaway b{max-width:100%;overflow-wrap:anywhere;word-break:keep-all}.takeaway h2{font-size:clamp(22px,6.5vw,31px);line-height:1.32}.takeaway b{line-height:1.55}
