@@ -1,16 +1,16 @@
-import { CrystalSymbol } from "./CrystalSymbol";
+import Image from "next/image";
 
 type Service = {
   title: string;
   description: string;
-  symbol: "sun" | "star" | "moon";
+  icon: string;
   destination: string;
 };
 
 const services: Service[] = [
-  { title: "오늘의 타로", description: "오늘의 흐름을\n카드 한 장으로", symbol: "sun", destination: "/today-tarot" },
-  { title: "운명타로", description: "당신의 고민을\n깊게 들여다봐요", symbol: "star", destination: "/destiny-tarot" },
-  { title: "운명 궁합", description: "두 사람의\n흐름을 함께", symbol: "moon", destination: "/destiny-compatibility" },
+  { title: "오늘의 타로", description: "오늘의 흐름을\n카드 한 장으로", icon: "/illustrations/destiny-icons/daily-tarot-sun.png", destination: "/today-tarot" },
+  { title: "운명타로", description: "당신의 고민을\n깊게 들여다봐요", icon: "/illustrations/destiny-icons/destiny-tarot-star.png", destination: "/destiny-tarot" },
+  { title: "운명 궁합", description: "두 사람의\n흐름을 함께", icon: "/illustrations/destiny-icons/compatibility-moon.png", destination: "/destiny-compatibility" },
 ];
 
 export function ServiceMenu() {
@@ -25,7 +25,7 @@ export function ServiceMenu() {
         aria-label={`${service.title} (준비 중)`}
       >
         <span className="destiny-service-constellation" aria-hidden="true" />
-        <span className="destiny-symbol-orb"><CrystalSymbol name={service.symbol} /></span>
+        <span className="destiny-service-icon"><Image src={service.icon} alt="" fill sizes="(max-width: 480px) 25vw, 105px" /></span>
         <span className="destiny-service-title">{service.title}</span>
         <span className="destiny-service-description">{service.description}</span>
         <span className="destiny-card-arrow" aria-hidden="true">›</span>

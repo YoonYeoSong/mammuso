@@ -11,7 +11,7 @@ type ReadingPreview = {
 const mockReading: ReadingPreview = {
   title: "그 사람과의 궁합",
   date: "2026.09.23",
-  thumbnail: "/tarot/arcana/17-star.png",
+  thumbnail: "/tarot/back/tarot-card-back.png",
 };
 
 function CrystalCount({ count }: { count: number }) {
@@ -77,11 +77,15 @@ function BottomNavigation() {
 export function DestinyTarotHome() {
   return <main id="destiny-home" className="destiny-home">
     <div className="destiny-app-surface">
+      <div className="destiny-scene">
       <Header />
       <Hero />
       <ServiceMenu />
+      </div>
+      <div className="destiny-content-surface">
       <MoodBanner />
       <RecentReading />
+      </div>
     </div>
     <BottomNavigation />
   </main>;
