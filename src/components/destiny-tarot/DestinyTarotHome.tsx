@@ -36,20 +36,6 @@ function Header() {
 
 function Hero() {
   return <section className="destiny-hero" aria-labelledby="destiny-hero-title">
-    <div className="destiny-hero-sky" aria-hidden="true">
-      <span className="destiny-moon" />
-      <span className="destiny-star-field" />
-      <span className="destiny-sky-arc" />
-      <span className="destiny-city city-near" />
-      <span className="destiny-city city-far" />
-      <span className="destiny-water" />
-      <span className="destiny-reflection" />
-      <span className="destiny-lantern lantern-left" />
-      <span className="destiny-lantern lantern-right" />
-      <span className="destiny-stargazer"><i /><b /></span>
-      <span className="destiny-cat"><i /><b /></span>
-      <span className="destiny-wisteria" />
-    </div>
     <div className="destiny-hero-copy">
       <h1 id="destiny-hero-title">오늘,<br />어떤 이야기가<br />당신을 기다리고<br />있을까요?</h1>
       <p className="destiny-hero-subcopy">지금 이 순간도,<br />당신의 이야기는 계속되고 있어요.</p>
