@@ -51,7 +51,6 @@ function Hero() {
       <span className="destiny-wisteria" />
     </div>
     <div className="destiny-hero-copy">
-      <p className="destiny-eyebrow">A QUIET SIGN IN THE NIGHT</p>
       <h1 id="destiny-hero-title">오늘,<br />어떤 이야기가<br />당신을 기다리고<br />있을까요?</h1>
       <p className="destiny-hero-subcopy">지금 이 순간도,<br />당신의 이야기는 계속되고 있어요.</p>
     </div>
