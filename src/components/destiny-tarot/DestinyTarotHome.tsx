@@ -44,7 +44,7 @@ function HeroCopy() {
 function Hero() {
   return <section className="destiny-hero" aria-labelledby="destiny-hero-title">
     <div className="destiny-hero-visual" aria-hidden="true">
-      <Image src="/illustrations/destiny-tarot-moonlit-castle.jpg" alt="" fill preload sizes="(max-width: 480px) 100vw, 480px" />
+      <Image src="/illustrations/destiny-tarot-hero-v1.png" alt="" fill preload sizes="(max-width: 480px) 100vw, 480px" />
     </div>
     <HeroCopy />
   </section>;
