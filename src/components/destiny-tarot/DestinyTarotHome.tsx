@@ -10,7 +10,7 @@ type ReadingPreview = {
 
 const mockReading: ReadingPreview = {
   title: "그 사람과의 궁합",
-  date: "2026.09.23",
+  date: "2026.09.19",
   thumbnail: "/tarot/back/tarot-card-back.png",
 };
 
@@ -34,12 +34,19 @@ function Header() {
   </header>;
 }
 
+function HeroCopy() {
+  return <div className="destiny-hero-copy">
+    <h1 id="destiny-hero-title">오늘,<br />어떤 이야기가<br />당신을 기다리고<br />있을까요?</h1>
+    <p className="destiny-hero-subcopy">지금 이 순간도,<br />당신의 이야기는 계속되고 있어요.</p>
+  </div>;
+}
+
 function Hero() {
   return <section className="destiny-hero" aria-labelledby="destiny-hero-title">
-    <div className="destiny-hero-copy">
-      <h1 id="destiny-hero-title">오늘,<br />어떤 이야기가<br />당신을 기다리고<br />있을까요?</h1>
-      <p className="destiny-hero-subcopy">지금 이 순간도,<br />당신의 이야기는 계속되고 있어요.</p>
+    <div className="destiny-hero-visual" aria-hidden="true">
+      <Image src="/illustrations/destiny-tarot-moonlit-castle.jpg" alt="" fill preload sizes="(max-width: 480px) 100vw, 480px" />
     </div>
+    <HeroCopy />
   </section>;
 }
 
