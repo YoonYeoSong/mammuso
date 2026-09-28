@@ -25,15 +25,15 @@
   --destiny-copy-sub: var(--destiny-text-secondary);
   --destiny-content-background: linear-gradient(180deg, rgba(23, 20, 70, .96), #101642 25%, var(--destiny-night-950) 100%);
   --destiny-content-glow: radial-gradient(ellipse at center, rgba(120, 87, 202, .1), transparent 67%);
-  --destiny-card-border: rgba(217, 208, 255, .38);
-  --destiny-card-background: radial-gradient(ellipse 78% 52% at 50% 0%, rgba(116, 87, 211, .13), transparent 67%), linear-gradient(145deg, rgba(22, 29, 77, .78) 0%, rgba(11, 17, 52, .9) 52%, rgba(28, 19, 76, .78) 100%);
-  --destiny-card-featured-background: radial-gradient(ellipse 70% 80% at 15% 50%, rgba(255, 190, 204, .075), transparent 52%), radial-gradient(ellipse 64% 86% at 82% 50%, rgba(131, 94, 226, .16), transparent 70%), linear-gradient(135deg, rgba(27, 35, 89, .86), rgba(13, 19, 58, .94) 58%, rgba(34, 21, 83, .86));
-  --destiny-card-shadow: inset 0 1px 0 rgba(239, 233, 255, .15), inset 0 -18px 32px rgba(7, 8, 33, .24), 0 10px 25px rgba(2, 5, 23, .36);
-  --destiny-card-sheen: linear-gradient(118deg, rgba(244, 238, 255, .09), rgba(210, 196, 255, .025) 39%, transparent 64%);
-  --destiny-card-inner-line: linear-gradient(135deg, rgba(246, 241, 255, .2), rgba(205, 191, 255, .06) 48%, rgba(235, 177, 230, .12));
-  --destiny-card-backdrop: blur(8px) saturate(1.08);
-  --destiny-icon-glow: drop-shadow(0 0 2px rgba(255, 239, 216, .72)) drop-shadow(0 0 7px rgba(245, 181, 205, .22));
-  --destiny-card-description: var(--destiny-text-secondary);
+  --destiny-card-border: rgba(233, 226, 255, .34);
+  --destiny-card-background: radial-gradient(ellipse 84% 62% at 50% -8%, rgba(198, 181, 255, .16), transparent 68%), radial-gradient(ellipse 74% 78% at 86% 96%, rgba(128, 102, 218, .1), transparent 72%), linear-gradient(142deg, rgba(85, 77, 151, .48) 0%, rgba(53, 54, 123, .42) 53%, rgba(73, 57, 133, .46) 100%);
+  --destiny-card-featured-background: radial-gradient(ellipse 58% 120% at 7% 50%, rgba(255, 227, 218, .1), transparent 64%), radial-gradient(ellipse 72% 100% at 88% 45%, rgba(170, 137, 245, .16), transparent 72%), linear-gradient(142deg, rgba(85, 77, 151, .48) 0%, rgba(53, 54, 123, .42) 53%, rgba(73, 57, 133, .46) 100%);
+  --destiny-card-shadow: inset 0 1px 0 rgba(248, 243, 255, .2), inset 0 -14px 24px rgba(49, 38, 103, .1), 0 7px 16px rgba(13, 15, 57, .16);
+  --destiny-card-sheen: linear-gradient(116deg, rgba(255, 249, 240, .16), rgba(224, 211, 255, .045) 40%, transparent 65%);
+  --destiny-card-inner-line: linear-gradient(135deg, rgba(255, 249, 240, .18), rgba(221, 207, 255, .045) 49%, rgba(237, 207, 246, .1));
+  --destiny-card-backdrop: blur(5px) saturate(1.04);
+  --destiny-icon-glow: drop-shadow(0 1px 2px rgba(255, 239, 216, .42)) drop-shadow(0 0 4px rgba(225, 195, 245, .1));
+  --destiny-card-description: #d3cee5;
   --destiny-banner-border: rgba(217, 208, 255, .36);
   --destiny-banner-overlay: linear-gradient(90deg, rgba(12, 13, 50, .61) 0%, rgba(20, 20, 71, .43) 48%, rgba(47, 32, 95, .2) 73%, rgba(109, 72, 135, .08) 100%);
   --destiny-banner-moonlight: radial-gradient(ellipse 44% 116% at 91% 50%, rgba(221, 199, 242, .075), transparent 72%);
@@ -56,15 +56,15 @@
   --destiny-copy-sub: #cec7e4;
   --destiny-content-background: linear-gradient(180deg, rgba(23, 20, 73, .97), #111842 25%, #060b23 100%);
   --destiny-content-glow: radial-gradient(ellipse at center, rgba(103, 75, 209, .09), transparent 67%);
-  --destiny-card-border: rgba(217, 208, 255, .44);
-  --destiny-card-background: radial-gradient(ellipse 78% 52% at 50% 0%, rgba(128, 91, 232, .16), transparent 67%), linear-gradient(145deg, rgba(24, 30, 87, .84) 0%, rgba(10, 16, 55, .92) 52%, rgba(32, 19, 85, .84) 100%);
-  --destiny-card-featured-background: radial-gradient(ellipse 70% 80% at 15% 50%, rgba(255, 190, 204, .09), transparent 52%), radial-gradient(ellipse 64% 86% at 82% 50%, rgba(142, 96, 242, .2), transparent 70%), linear-gradient(135deg, rgba(29, 37, 98, .9), rgba(12, 18, 62, .96) 58%, rgba(37, 21, 94, .9));
-  --destiny-card-shadow: inset 0 1px 0 rgba(241, 235, 255, .18), inset 0 -18px 32px rgba(5, 7, 30, .28), 0 10px 25px rgba(1, 4, 22, .42);
-  --destiny-card-sheen: linear-gradient(118deg, rgba(247, 241, 255, .11), rgba(214, 199, 255, .03) 39%, transparent 64%);
-  --destiny-card-inner-line: linear-gradient(135deg, rgba(247, 241, 255, .24), rgba(207, 193, 255, .07) 48%, rgba(240, 181, 235, .13));
-  --destiny-card-backdrop: blur(10px) saturate(1.1);
-  --destiny-icon-glow: drop-shadow(0 0 2px rgba(255, 241, 218, .78)) drop-shadow(0 0 7px rgba(247, 184, 214, .25));
-  --destiny-card-description: #cbc4df;
+  --destiny-card-border: rgba(237, 230, 255, .38);
+  --destiny-card-background: radial-gradient(ellipse 84% 62% at 50% -8%, rgba(206, 188, 255, .19), transparent 68%), radial-gradient(ellipse 74% 78% at 86% 96%, rgba(143, 108, 232, .13), transparent 72%), linear-gradient(142deg, rgba(93, 82, 169, .5) 0%, rgba(57, 58, 137, .44) 53%, rgba(82, 61, 151, .48) 100%);
+  --destiny-card-featured-background: radial-gradient(ellipse 58% 120% at 7% 50%, rgba(255, 229, 221, .12), transparent 64%), radial-gradient(ellipse 72% 100% at 88% 45%, rgba(182, 144, 255, .18), transparent 72%), linear-gradient(142deg, rgba(93, 82, 169, .5) 0%, rgba(57, 58, 137, .44) 53%, rgba(82, 61, 151, .48) 100%);
+  --destiny-card-shadow: inset 0 1px 0 rgba(250, 245, 255, .23), inset 0 -14px 24px rgba(50, 37, 113, .11), 0 7px 16px rgba(10, 12, 55, .18);
+  --destiny-card-sheen: linear-gradient(116deg, rgba(255, 250, 243, .18), rgba(229, 215, 255, .05) 40%, transparent 65%);
+  --destiny-card-inner-line: linear-gradient(135deg, rgba(255, 250, 243, .21), rgba(225, 211, 255, .05) 49%, rgba(244, 210, 248, .11));
+  --destiny-card-backdrop: blur(5px) saturate(1.05);
+  --destiny-icon-glow: drop-shadow(0 1px 2px rgba(255, 241, 218, .46)) drop-shadow(0 0 4px rgba(229, 197, 250, .11));
+  --destiny-card-description: #d8d2e8;
   --destiny-banner-border: rgba(217, 208, 255, .42);
   --destiny-banner-overlay: linear-gradient(90deg, rgba(10, 12, 47, .65) 0%, rgba(19, 20, 71, .48) 46%, rgba(45, 29, 96, .23) 72%, rgba(113, 68, 145, .08) 100%);
   --destiny-banner-moonlight: radial-gradient(ellipse 44% 116% at 91% 50%, rgba(228, 206, 247, .09), transparent 72%);
@@ -132,9 +132,9 @@ body > main.destiny-home { width: 100vw !important; max-width: none !important; 
 .destiny-service-card.is-featured .destiny-service-title { font-size: 16px; }
 .destiny-service-card.is-featured .destiny-service-description { margin-top: 4px; font-size: 11.5px; line-height: 1.35; white-space: normal; text-align: left; }
 .destiny-service-card.is-featured .destiny-card-arrow { flex: none; margin: 0 0 0 auto; }
-.destiny-service-card:hover { border-color: rgba(229, 221, 255, .56); box-shadow: inset 0 1px 1px rgba(255, 255, 255, .22), inset 0 -20px 34px rgba(62, 42, 134, .14), 0 11px 29px rgba(2, 5, 24, .42), 0 0 13px rgba(162, 126, 228, .08); transform: scale(1.015); }
-.destiny-service-card:hover .destiny-card-arrow { border-color: rgba(255, 248, 255, .5); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 0 7px rgba(231, 197, 245, .08); }
-.destiny-service-card:active { box-shadow: inset 0 1px 1px rgba(255, 255, 255, .26), inset 0 -20px 34px rgba(62, 42, 134, .18), 0 7px 24px rgba(2, 5, 24, .34), 0 0 11px rgba(162, 126, 228, .06); transform: scale(.985); }
+.destiny-service-card:hover { border-color: rgba(241, 234, 255, .48); box-shadow: inset 0 1px 1px rgba(255, 255, 255, .24), inset 0 -14px 24px rgba(77, 57, 150, .12), 0 8px 18px rgba(13, 15, 57, .2); transform: scale(1.015); }
+.destiny-service-card:hover .destiny-card-arrow { border-color: rgba(255, 249, 242, .42); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .15), 0 0 5px rgba(231, 197, 245, .05); }
+.destiny-service-card:active { box-shadow: inset 0 1px 1px rgba(255, 255, 255, .25), inset 0 -14px 24px rgba(77, 57, 150, .14), 0 5px 13px rgba(13, 15, 57, .17); transform: scale(.985); }
 .destiny-service-card:active .destiny-card-arrow { background: linear-gradient(145deg, rgba(230, 217, 250, .23), rgba(135, 113, 199, .14)); }
 
 .destiny-content-surface { position: relative; z-index: 0; margin-top: -64px; padding: 78px 16px 0; background: var(--destiny-content-background); }
