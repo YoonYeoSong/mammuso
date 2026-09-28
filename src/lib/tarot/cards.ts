@@ -13,7 +13,7 @@ export const majorArcana: TarotCard[] = [
   ["fool", "바보", "The Fool", "○", ["시작", "가벼운 용기"], "새 길의 문턱"],
   ["magician", "마법사", "The Magician", "✦", ["가능성", "실행"], "손안의 가능성"],
   ["high-priestess", "여사제", "The High Priestess", "☾", ["직감", "숨은 마음"], "조용한 감각"],
-  ["empress", "여제", "The Empress", "❀", ["풍요", "돌봄"], "잘 자라는 마음"],
+  ["empress", "여황제", "The Empress", "❀", ["풍요", "돌봄"], "잘 자라는 마음"],
   ["emperor", "황제", "The Emperor", "♜", ["기준", "안정"], "단단한 중심"],
   ["hierophant", "교황", "The Hierophant", "⌘", ["배움", "약속"], "익숙한 기준"],
   ["lovers", "연인", "The Lovers", "♡", ["선택", "연결"], "마음의 선택"],

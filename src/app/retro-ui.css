@@ -103,64 +103,6 @@ body > main {
   transform: rotate(-2deg);
 }
 
-.today-tarot {
-  position: absolute;
-  z-index: 2;
-  right: 22px;
-  top: 24px;
-  display: grid;
-  width: 140px;
-  min-height: 194px;
-  align-content: space-between;
-  overflow: hidden;
-  border: 3px solid var(--clay-ink);
-  border-radius: 15px;
-  padding: 13px 10px;
-  background: var(--clay-paper);
-  box-shadow: 4px 4px 0 var(--clay-shadow);
-  color: var(--clay-ink);
-  text-decoration: none;
-  transform: rotate(2deg);
-}
-
-.today-tarot::before {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: url('/tarot/arcana/17-star.png') center / contain no-repeat;
-  content: "";
-}
-
-.today-tarot span,
-.today-tarot b {
-  position: relative;
-  z-index: 1;
-  width: fit-content;
-  margin-inline: auto;
-  border-radius: 999px;
-  padding: 3px 5px;
-  background: color-mix(in srgb, var(--clay-paper) 90%, transparent);
-  box-shadow: 1px 1px 0 var(--clay-shadow);
-  font-size: 10px;
-  font-weight: 1000;
-  text-align: center;
-}
-
-.today-tarot b {
-  font-size: 9px;
-}
-
-.today-tarot i {
-  position: absolute;
-  right: 8px;
-  top: 40px;
-  z-index: 2;
-  color: var(--clay-yellow);
-  font-size: 19px;
-  font-style: normal;
-  text-shadow: 1px 1px 0 var(--clay-ink);
-}
-
 .content-list {
   padding-top: 43px;
 }
@@ -383,36 +325,6 @@ body > main {
   .hero-speech {
     margin-top: 14px;
     font-size: 11px;
-  }
-
-  .today-tarot {
-    right: 13px;
-    top: 17px;
-    width: 118px;
-    min-height: 165px;
-    border-width: 2px;
-    padding: 8px;
-    box-shadow: 3px 3px 0 var(--clay-shadow);
-  }
-
-  .today-tarot::before {
-    inset: 0;
-  }
-
-  .today-tarot span {
-    font-size: 8px;
-    padding: 2px 4px;
-  }
-
-  .today-tarot b {
-    font-size: 7px;
-    padding: 2px 4px;
-  }
-
-  .today-tarot i {
-    right: 4px;
-    top: 33px;
-    font-size: 14px;
   }
 
   .content-list {

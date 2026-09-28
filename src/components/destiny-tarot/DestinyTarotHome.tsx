@@ -45,10 +45,10 @@ function Hero() {
   return <section className="destiny-hero" aria-labelledby="destiny-hero-title">
     <div className="destiny-hero-visual" aria-hidden="true">
       <div className="destiny-hero-backdrop">
-        <Image src="/illustrations/destiny-tarot-hero-v1.png" alt="" fill sizes="(max-width: 480px) 100vw, 480px" />
+        <Image src="/illustrations/destiny-tarot-hero-moonlit-castle.jpg" alt="" fill sizes="(max-width: 480px) 100vw, 480px" />
       </div>
       <div className="destiny-hero-main-image">
-        <Image src="/illustrations/destiny-tarot-hero-v1.png" alt="" fill preload sizes="(max-width: 480px) 100vw, 480px" />
+        <Image src="/illustrations/destiny-tarot-hero-moonlit-castle.jpg" alt="" fill preload sizes="(max-width: 480px) 100vw, 480px" />
       </div>
     </div>
     <HeroCopy />
