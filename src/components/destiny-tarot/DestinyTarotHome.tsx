@@ -60,7 +60,6 @@ function MoodBanner() {
     <span className="destiny-banner-moon" aria-hidden="true" />
     <span className="destiny-banner-ridge" aria-hidden="true" />
     <p>작은 한 장이,<br /><strong>더 큰 이야기를 만듭니다.</strong></p>
-    <span aria-hidden="true" className="destiny-banner-arrow">›</span>
   </section>;
 }
 
