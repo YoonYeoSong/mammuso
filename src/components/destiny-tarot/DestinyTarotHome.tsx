@@ -84,8 +84,8 @@ function BottomNavigation() {
   </nav>;
 }
 
-export function DestinyTarotHome() {
-  return <main id="destiny-home" className="destiny-home">
+export function DestinyTarotHome({ theme = "a" }: { theme?: "a" | "b" }) {
+  return <main id="destiny-home" className="destiny-home" data-theme={theme}>
     <div className="destiny-app-surface">
       <div className="destiny-scene">
       <Header />
