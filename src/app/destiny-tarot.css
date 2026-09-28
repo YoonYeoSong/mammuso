@@ -98,12 +98,12 @@ body > main.destiny-home { width: 100vw !important; max-width: none !important; 
 .destiny-menu-button { display: grid; width: 31px; height: 31px; place-content: center; gap: 4px; border: 0; padding: 0; background: transparent; color: var(--destiny-foreground); cursor: pointer; }
 .destiny-menu-button i { display: block; width: 19px; height: 1.25px; border-radius: 2px; background: currentColor; box-shadow: 0 0 4px rgba(255, 245, 229, .3); }
 
-.destiny-hero { position: relative; width: 100%; aspect-ratio: 853 / 1280; overflow: hidden; background: #11113e; }
+.destiny-hero { position: relative; width: 100%; aspect-ratio: 853 / 1080; overflow: hidden; background: #11113e; }
 .destiny-hero-visual { position: absolute; inset: 0; overflow: hidden; isolation: isolate; }
 .destiny-hero-backdrop { position: absolute; inset: -20px; z-index: 0; overflow: hidden; opacity: .16; filter: blur(24px) saturate(1.14) contrast(1.08); transform: scale(1.08); }
 .destiny-hero-backdrop img { object-fit: cover !important; object-position: center center !important; }
 .destiny-hero-main-image { position: absolute; z-index: 1; inset: 0; }
-.destiny-hero-main-image img { object-fit: cover !important; object-position: center center !important; filter: saturate(1.08) contrast(1.06) brightness(.94); }
+.destiny-hero-main-image img { object-fit: cover !important; object-position: center 47% !important; filter: saturate(1.08) contrast(1.06) brightness(.94); }
 .destiny-hero-copy { position: absolute; z-index: 10; top: 51.8%; left: 20px; text-align: left; }
 .destiny-hero h1 { margin: 0; color: var(--destiny-copy-main); font-family: var(--destiny-serif); font-size: 20px; font-weight: 400; line-height: 1.45; }
 .destiny-hero-subcopy { margin: 8px 0 0; color: var(--destiny-copy-sub); font-size: 10.5px; line-height: 1.6; }
