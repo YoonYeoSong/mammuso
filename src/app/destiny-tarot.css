@@ -68,7 +68,7 @@
   --destiny-nav-active-glow: drop-shadow(0 0 5px rgba(255, 221, 178, .42));
 }
 html:has(.destiny-home), body:has(.destiny-home) { background: var(--destiny-deep); }
-html:has(.destiny-home[data-theme="b"]), body:has(.destiny-home[data-theme="b"]) { background: var(--destiny-page-deep); }
+html:has(.destiny-home[data-theme="b"]), body:has(.destiny-home[data-theme="b"]) { background: #060b23; }
 body > main.destiny-home { width: 100vw !important; max-width: none !important; margin: 0 calc(50% - 50vw) !important; padding: 0 0 16px !important; overflow: clip; background: var(--destiny-page-background); color: var(--destiny-foreground); font-family: var(--destiny-sans); letter-spacing: -.035em; }
 .destiny-home *, .destiny-home *::before, .destiny-home *::after { box-sizing: border-box; }
 .destiny-home button { font: inherit; }
