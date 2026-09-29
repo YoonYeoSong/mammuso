@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type TransitionEvent } from "react";
 import { useRouter } from "next/navigation";
 import { TodayTarotHeader } from "./TodayTarotHeader";
 import { TODAY_TAROT_SESSION_KEY } from "@/lib/today-tarot/session";
@@ -8,16 +8,20 @@ import { todayTarotRoutes, type TodayTarotSession } from "@/lib/today-tarot/flow
 
 const CARD_COUNT = 78;
 const VISIBLE_CARD_OFFSETS = [-3, -2, -1, 0, 1, 2, 3] as const;
+const RENDERED_CARD_OFFSETS = [-4, ...VISIBLE_CARD_OFFSETS, 4] as const;
 const SWIPE_THRESHOLD = 36;
 const DRAG_FEEDBACK_LIMIT = 22;
 const CARD_STEP = 78;
 const SNAP_DURATION_MS = 320;
+const SNAP_FALLBACK_MS = SNAP_DURATION_MS + 80;
+const DECK_ENTRANCE_MS = 700;
 
 type DeckCard = { cardId: string; index: number; offset: number };
 type TransitionCard = { left: number; top: number; width: number; height: number; x: number; y: number };
 
 function getDeckCardStyle(distance: number): CSSProperties {
   const absoluteDistance = Math.abs(distance);
+  const isTransitionBuffer = absoluteDistance > 3;
   const depth = [
     { scale: 1, opacity: 1, y: 0, rotation: 0 },
     { scale: 0.94, opacity: 0.91, y: 10, rotation: 4 },
@@ -32,8 +36,10 @@ function getDeckCardStyle(distance: number): CSSProperties {
     "--deck-y": `${depth.y}px`,
     "--deck-scale": `${depth.scale}`,
     "--deck-rotation": `${distance < 0 ? -depth.rotation : depth.rotation}deg`,
-    "--deck-opacity": `${depth.opacity}`,
-    "--deck-muted-opacity": `${depth.opacity * 0.76}`,
+    // One hidden card is retained at each edge. It moves into the visible fan
+    // on the next step, instead of mounting directly at its final position.
+    "--deck-opacity": `${isTransitionBuffer ? 0 : depth.opacity}`,
+    "--deck-muted-opacity": `${isTransitionBuffer ? 0 : depth.opacity * 0.76}`,
     "--deck-z-index": `${10 - absoluteDistance}`,
     "--deck-exit-x": `${distance * CARD_STEP * 1.45}px`,
     "--entrance-delay": `${(distance + 3) * 35}ms`,
@@ -48,12 +54,17 @@ export function TodayTarotSelection() {
   const [positionIndex, setPositionIndex] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDeckReady, setIsDeckReady] = useState(false);
+  const [isDeckEntering, setIsDeckEntering] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [transitionCard, setTransitionCard] = useState<TransitionCard | null>(null);
   const pointer = useRef<{ id: number; startX: number } | null>(null);
   const selectedCardElement = useRef<HTMLButtonElement | null>(null);
   const ignoreSyntheticCardTap = useRef(false);
-  const positionSnapTimer = useRef<number | null>(null);
+  const activeIndexRef = useRef(0);
+  const queuedMovesRef = useRef<Array<-1 | 1>>([]);
+  const isAnimatingRef = useRef(false);
+  const snapFallbackTimer = useRef<number | null>(null);
+  const snapFrame = useRef<number | null>(null);
 
   useEffect(() => {
     const saved = window.sessionStorage.getItem(TODAY_TAROT_SESSION_KEY);
@@ -67,6 +78,7 @@ export function TodayTarotSelection() {
         // visible immediately, without selecting or reordering anything.
         const restoredIndex = parsed.selectedCardId ? parsed.shuffledCardIds.indexOf(parsed.selectedCardId) : Math.floor(parsed.shuffledCardIds.length / 2);
         if (restoredIndex >= 0) {
+          activeIndexRef.current = restoredIndex;
           setActiveIndex(restoredIndex);
           setPositionIndex(restoredIndex);
         }
@@ -77,39 +89,91 @@ export function TodayTarotSelection() {
   }, []);
 
   useEffect(() => {
-    const animationFrame = window.requestAnimationFrame(() => setIsDeckReady(true));
-    return () => window.cancelAnimationFrame(animationFrame);
+    const animationFrame = window.requestAnimationFrame(() => {
+      setIsDeckReady(true);
+      setIsDeckEntering(true);
+    });
+    const entranceTimer = window.setTimeout(() => setIsDeckEntering(false), DECK_ENTRANCE_MS);
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(entranceTimer);
+    };
   }, [session]);
 
   useEffect(() => () => {
-    if (positionSnapTimer.current !== null) window.clearTimeout(positionSnapTimer.current);
+    if (snapFallbackTimer.current !== null) window.clearTimeout(snapFallbackTimer.current);
+    if (snapFrame.current !== null) window.cancelAnimationFrame(snapFrame.current);
   }, []);
 
-  function updatePositionAfterSnap(nextIndex: number) {
-    if (positionSnapTimer.current !== null) window.clearTimeout(positionSnapTimer.current);
-    positionSnapTimer.current = window.setTimeout(() => {
-      setPositionIndex(nextIndex);
-      positionSnapTimer.current = null;
-    }, SNAP_DURATION_MS);
-  }
+  function finishSnap() {
+    if (!isAnimatingRef.current) return;
+    if (snapFallbackTimer.current !== null) {
+      window.clearTimeout(snapFallbackTimer.current);
+      snapFallbackTimer.current = null;
+    }
 
-  function moveDeck(direction: -1 | 1, count = 1) {
-    if (!session || isConfirming) return;
-    // A selected card always occupies the center. Moving away resumes browsing,
-    // so the previous selection is cleared without touching the deck order.
-    setSelectedCardId(null);
-    setActiveIndex((current) => {
-      const nextIndex = Math.max(0, Math.min(session.shuffledCardIds.length - 1, current + direction * count));
-      if (nextIndex !== current) updatePositionAfterSnap(nextIndex);
-      return nextIndex;
+    // The displayed position is committed only after the same transform that
+    // brought its card to center has completed.
+    setPositionIndex(activeIndexRef.current);
+    isAnimatingRef.current = false;
+    snapFrame.current = window.requestAnimationFrame(() => {
+      snapFrame.current = null;
+      startQueuedMove();
     });
   }
 
+  function startQueuedMove() {
+    if (!session || isConfirming || isAnimatingRef.current) return;
+    const direction = queuedMovesRef.current.shift();
+    if (!direction) return;
+
+    const nextIndex = Math.max(0, Math.min(session.shuffledCardIds.length - 1, activeIndexRef.current + direction));
+    if (nextIndex === activeIndexRef.current) {
+      startQueuedMove();
+      return;
+    }
+
+    isAnimatingRef.current = true;
+    activeIndexRef.current = nextIndex;
+    setActiveIndex(nextIndex);
+    // transitionend is authoritative; this only covers browsers that do not
+    // dispatch it (for example when a transition is interrupted by the OS).
+    snapFallbackTimer.current = window.setTimeout(finishSnap, SNAP_FALLBACK_MS);
+  }
+
+  function moveDeck(direction: -1 | 1) {
+    if (!session || isConfirming) return;
+    const queuedTarget = queuedMovesRef.current.reduce(
+      (index, queuedDirection) => Math.max(0, Math.min(session.shuffledCardIds.length - 1, index + queuedDirection)),
+      activeIndexRef.current,
+    );
+    const nextTarget = Math.max(0, Math.min(session.shuffledCardIds.length - 1, queuedTarget + direction));
+    if (nextTarget === queuedTarget) return;
+
+    // A selected card always occupies the center. Moving away resumes browsing,
+    // so the previous selection is cleared without touching the deck order.
+    setSelectedCardId(null);
+    queuedMovesRef.current.push(direction);
+    startQueuedMove();
+  }
+
+  function handleCardTransitionEnd(event: TransitionEvent<HTMLButtonElement>, index: number, offset: number) {
+    if (
+      event.target === event.currentTarget
+      && event.propertyName === "transform"
+      && offset === 0
+      && index === activeIndexRef.current
+    ) {
+      finishSnap();
+    }
+  }
+
   function chooseCard(cardId: string, index: number) {
-    if (ignoreSyntheticCardTap.current || isConfirming) return;
+    if (ignoreSyntheticCardTap.current || isConfirming || isAnimatingRef.current) return;
     setSelectedCardId((current) => current === cardId ? null : cardId);
     setActiveIndex(index);
-    if (index !== activeIndex) updatePositionAfterSnap(index);
+    activeIndexRef.current = index;
+    setPositionIndex(index);
   }
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
@@ -189,7 +253,7 @@ export function TodayTarotSelection() {
     </div>
   </main>;
 
-  const visibleCards: DeckCard[] = VISIBLE_CARD_OFFSETS.flatMap((offset) => {
+  const visibleCards: DeckCard[] = RENDERED_CARD_OFFSETS.flatMap((offset) => {
     const index = activeIndex + offset;
     const cardId = session.shuffledCardIds[index];
     return cardId ? [{ cardId, index, offset }] : [];
@@ -205,7 +269,7 @@ export function TodayTarotSelection() {
           <p>첫 느낌이 가장 솔직한 답입니다.</p>
         </div>
         <div
-          className={`today-tarot-deck ${isDeckReady ? "is-ready" : ""} ${selectedCardId ? "has-selection" : ""} ${isConfirming ? "is-confirming" : ""}`}
+          className={`today-tarot-deck ${isDeckReady ? "is-ready" : ""} ${isDeckEntering ? "is-entering" : ""} ${selectedCardId ? "has-selection" : ""} ${isConfirming ? "is-confirming" : ""}`}
           aria-label="섞인 78장 타로 덱"
         >
           <div
@@ -218,16 +282,20 @@ export function TodayTarotSelection() {
             <div className="today-tarot-deck-cards" style={{ transform: `translate3d(${dragOffset}px, 0, 0)` }}>
               {visibleCards.map(({ cardId, index, offset }) => {
                 const isSelected = selectedCardId === cardId;
+                const isTransitionBuffer = Math.abs(offset) > 3;
                 const cardStyle = getDeckCardStyle(offset);
                 return <button
                   key={cardId}
                   type="button"
-                  className={`today-tarot-deck-card ${offset === 0 ? "is-active" : ""} ${isSelected ? "is-selected" : ""}`}
+                  className={`today-tarot-deck-card ${isTransitionBuffer ? "is-transition-buffer" : ""} ${offset === 0 ? "is-active" : ""} ${isSelected ? "is-selected" : ""}`}
                   style={cardStyle}
                   ref={isSelected ? selectedCardElement : undefined}
                   aria-label={`덱의 ${index + 1}번째 카드 선택`}
                   aria-pressed={isSelected}
+                  aria-hidden={isTransitionBuffer}
+                  tabIndex={isTransitionBuffer ? -1 : undefined}
                   onClick={() => chooseCard(cardId, index)}
+                  onTransitionEnd={(event) => handleCardTransitionEnd(event, index, offset)}
                 ><span aria-hidden="true" /></button>;
               })}
             </div>
