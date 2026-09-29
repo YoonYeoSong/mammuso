@@ -9,8 +9,27 @@ import { todayTarotRoutes, type TodayTarotSession } from "@/lib/today-tarot/flow
 const CARD_COUNT = 78;
 const VISIBLE_CARD_OFFSETS = [-3, -2, -1, 0, 1, 2, 3] as const;
 const SWIPE_THRESHOLD = 32;
+const DRAG_FEEDBACK_LIMIT = 76;
+const CARD_STEP = 52;
 
 type DeckCard = { cardId: string; index: number; offset: number };
+
+function getDeckCardStyle(distance: number): CSSProperties {
+  const absoluteDistance = Math.abs(distance);
+
+  return {
+    // Every visual property comes from the card's distance to the current center.
+    // The same rule is therefore applied to both sides of the deck.
+    "--deck-x": `${distance * CARD_STEP}px`,
+    "--deck-y": `${absoluteDistance * 5}px`,
+    "--deck-scale": `${1 - absoluteDistance * 0.05}`,
+    "--deck-opacity": `${1 - absoluteDistance * 0.07}`,
+    "--deck-muted-opacity": `${(1 - absoluteDistance * 0.07) * 0.76}`,
+    "--deck-z-index": `${10 - absoluteDistance}`,
+    "--deck-exit-x": `${distance * CARD_STEP * 1.45}px`,
+    "--entrance-delay": `${(distance + 3) * 35}ms`,
+  } as CSSProperties;
+}
 
 export function TodayTarotSelection() {
   const router = useRouter();
@@ -20,7 +39,7 @@ export function TodayTarotSelection() {
   const [dragOffset, setDragOffset] = useState(0);
   const [isDeckReady, setIsDeckReady] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
-  const pointerStartX = useRef<number | null>(null);
+  const pointer = useRef<{ id: number; startX: number } | null>(null);
   const ignoreSyntheticCardTap = useRef(false);
 
   useEffect(() => {
@@ -46,40 +65,51 @@ export function TodayTarotSelection() {
     return () => window.cancelAnimationFrame(animationFrame);
   }, [session]);
 
-  function moveDeck(direction: -1 | 1) {
+  function moveDeck(direction: -1 | 1, count = 1) {
     if (!session || isConfirming) return;
-    setActiveIndex((current) => Math.max(0, Math.min(session.shuffledCardIds.length - 1, current + direction)));
+    // A selected card always occupies the center. Moving away resumes browsing,
+    // so the previous selection is cleared without touching the deck order.
+    setSelectedCardId(null);
+    setActiveIndex((current) => Math.max(0, Math.min(session.shuffledCardIds.length - 1, current + direction * count)));
   }
 
   function chooseCard(cardId: string, index: number) {
     if (ignoreSyntheticCardTap.current || isConfirming) return;
-    setSelectedCardId(cardId);
+    setSelectedCardId((current) => current === cardId ? null : cardId);
     setActiveIndex(index);
   }
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
     if (isConfirming) return;
-    pointerStartX.current = event.clientX;
+    pointer.current = { id: event.pointerId, startX: event.clientX };
+    event.currentTarget.setPointerCapture(event.pointerId);
   }
 
   function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
-    if (pointerStartX.current === null || isConfirming) return;
-    const nextOffset = Math.max(-72, Math.min(72, event.clientX - pointerStartX.current));
+    if (!pointer.current || pointer.current.id !== event.pointerId || isConfirming) return;
+    const nextOffset = Math.max(-DRAG_FEEDBACK_LIMIT, Math.min(DRAG_FEEDBACK_LIMIT, event.clientX - pointer.current.startX));
     setDragOffset(nextOffset);
   }
 
   function finishPointer(event: PointerEvent<HTMLDivElement>) {
-    if (pointerStartX.current === null) return;
-    const offset = event.clientX - pointerStartX.current;
-    pointerStartX.current = null;
+    if (!pointer.current || pointer.current.id !== event.pointerId) return;
+    const offset = event.clientX - pointer.current.startX;
+    pointer.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     setDragOffset(0);
     if (Math.abs(offset) >= SWIPE_THRESHOLD) {
       // Some mobile browsers still emit a click at the end of a drag. Keep that
       // synthetic click from selecting the card under the finger.
       ignoreSyntheticCardTap.current = true;
-      window.setTimeout(() => { ignoreSyntheticCardTap.current = false; }, 120);
-      moveDeck(offset < 0 ? 1 : -1);
+      window.setTimeout(() => { ignoreSyntheticCardTap.current = false; }, 180);
+      moveDeck(offset < 0 ? 1 : -1, Math.min(2, Math.max(1, Math.round(Math.abs(offset) / CARD_STEP))));
     }
+  }
+
+  function cancelPointer(event: PointerEvent<HTMLDivElement>) {
+    if (!pointer.current || pointer.current.id !== event.pointerId) return;
+    pointer.current = null;
+    setDragOffset(0);
   }
 
   function confirmCard() {
@@ -125,17 +155,12 @@ export function TodayTarotSelection() {
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={finishPointer}
-          onPointerCancel={finishPointer}
+          onPointerCancel={cancelPointer}
         >
           <div className="today-tarot-deck-cards" style={{ transform: `translate3d(${dragOffset}px, 0, 0)` }}>
             {visibleCards.map(({ cardId, index, offset }) => {
               const isSelected = selectedCardId === cardId;
-              const cardStyle = {
-                "--deck-x": `${offset * 49}px`,
-                "--deck-y": `${Math.abs(offset) * 4}px`,
-                "--exit-x": `${offset * 92}px`,
-                "--entrance-delay": `${(offset + 3) * 35}ms`,
-              } as CSSProperties;
+              const cardStyle = getDeckCardStyle(offset);
               return <button
                 key={cardId}
                 type="button"
@@ -149,7 +174,7 @@ export function TodayTarotSelection() {
           </div>
           <button type="button" className="today-tarot-deck-arrow today-tarot-deck-arrow--previous" onClick={() => moveDeck(-1)} disabled={activeIndex === 0 || isConfirming} aria-label="이전 카드 보기">‹</button>
           <button type="button" className="today-tarot-deck-arrow today-tarot-deck-arrow--next" onClick={() => moveDeck(1)} disabled={activeIndex === session.shuffledCardIds.length - 1 || isConfirming} aria-label="다음 카드 보기">›</button>
-          <p className="today-tarot-deck-position" aria-live="polite">{activeIndex + 1} <span>/</span> {CARD_COUNT}</p>
+          <p className="today-tarot-deck-position" aria-live="polite"><b>현재 위치</b> {activeIndex + 1} <span>/</span> {CARD_COUNT}</p>
         </div>
         <div className={`today-tarot-selection-confirmation ${selectedCardId ? "is-visible" : ""}`} aria-live="polite">
           <p>{selectedCardId ? "이 카드로 진행할까요?" : "마음이 이끄는 카드를 골라주세요."}</p>
