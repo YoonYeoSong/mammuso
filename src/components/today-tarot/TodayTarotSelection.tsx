@@ -19,10 +19,10 @@ function getDeckCardStyle(distance: number): CSSProperties {
   const absoluteDistance = Math.abs(distance);
   const depth = [
     { scale: 1, opacity: 1, y: 0, rotation: 0 },
-    { scale: 0.94, opacity: 0.91, y: 14, rotation: 5 },
-    { scale: 0.88, opacity: 0.76, y: 30, rotation: 9 },
-    { scale: 0.81, opacity: 0.54, y: 50, rotation: 13 },
-  ][absoluteDistance] ?? { scale: 0.81, opacity: 0.54, y: 50, rotation: 13 };
+    { scale: 0.94, opacity: 0.91, y: 10, rotation: 4 },
+    { scale: 0.88, opacity: 0.76, y: 22, rotation: 6.5 },
+    { scale: 0.81, opacity: 0.54, y: 37, rotation: 9.5 },
+  ][absoluteDistance] ?? { scale: 0.81, opacity: 0.54, y: 37, rotation: 9.5 };
 
   return {
     // The lower center of every card follows the same virtual arc. This keeps

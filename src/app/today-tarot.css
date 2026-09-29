@@ -60,7 +60,7 @@ body > main.today-tarot-page { position: relative; width: 100vw !important; min-
 .today-tarot-deck { position: relative; width: 100vw; height: clamp(286px, 46dvh, 390px); align-self: center; flex: 1 1 auto; min-height: 0; margin: 7px 0 0; overflow: hidden; user-select: none; }
 .today-tarot-deck::before { position: absolute; z-index: 0; top: 41%; left: 50%; width: min(100vw, 430px); height: 250px; border-radius: 50%; background: radial-gradient(ellipse, rgba(174, 154, 255, .16), rgba(122, 111, 208, .05) 48%, transparent 73%); content: ""; filter: blur(12px); transform: translate(-50%, -45%); }
 .today-tarot-deck-stage { position: absolute; z-index: 1; inset: 0 0 48px; overflow: hidden; touch-action: pan-y; }
-.today-tarot-deck-cards { position: absolute; z-index: 1; top: 42%; left: 50%; width: 0; height: 0; transition: transform 200ms cubic-bezier(.2, .72, .2, 1); }
+.today-tarot-deck-cards { position: absolute; z-index: 1; top: 45%; left: 50%; width: 0; height: 0; transition: transform 200ms cubic-bezier(.2, .72, .2, 1); }
 .today-tarot-deck-card { position: absolute; z-index: var(--deck-z-index); top: 0; left: 0; width: clamp(142px, 40vw, 172px); aspect-ratio: 714 / 1210; overflow: hidden; border: 0; border-radius: 10px; padding: 0; background: transparent; box-shadow: 0 8px 15px rgba(0, 0, 15, .26); cursor: pointer; opacity: var(--deck-opacity); transform: translate3d(var(--deck-x), var(--deck-y), 0) translate(-50%, -50%) rotate(var(--deck-rotation)) scale(var(--deck-scale)); transform-origin: 50% 100%; transition: transform 320ms cubic-bezier(.2, .72, .2, 1), opacity 280ms ease, filter 280ms ease, box-shadow 300ms ease; will-change: transform, opacity; }
 .today-tarot-deck-card span { display: block; width: 100%; height: 100%; border-radius: inherit; background: url("/tarot/back/today-tarot-card-back.png") center / 100% 100% no-repeat; }.today-tarot-deck-card::after { position: absolute; z-index: 1; inset: 0; border: 1px solid rgba(248, 239, 221, .58); border-radius: inherit; content: ""; opacity: 0; pointer-events: none; transition: opacity 280ms ease; }
 .today-tarot-deck-card:focus-visible { outline: 1px solid rgba(255, 245, 224, .9); outline-offset: 4px; }
@@ -79,7 +79,7 @@ body > main.today-tarot-page { position: relative; width: 100vw !important; min-
 
 .today-tarot-reveal-page { background: #080b2c !important; }
 .today-tarot-reveal-page::before { background-image: url("/illustrations/today-tarot-prepare-bg.jpg"); background-position: 50% top; }
-.today-tarot-reveal-page::after { background: linear-gradient(180deg, rgba(5, 7, 35, .14) 0%, rgba(8, 8, 39, .05) 36%, rgba(14, 13, 51, .38) 48%, #080b2c 60%, #080b2c 100%); }
+.today-tarot-reveal-page::after { background: linear-gradient(180deg, rgba(5, 7, 35, .14) 0%, rgba(8, 8, 39, .05) 40%, rgba(14, 13, 51, .3) 55%, #080b2c 72%, #080b2c 100%); }
 .today-tarot-reveal-page .today-tarot-app-surface { position: relative; width: min(100%, 480px); padding: max(10px, env(safe-area-inset-top)) 0 0; overflow: hidden; }
 .today-tarot-reveal-page .today-tarot-header { position: relative; z-index: 2; padding: 0 24px; }
 .today-tarot-interpretation { display: flex; min-height: 0; flex: 1; flex-direction: column; margin-top: -46px; }
