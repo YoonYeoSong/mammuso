@@ -103,30 +103,20 @@ body > main.destiny-home { width: 100vw !important; max-width: none !important; 
 .destiny-service-menu::before { position: absolute; z-index: -1; top: -34px; right: 0; left: 0; height: 122px; background: radial-gradient(ellipse at 50% 12%, rgba(132, 97, 212, .045), transparent 61%), linear-gradient(180deg, rgba(15, 20, 61, .32) 0%, rgba(9, 15, 45, .12) 56%, rgba(7, 13, 39, 0) 100%); content: ""; pointer-events: none; }
 .sr-only { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 .destiny-service-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.destiny-service-card { position: relative; display: flex; height: 118px; flex-direction: column; align-items: center; overflow: hidden; border: 1px solid var(--destiny-card-border); border-radius: 20px; padding: 10px 5px 8px; box-shadow: var(--destiny-card-shadow); color: var(--destiny-foreground); cursor: pointer; isolation: isolate; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
-.destiny-service-card--daily { background: linear-gradient(90deg, rgba(5, 11, 35, .42) 0%, rgba(5, 11, 35, .22) 47%, transparent 74%), url('/illustrations/daily-tarot-bg.png') 66% 38% / cover no-repeat; }
-.destiny-service-card--destiny, .destiny-service-card--compatibility { background: #11133d; }
-.destiny-service-background { z-index: 0; }
-.destiny-service-card--destiny::after, .destiny-service-card--compatibility::after { position: absolute; z-index: 1; right: 0; bottom: 0; left: 0; height: 42%; background: linear-gradient(0deg, rgba(5, 8, 31, .2), transparent); content: ""; pointer-events: none; }
-.destiny-service-constellation { position: absolute; top: 8px; left: 50%; width: 1px; height: 12px; background: linear-gradient(transparent, rgba(255, 237, 247, .86)); box-shadow: 0 15px 0 -0.2px rgba(255, 235, 243, .66); }
-.destiny-service-icon { position: relative; display: block; width: clamp(49px, 13.5vw, 55px); height: clamp(49px, 13.5vw, 55px); margin: 2px 0 7px; filter: var(--destiny-icon-glow); }
-.destiny-service-icon img { object-fit: contain; }
+.destiny-service-card { position: relative; display: flex; height: 118px; flex-direction: column; align-items: center; overflow: hidden; border: 1px solid rgba(224, 216, 193, .32); border-radius: 20px; padding: 10px 5px 8px; background: linear-gradient(135deg, #081027 0%, #0a1230 58%, #10183a 100%); box-shadow: inset 0 1px 0 rgba(255, 245, 229, .06), 0 5px 14px rgba(2, 6, 25, .18); color: #fff3df; cursor: pointer; isolation: isolate; transition: background .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.destiny-service-card::before { position: absolute; inset: 5px; border: 1px solid rgba(217, 208, 255, .09); border-radius: 15px; content: ""; pointer-events: none; }
+.destiny-service-icon { position: relative; z-index: 1; display: grid; width: clamp(49px, 13.5vw, 55px); height: clamp(49px, 13.5vw, 55px); place-items: center; margin: 2px 0 7px; color: #f4dfb9; filter: drop-shadow(0 1px 1px rgba(255, 239, 216, .2)) drop-shadow(0 0 3px rgba(225, 195, 245, .05)); }
+.destiny-service-icon svg { width: 100%; height: 100%; }
 .destiny-service-copy { display: contents; }
-.destiny-service-title { position: relative; z-index: 2; font-family: var(--destiny-serif); font-size: 14px; font-weight: 500; line-height: 1.15; letter-spacing: -.09em; white-space: nowrap; }
-.destiny-service-description { position: relative; z-index: 2; margin-top: 6px; color: var(--destiny-card-description); font-size: 10.5px; line-height: 1.45; white-space: pre-line; text-align: center; }
-.destiny-card-arrow { display: grid; width: 27px; height: 27px; place-items: center; border: 1px solid rgba(218, 224, 226, .32); border-radius: 50%; margin-top: auto; background: rgba(5, 11, 35, .18); color: var(--destiny-foreground); font-family: Arial, sans-serif; font-size: 20px; font-weight: 200; line-height: 1; transition: background .2s ease, border-color .2s ease; }
-.destiny-service-card:not(.is-featured) .destiny-card-arrow { display: none; }
+.destiny-service-title { position: relative; z-index: 1; color: #fff3df; font-family: var(--destiny-serif); font-size: 14px; font-weight: 500; line-height: 1.15; letter-spacing: -.09em; white-space: nowrap; }
+.destiny-service-description { position: relative; z-index: 1; margin-top: 6px; color: #c7c1d7; font-size: 10.5px; line-height: 1.45; white-space: pre-line; text-align: center; }
 .destiny-service-card.is-featured { grid-column: 1 / -1; height: 90px; flex-direction: row; justify-content: flex-start; padding: 12px 14px; text-align: left; }
 .destiny-service-card.is-featured .destiny-service-icon { width: 48px; height: 48px; flex: none; margin: 0 12px 0 3px; }
-.destiny-service-card.is-featured .destiny-service-constellation { display: none; }
 .destiny-service-card.is-featured .destiny-service-copy { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; }
 .destiny-service-card.is-featured .destiny-service-title { font-size: 16px; }
 .destiny-service-card.is-featured .destiny-service-description { margin-top: 4px; font-size: 11.5px; line-height: 1.35; white-space: normal; text-align: left; }
-.destiny-service-card.is-featured .destiny-card-arrow { flex: none; margin: 0 0 0 auto; }
-.destiny-service-card:hover { border-color: rgba(230, 228, 216, .46); box-shadow: 0 7px 17px rgba(2, 6, 25, .23); transform: scale(1.015); }
-.destiny-service-card:hover .destiny-card-arrow { border-color: rgba(232, 232, 219, .42); }
-.destiny-service-card:active { box-shadow: 0 4px 11px rgba(2, 6, 25, .2); transform: scale(.985); }
-.destiny-service-card:active .destiny-card-arrow { background: rgba(5, 11, 35, .3); }
+.destiny-service-card:hover { border-color: rgba(242, 224, 188, .48); background: linear-gradient(135deg, #0a1230 0%, #10183a 100%); box-shadow: inset 0 1px 0 rgba(255, 245, 229, .09), 0 6px 16px rgba(2, 6, 25, .22); }
+.destiny-service-card:active { border-color: rgba(242, 224, 188, .4); background: #0a1230; box-shadow: inset 0 1px 0 rgba(255, 245, 229, .05), 0 4px 11px rgba(2, 6, 25, .2); }
 
 .destiny-content-surface { position: relative; z-index: 0; margin-top: -64px; padding: 78px 16px 0; background: var(--destiny-content-background); }
 .destiny-content-surface::before { position: absolute; top: 21px; right: 0; left: 0; height: 86px; background: var(--destiny-content-glow); content: ""; pointer-events: none; }
