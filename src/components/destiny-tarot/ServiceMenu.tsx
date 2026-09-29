@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type Service = {
   title: string;
   description: string;
@@ -35,17 +37,31 @@ function ServiceIcon({ name }: { name: Service["icon"] }) {
 }
 
 function ServiceCard({ service }: { service: Service }) {
-  return <button
-    type="button"
-    className={`destiny-service-card destiny-service-card--${service.background}${service.featured ? " is-featured" : ""}`}
-    data-destination={service.destination}
-    aria-label={`${service.title} (준비 중)`}
-  >
+  const content = <>
     <span className={`destiny-service-icon destiny-service-icon--${service.icon}`}><ServiceIcon name={service.icon} /></span>
     <span className="destiny-service-copy">
       <span className="destiny-service-title">{service.title}</span>
       <span className="destiny-service-description">{service.description}</span>
     </span>
+  </>;
+
+  if (service.featured) {
+    return <Link
+      className={`destiny-service-card destiny-service-card--${service.background} is-featured`}
+      href={service.destination}
+      aria-label={`${service.title} 시작하기`}
+    >
+      {content}
+    </Link>;
+  }
+
+  return <button
+    type="button"
+    className={`destiny-service-card destiny-service-card--${service.background}`}
+    data-destination={service.destination}
+    aria-label={`${service.title} (준비 중)`}
+  >
+    {content}
   </button>;
 }
 
