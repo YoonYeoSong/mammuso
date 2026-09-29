@@ -105,14 +105,15 @@ body > main.destiny-home { width: 100vw !important; max-width: none !important; 
 .destiny-service-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .destiny-service-card { position: relative; display: flex; height: 118px; flex-direction: column; align-items: center; overflow: hidden; border: 1px solid var(--destiny-card-border); border-radius: 20px; padding: 10px 5px 8px; box-shadow: var(--destiny-card-shadow); color: var(--destiny-foreground); cursor: pointer; isolation: isolate; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
 .destiny-service-card--daily { background: linear-gradient(90deg, rgba(5, 11, 35, .42) 0%, rgba(5, 11, 35, .22) 47%, transparent 74%), url('/illustrations/daily-tarot-bg.png') 66% 38% / cover no-repeat; }
-.destiny-service-card--destiny { background: linear-gradient(0deg, rgba(5, 11, 35, .46) 0%, rgba(5, 11, 35, .22) 38%, transparent 61%), url('/illustrations/destiny-tarot-bg.png') 100% 12% / 128% auto no-repeat; }
-.destiny-service-card--compatibility { background: linear-gradient(0deg, rgba(5, 11, 35, .46) 0%, rgba(5, 11, 35, .22) 38%, transparent 61%), url('/illustrations/compatibility-bg.png') 50% 59% / 106% auto no-repeat; }
+.destiny-service-card--destiny, .destiny-service-card--compatibility { background: #11133d; }
+.destiny-service-background { z-index: 0; }
+.destiny-service-card--destiny::after, .destiny-service-card--compatibility::after { position: absolute; z-index: 1; right: 0; bottom: 0; left: 0; height: 42%; background: linear-gradient(0deg, rgba(5, 8, 31, .2), transparent); content: ""; pointer-events: none; }
 .destiny-service-constellation { position: absolute; top: 8px; left: 50%; width: 1px; height: 12px; background: linear-gradient(transparent, rgba(255, 237, 247, .86)); box-shadow: 0 15px 0 -0.2px rgba(255, 235, 243, .66); }
 .destiny-service-icon { position: relative; display: block; width: clamp(49px, 13.5vw, 55px); height: clamp(49px, 13.5vw, 55px); margin: 2px 0 7px; filter: var(--destiny-icon-glow); }
 .destiny-service-icon img { object-fit: contain; }
 .destiny-service-copy { display: contents; }
-.destiny-service-title { font-family: var(--destiny-serif); font-size: 14px; font-weight: 500; line-height: 1.15; letter-spacing: -.09em; white-space: nowrap; }
-.destiny-service-description { margin-top: 6px; color: var(--destiny-card-description); font-size: 10.5px; line-height: 1.45; white-space: pre-line; text-align: center; }
+.destiny-service-title { position: relative; z-index: 2; font-family: var(--destiny-serif); font-size: 14px; font-weight: 500; line-height: 1.15; letter-spacing: -.09em; white-space: nowrap; }
+.destiny-service-description { position: relative; z-index: 2; margin-top: 6px; color: var(--destiny-card-description); font-size: 10.5px; line-height: 1.45; white-space: pre-line; text-align: center; }
 .destiny-card-arrow { display: grid; width: 27px; height: 27px; place-items: center; border: 1px solid rgba(218, 224, 226, .32); border-radius: 50%; margin-top: auto; background: rgba(5, 11, 35, .18); color: var(--destiny-foreground); font-family: Arial, sans-serif; font-size: 20px; font-weight: 200; line-height: 1; transition: background .2s ease, border-color .2s ease; }
 .destiny-service-card:not(.is-featured) .destiny-card-arrow { display: none; }
 .destiny-service-card.is-featured { grid-column: 1 / -1; height: 90px; flex-direction: row; justify-content: flex-start; padding: 12px 14px; text-align: left; }
