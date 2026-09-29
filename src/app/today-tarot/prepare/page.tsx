@@ -1,5 +1,5 @@
-import { TodayTarotPhasePlaceholder } from "@/components/today-tarot/TodayTarotPhasePlaceholder";
+import { redirect } from "next/navigation";
 
 export default function TodayTarotPreparationPage() {
-  return <TodayTarotPhasePlaceholder />;
+  redirect("/tarot");
 }
