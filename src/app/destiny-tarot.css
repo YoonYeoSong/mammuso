@@ -27,7 +27,7 @@
   --destiny-content-glow: radial-gradient(ellipse at center, rgba(120, 87, 202, .1), transparent 67%);
   --destiny-card-border: rgba(204, 213, 224, .32);
   --destiny-card-shadow: 0 5px 14px rgba(2, 6, 25, .18);
-  --destiny-icon-glow: drop-shadow(0 1px 1px rgba(255, 239, 216, .26)) drop-shadow(0 0 3px rgba(225, 195, 245, .06));
+  --destiny-icon-glow: drop-shadow(0 1px 1px rgba(255, 239, 216, .16)) drop-shadow(0 0 2px rgba(225, 195, 245, .035));
   --destiny-card-description: #d3cee5;
   --destiny-banner-border: rgba(217, 208, 255, .36);
   --destiny-banner-overlay: linear-gradient(90deg, rgba(12, 13, 50, .61) 0%, rgba(20, 20, 71, .43) 48%, rgba(47, 32, 95, .2) 73%, rgba(109, 72, 135, .08) 100%);
@@ -53,7 +53,7 @@
   --destiny-content-glow: radial-gradient(ellipse at center, rgba(103, 75, 209, .09), transparent 67%);
   --destiny-card-border: rgba(223, 216, 194, .34);
   --destiny-card-shadow: 0 5px 14px rgba(1, 5, 24, .2);
-  --destiny-icon-glow: drop-shadow(0 1px 1px rgba(255, 241, 218, .28)) drop-shadow(0 0 3px rgba(229, 197, 250, .07));
+  --destiny-icon-glow: drop-shadow(0 1px 1px rgba(255, 241, 218, .16)) drop-shadow(0 0 2px rgba(229, 197, 250, .04));
   --destiny-card-description: #d8d2e8;
   --destiny-banner-border: rgba(217, 208, 255, .42);
   --destiny-banner-overlay: linear-gradient(90deg, rgba(10, 12, 47, .65) 0%, rgba(19, 20, 71, .48) 46%, rgba(45, 29, 96, .23) 72%, rgba(113, 68, 145, .08) 100%);
@@ -105,13 +105,14 @@ body > main.destiny-home { width: 100vw !important; max-width: none !important; 
 .destiny-service-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .destiny-service-card { position: relative; display: flex; height: 150px; flex-direction: column; align-items: center; overflow: hidden; border: 1px solid rgba(224, 216, 193, .32); border-radius: 20px; padding: 14px 6px 20px; background: linear-gradient(135deg, #081027 0%, #0a1230 58%, #10183a 100%); box-shadow: inset 0 1px 0 rgba(255, 245, 229, .06), 0 5px 14px rgba(2, 6, 25, .18); color: #fff3df; cursor: pointer; isolation: isolate; transition: background .2s ease, box-shadow .2s ease, border-color .2s ease; }
 .destiny-service-card::before { position: absolute; inset: 5px; border: 1px solid rgba(217, 208, 255, .09); border-radius: 15px; content: ""; pointer-events: none; }
-.destiny-service-icon { position: relative; z-index: 1; display: grid; width: clamp(49px, 13.5vw, 55px); height: clamp(49px, 13.5vw, 55px); flex: none; place-items: center; margin: 0 0 7px; color: #f4dfb9; filter: drop-shadow(0 1px 1px rgba(255, 239, 216, .2)) drop-shadow(0 0 3px rgba(225, 195, 245, .05)); }
+.destiny-service-icon { --destiny-service-icon-title-gap: 8px; position: relative; z-index: 1; display: grid; width: clamp(49px, 13.5vw, 55px); height: clamp(49px, 13.5vw, 55px); flex: none; place-items: center; margin: 0 0 var(--destiny-service-icon-title-gap); color: #f4dfb9; filter: var(--destiny-icon-glow); }
+.destiny-service-icon--star, .destiny-service-icon--heart { width: clamp(35px, 9.7vw, 40px); height: clamp(35px, 9.7vw, 40px); }
 .destiny-service-icon svg { width: 100%; height: 100%; }
 .destiny-service-copy { display: flex; min-width: 0; flex-direction: column; align-items: center; }
 .destiny-service-title { position: relative; z-index: 1; color: #fff3df; font-family: var(--destiny-serif); font-size: 14px; font-weight: 500; line-height: 1.15; letter-spacing: -.09em; white-space: nowrap; }
 .destiny-service-description { position: relative; z-index: 1; margin-top: 6px; color: #c7c1d7; font-size: 10.5px; line-height: 1.45; white-space: pre-line; text-align: center; }
 .destiny-service-card.is-featured { grid-column: 1 / -1; height: 90px; flex-direction: row; justify-content: flex-start; padding: 12px 14px; text-align: left; }
-.destiny-service-card.is-featured .destiny-service-icon { width: 48px; height: 48px; flex: none; margin: 0 12px 0 3px; }
+.destiny-service-card.is-featured .destiny-service-icon { width: 48px; height: 48px; flex: none; margin: 0 var(--destiny-service-icon-title-gap) 0 3px; }
 .destiny-service-card.is-featured .destiny-service-copy { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; }
 .destiny-service-card.is-featured .destiny-service-title { font-size: 16px; }
 .destiny-service-card.is-featured .destiny-service-description { margin-top: 4px; font-size: 11.5px; line-height: 1.35; white-space: normal; text-align: left; }

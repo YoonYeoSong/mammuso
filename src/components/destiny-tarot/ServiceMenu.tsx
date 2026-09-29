@@ -14,7 +14,7 @@ const services: Service[] = [
 ];
 
 function ServiceIcon({ name }: { name: Service["icon"] }) {
-  const sharedProps = { fill: "none", stroke: "currentColor", strokeWidth: 1.35, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  const sharedProps = { fill: "none", stroke: "currentColor", strokeWidth: 1.4, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
   if (name === "sun") {
     return <svg viewBox="0 0 64 64" aria-hidden="true" {...sharedProps}>
@@ -25,13 +25,12 @@ function ServiceIcon({ name }: { name: Service["icon"] }) {
 
   if (name === "star") {
     return <svg viewBox="0 0 64 64" aria-hidden="true" {...sharedProps}>
-      <path d="M32 4 36 28 52 12 35 29 60 32 35 35 52 52 36 36 32 60 28 36 12 52 29 35 4 32 29 29 12 12 28 28Z" />
-      <circle cx="32" cy="32" r="2" />
+      <path d="M32 7 35.8 27.4 47.6 16.4 36.6 28.2 57 32 36.6 35.8 47.6 47.6 35.8 36.6 32 57 28.2 36.6 16.4 47.6 27.4 35.8 7 32 27.4 28.2 16.4 16.4 28.2 27.4Z" />
     </svg>;
   }
 
   return <svg viewBox="0 0 64 64" aria-hidden="true" {...sharedProps}>
-    <path d="M32 52.5 13.5 34.6C5.8 27.1 7.2 14.3 16.1 10.1c6.2-3 12.4-.5 15.9 5.1 3.5-5.6 9.7-8.1 15.9-5.1 8.9 4.2 10.3 17 2.6 24.5Z" />
+    <path d="M32 52.5 14.7 35.2C7.1 27.6 8.2 15.2 16.3 11.5c6.3-2.8 12.4.2 15.7 5.9 3.3-5.7 9.4-8.7 15.7-5.9 8.1 3.7 9.2 16.1 1.6 23.7Z" />
   </svg>;
 }
 
@@ -42,7 +41,7 @@ function ServiceCard({ service }: { service: Service }) {
     data-destination={service.destination}
     aria-label={`${service.title} (준비 중)`}
   >
-    <span className="destiny-service-icon"><ServiceIcon name={service.icon} /></span>
+    <span className={`destiny-service-icon destiny-service-icon--${service.icon}`}><ServiceIcon name={service.icon} /></span>
     <span className="destiny-service-copy">
       <span className="destiny-service-title">{service.title}</span>
       <span className="destiny-service-description">{service.description}</span>
