@@ -1,13 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import { useRouter } from "next/navigation";
 import { TodayTarotHeader } from "./TodayTarotHeader";
 import { TODAY_TAROT_SESSION_KEY } from "@/lib/today-tarot/session";
 import { todayTarotRoutes, type TodayTarotSession } from "@/lib/today-tarot/flow";
 
+const CARD_COUNT = 78;
+const VISIBLE_CARD_OFFSETS = [-3, -2, -1, 0, 1, 2, 3] as const;
+const SWIPE_THRESHOLD = 32;
+
+type DeckCard = { cardId: string; index: number; offset: number };
+
 export function TodayTarotSelection() {
+  const router = useRouter();
   const [session, setSession] = useState<TodayTarotSession | null>(null);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDeckReady, setIsDeckReady] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const pointerStartX = useRef<number | null>(null);
+  const ignoreSyntheticCardTap = useRef(false);
 
   useEffect(() => {
     const saved = window.sessionStorage.getItem(TODAY_TAROT_SESSION_KEY);
@@ -15,16 +29,72 @@ export function TodayTarotSelection() {
 
     try {
       const parsed = JSON.parse(saved) as TodayTarotSession;
-      if (parsed.shuffledCardIds.length === 78) setSession(parsed);
+      if (parsed.shuffledCardIds.length === CARD_COUNT) {
+        setSession(parsed);
+        // Begin in the middle of the already-shuffled deck so a natural 5–7 card fan is
+        // visible immediately, without selecting or reordering anything.
+        const restoredIndex = parsed.selectedCardId ? parsed.shuffledCardIds.indexOf(parsed.selectedCardId) : Math.floor(parsed.shuffledCardIds.length / 2);
+        if (restoredIndex >= 0) setActiveIndex(restoredIndex);
+      }
     } catch {
       // A corrupt or stale browser session should be prepared again instead.
     }
   }, []);
 
-  function chooseCard(cardId: string) {
+  useEffect(() => {
+    const animationFrame = window.requestAnimationFrame(() => setIsDeckReady(true));
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [session]);
+
+  function moveDeck(direction: -1 | 1) {
+    if (!session || isConfirming) return;
+    setActiveIndex((current) => Math.max(0, Math.min(session.shuffledCardIds.length - 1, current + direction)));
+  }
+
+  function chooseCard(cardId: string, index: number) {
+    if (ignoreSyntheticCardTap.current || isConfirming) return;
     setSelectedCardId(cardId);
-    if (!session) return;
-    window.sessionStorage.setItem(TODAY_TAROT_SESSION_KEY, JSON.stringify({ ...session, selectedCardId: cardId }));
+    setActiveIndex(index);
+  }
+
+  function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
+    if (isConfirming) return;
+    pointerStartX.current = event.clientX;
+  }
+
+  function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (pointerStartX.current === null || isConfirming) return;
+    const nextOffset = Math.max(-72, Math.min(72, event.clientX - pointerStartX.current));
+    setDragOffset(nextOffset);
+  }
+
+  function finishPointer(event: PointerEvent<HTMLDivElement>) {
+    if (pointerStartX.current === null) return;
+    const offset = event.clientX - pointerStartX.current;
+    pointerStartX.current = null;
+    setDragOffset(0);
+    if (Math.abs(offset) >= SWIPE_THRESHOLD) {
+      // Some mobile browsers still emit a click at the end of a drag. Keep that
+      // synthetic click from selecting the card under the finger.
+      ignoreSyntheticCardTap.current = true;
+      window.setTimeout(() => { ignoreSyntheticCardTap.current = false; }, 120);
+      moveDeck(offset < 0 ? 1 : -1);
+    }
+  }
+
+  function confirmCard() {
+    if (!session || !selectedCardId || isConfirming) return;
+    const orientation = Math.random() < 0.5 ? "upright" : "reversed";
+    const nextSession: TodayTarotSession = {
+      ...session,
+      step: "reveal",
+      selectedCardId,
+      orientation,
+    };
+    setSession(nextSession);
+    window.sessionStorage.setItem(TODAY_TAROT_SESSION_KEY, JSON.stringify(nextSession));
+    setIsConfirming(true);
+    window.setTimeout(() => router.push(todayTarotRoutes.reveal), 360);
   }
 
   if (!session) return <main className="today-tarot-page today-tarot-selection-page">
@@ -34,22 +104,60 @@ export function TodayTarotSelection() {
     </div>
   </main>;
 
+  const visibleCards: DeckCard[] = VISIBLE_CARD_OFFSETS.flatMap((offset) => {
+    const index = activeIndex + offset;
+    const cardId = session.shuffledCardIds[index];
+    return cardId ? [{ cardId, index, offset }] : [];
+  });
+  const selectedIndex = selectedCardId ? session.shuffledCardIds.indexOf(selectedCardId) : -1;
+
   return <main className="today-tarot-page today-tarot-selection-page">
     <div className="today-tarot-app-surface">
       <TodayTarotHeader backHref={todayTarotRoutes.intro} />
       <section className="today-tarot-selection" aria-labelledby="today-tarot-selection-title">
-        <p>오늘의 타로</p>
-        <h2 id="today-tarot-selection-title">마음이 이끄는 카드 한 장을<br />직접 골라주세요.</h2>
-        <div className="today-tarot-card-grid" aria-label="섞인 78장 카드">
-          {session.shuffledCardIds.map((cardId, index) => <button
-            key={cardId}
-            type="button"
-            className={`today-tarot-card-choice ${selectedCardId === cardId ? "is-selected" : ""}`}
-            aria-label={`카드 ${index + 1}번 선택`}
-            aria-pressed={selectedCardId === cardId}
-            onClick={() => chooseCard(cardId)}
-          ><span aria-hidden="true" /></button>)}
+        <div className="today-tarot-selection-copy">
+          <h2 id="today-tarot-selection-title">지금, 마음이 끌리는 카드를<br />한 장 선택해주세요.</h2>
+          <p>첫 느낌이 가장 솔직한 답입니다.</p>
         </div>
+        <div
+          className={`today-tarot-deck ${isDeckReady ? "is-ready" : ""} ${selectedCardId ? "has-selection" : ""} ${isConfirming ? "is-confirming" : ""}`}
+          aria-label="섞인 78장 타로 덱"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={finishPointer}
+          onPointerCancel={finishPointer}
+        >
+          <div className="today-tarot-deck-cards" style={{ transform: `translate3d(${dragOffset}px, 0, 0)` }}>
+            {visibleCards.map(({ cardId, index, offset }) => {
+              const isSelected = selectedCardId === cardId;
+              const cardStyle = {
+                "--deck-x": `${offset * 49}px`,
+                "--deck-y": `${Math.abs(offset) * 4}px`,
+                "--exit-x": `${offset * 92}px`,
+                "--entrance-delay": `${(offset + 3) * 35}ms`,
+              } as CSSProperties;
+              return <button
+                key={cardId}
+                type="button"
+                className={`today-tarot-deck-card ${offset === 0 ? "is-active" : ""} ${isSelected ? "is-selected" : ""}`}
+                style={cardStyle}
+                aria-label={`덱의 ${index + 1}번째 카드 선택`}
+                aria-pressed={isSelected}
+                onClick={() => chooseCard(cardId, index)}
+              ><span aria-hidden="true" /></button>;
+            })}
+          </div>
+          <button type="button" className="today-tarot-deck-arrow today-tarot-deck-arrow--previous" onClick={() => moveDeck(-1)} disabled={activeIndex === 0 || isConfirming} aria-label="이전 카드 보기">‹</button>
+          <button type="button" className="today-tarot-deck-arrow today-tarot-deck-arrow--next" onClick={() => moveDeck(1)} disabled={activeIndex === session.shuffledCardIds.length - 1 || isConfirming} aria-label="다음 카드 보기">›</button>
+          <p className="today-tarot-deck-position" aria-live="polite">{activeIndex + 1} <span>/</span> {CARD_COUNT}</p>
+        </div>
+        <div className={`today-tarot-selection-confirmation ${selectedCardId ? "is-visible" : ""}`} aria-live="polite">
+          <p>{selectedCardId ? "이 카드로 진행할까요?" : "마음이 이끄는 카드를 골라주세요."}</p>
+          <button type="button" onClick={confirmCard} disabled={!selectedCardId || isConfirming}>
+            이 카드 선택하기
+          </button>
+        </div>
+        {selectedIndex >= 0 && <span className="today-tarot-selection-status sr-only">덱의 {selectedIndex + 1}번째 카드를 선택했습니다.</span>}
       </section>
     </div>
   </main>;

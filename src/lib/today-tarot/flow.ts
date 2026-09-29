@@ -29,6 +29,8 @@ export type TodayTarotSession = {
   step: TodayTarotStep;
   shuffledCardIds: string[];
   selectedCardId?: string;
+  /** Randomized only when the visitor confirms their own card selection. */
+  orientation?: "upright" | "reversed";
 };
 
 /**
