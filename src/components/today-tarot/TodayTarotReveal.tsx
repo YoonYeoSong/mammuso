@@ -44,6 +44,7 @@ export function TodayTarotReveal() {
           <h2 id="today-tarot-interpretation-title">당신의 사주와 카드를<br />함께 해석하고 있어요.</h2>
           <p>조금만 기다려주세요.<br />당신을 위한 이야기를 정리하고 있습니다.</p>
           <MoonPhaseLoader />
+          <small className="today-tarot-interpretation-status">해석 중...</small>
         </div>}
       </section>
     </div>
