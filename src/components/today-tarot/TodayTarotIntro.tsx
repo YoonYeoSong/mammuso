@@ -22,28 +22,12 @@ function BenefitIcon({ icon }: { icon: IntroBenefit["icon"] }) {
   return <svg viewBox="0 0 48 48" aria-hidden="true" {...shared}><path d="M8 37.5c8.4-1.1 10.5-10.6 18-14.5 4.9-2.5 8.3-1.3 14-8.5" /><path d="m35 13.2 5 .3-.4 5" /><path d="M10 12.5h8M10 18.5h5" /><circle cx="9" cy="37.5" r="2.5" /></svg>;
 }
 
-function IntroVisual() {
-  return <div className="today-tarot-intro-visual" aria-hidden="true">
-    <span className="today-tarot-visual-aura today-tarot-visual-aura--one" />
-    <span className="today-tarot-visual-aura today-tarot-visual-aura--two" />
-    <span className="today-tarot-moon"><i /></span>
-    <span className="today-tarot-star today-tarot-star--one" />
-    <span className="today-tarot-star today-tarot-star--two" />
-    <span className="today-tarot-star today-tarot-star--three" />
-    <span className="today-tarot-star today-tarot-star--four" />
-    <span className="today-tarot-constellation"><i /><i /><i /></span>
-    <span className="today-tarot-horizon" />
-  </div>;
-}
-
 export function TodayTarotIntro() {
   return <main className="today-tarot-page today-tarot-intro-page">
     <div className="today-tarot-app-surface">
       <TodayTarotHeader />
       <section className="today-tarot-intro" aria-labelledby="today-tarot-intro-title">
-        <IntroVisual />
         <div className="today-tarot-intro-copy">
-          <p className="today-tarot-kicker">A SMALL RITUAL FOR TODAY</p>
           <h2 id="today-tarot-intro-title">지금, 당신의 오늘을<br />카드 한 장에 담아볼까요?</h2>
           <p>오늘의 흐름을 비추는 카드가<br />당신에게 전하는 메시지를 확인해보세요.</p>
         </div>
