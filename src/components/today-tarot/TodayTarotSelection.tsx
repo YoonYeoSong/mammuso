@@ -14,6 +14,7 @@ const CARD_STEP = 78;
 const SNAP_DURATION_MS = 320;
 
 type DeckCard = { cardId: string; index: number; offset: number };
+type TransitionCard = { left: number; top: number; width: number; height: number; x: number; y: number };
 
 function getDeckCardStyle(distance: number): CSSProperties {
   const absoluteDistance = Math.abs(distance);
@@ -48,7 +49,9 @@ export function TodayTarotSelection() {
   const [dragOffset, setDragOffset] = useState(0);
   const [isDeckReady, setIsDeckReady] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [transitionCard, setTransitionCard] = useState<TransitionCard | null>(null);
   const pointer = useRef<{ id: number; startX: number } | null>(null);
+  const selectedCardElement = useRef<HTMLButtonElement | null>(null);
   const ignoreSyntheticCardTap = useRef(false);
   const positionSnapTimer = useRef<number | null>(null);
 
@@ -144,6 +147,28 @@ export function TodayTarotSelection() {
 
   function confirmCard() {
     if (!session || !selectedCardId || isConfirming) return;
+
+    const selectedCard = selectedCardElement.current;
+    if (!selectedCard) return;
+
+    const bounds = selectedCard.getBoundingClientRect();
+    const scale = 1.08;
+    const scaledHeight = bounds.height * scale;
+    const safeCenterTop = 20 + scaledHeight / 2;
+    const safeCenterBottom = window.innerHeight - 20 - scaledHeight / 2;
+    const targetCenterY = Math.max(
+      safeCenterTop,
+      Math.min(safeCenterBottom, window.innerHeight / 2 - 18),
+    );
+    setTransitionCard({
+      left: bounds.left,
+      top: bounds.top,
+      width: bounds.width,
+      height: bounds.height,
+      x: window.innerWidth / 2 - (bounds.left + bounds.width / 2),
+      y: targetCenterY - (bounds.top + bounds.height / 2),
+    });
+
     const orientation = Math.random() < 0.5 ? "upright" : "reversed";
     const nextSession: TodayTarotSession = {
       ...session,
@@ -154,7 +179,7 @@ export function TodayTarotSelection() {
     setSession(nextSession);
     window.sessionStorage.setItem(TODAY_TAROT_SESSION_KEY, JSON.stringify(nextSession));
     setIsConfirming(true);
-    window.setTimeout(() => router.push(todayTarotRoutes.reveal), 360);
+    window.setTimeout(() => router.push(todayTarotRoutes.reveal), 680);
   }
 
   if (!session) return <main className="today-tarot-page today-tarot-selection-page">
@@ -171,7 +196,7 @@ export function TodayTarotSelection() {
   });
   const selectedIndex = selectedCardId ? session.shuffledCardIds.indexOf(selectedCardId) : -1;
 
-  return <main className="today-tarot-page today-tarot-selection-page">
+  return <main className={`today-tarot-page today-tarot-selection-page ${isConfirming ? "is-confirming" : ""}`}>
     <div className="today-tarot-app-surface">
       <TodayTarotHeader backHref={todayTarotRoutes.intro} />
       <section className="today-tarot-selection" aria-labelledby="today-tarot-selection-title">
@@ -199,6 +224,7 @@ export function TodayTarotSelection() {
                   type="button"
                   className={`today-tarot-deck-card ${offset === 0 ? "is-active" : ""} ${isSelected ? "is-selected" : ""}`}
                   style={cardStyle}
+                  ref={isSelected ? selectedCardElement : undefined}
                   aria-label={`덱의 ${index + 1}번째 카드 선택`}
                   aria-pressed={isSelected}
                   onClick={() => chooseCard(cardId, index)}
@@ -219,5 +245,20 @@ export function TodayTarotSelection() {
         {selectedIndex >= 0 && <span className="today-tarot-selection-status sr-only">덱의 {selectedIndex + 1}번째 카드를 선택했습니다.</span>}
       </section>
     </div>
+    {transitionCard && <>
+      <div
+        className="today-tarot-selection-transition-card"
+        aria-hidden="true"
+        style={{
+          "--transition-card-left": `${transitionCard.left}px`,
+          "--transition-card-top": `${transitionCard.top}px`,
+          "--transition-card-width": `${transitionCard.width}px`,
+          "--transition-card-height": `${transitionCard.height}px`,
+          "--transition-card-x": `${transitionCard.x}px`,
+          "--transition-card-y": `${transitionCard.y}px`,
+        } as CSSProperties}
+      ><span /></div>
+      <div className="today-tarot-selection-transition-wash" aria-hidden="true" />
+    </>}
   </main>;
 }
