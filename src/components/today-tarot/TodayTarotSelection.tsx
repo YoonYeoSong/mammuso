@@ -8,23 +8,31 @@ import { todayTarotRoutes, type TodayTarotSession } from "@/lib/today-tarot/flow
 
 const CARD_COUNT = 78;
 const VISIBLE_CARD_OFFSETS = [-3, -2, -1, 0, 1, 2, 3] as const;
-const SWIPE_THRESHOLD = 32;
-const DRAG_FEEDBACK_LIMIT = 76;
-const CARD_STEP = 52;
+const SWIPE_THRESHOLD = 36;
+// Dragging is intentionally only a small input cue. The deck itself never
+// leaves its centered viewport, and always returns to its symmetric layout.
+const DRAG_FEEDBACK_LIMIT = 22;
+const CARD_STEP = 78;
 
 type DeckCard = { cardId: string; index: number; offset: number };
 
 function getDeckCardStyle(distance: number): CSSProperties {
   const absoluteDistance = Math.abs(distance);
+  const depth = [
+    { scale: 1, opacity: 1, y: 0 },
+    { scale: 0.96, opacity: 0.91, y: 7 },
+    { scale: 0.91, opacity: 0.78, y: 17 },
+    { scale: 0.85, opacity: 0.56, y: 29 },
+  ][absoluteDistance] ?? { scale: 0.85, opacity: 0.56, y: 29 };
 
   return {
     // Every visual property comes from the card's distance to the current center.
     // The same rule is therefore applied to both sides of the deck.
     "--deck-x": `${distance * CARD_STEP}px`,
-    "--deck-y": `${absoluteDistance * 5}px`,
-    "--deck-scale": `${1 - absoluteDistance * 0.05}`,
-    "--deck-opacity": `${1 - absoluteDistance * 0.07}`,
-    "--deck-muted-opacity": `${(1 - absoluteDistance * 0.07) * 0.76}`,
+    "--deck-y": `${depth.y}px`,
+    "--deck-scale": `${depth.scale}`,
+    "--deck-opacity": `${depth.opacity}`,
+    "--deck-muted-opacity": `${depth.opacity * 0.76}`,
     "--deck-z-index": `${10 - absoluteDistance}`,
     "--deck-exit-x": `${distance * CARD_STEP * 1.45}px`,
     "--entrance-delay": `${(distance + 3) * 35}ms`,
@@ -102,7 +110,7 @@ export function TodayTarotSelection() {
       // synthetic click from selecting the card under the finger.
       ignoreSyntheticCardTap.current = true;
       window.setTimeout(() => { ignoreSyntheticCardTap.current = false; }, 180);
-      moveDeck(offset < 0 ? 1 : -1, Math.min(2, Math.max(1, Math.round(Math.abs(offset) / CARD_STEP))));
+      moveDeck(offset < 0 ? 1 : -1);
     }
   }
 
