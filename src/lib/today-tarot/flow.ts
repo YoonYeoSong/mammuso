@@ -25,10 +25,13 @@ export const todayTarotFlow = [
 ] as const satisfies ReadonlyArray<{ step: TodayTarotStep; label: string; route: string }>;
 
 export type TodayTarotSession = {
+  id?: string;
   dateKey: string;
   step: TodayTarotStep;
   shuffledCardIds: string[];
   selectedCardId?: string;
+  clarifierCardId?: string;
+  profileSource?: "guest" | "member";
   /** Randomized only when the visitor confirms their own card selection. */
   orientation?: "upright" | "reversed";
 };

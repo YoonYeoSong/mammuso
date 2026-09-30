@@ -1,5 +1,6 @@
 import { FULL_TAROT_DECK_SIZE, tarotDeckCapacity } from "./deck";
 import type { TodayTarotSession } from "./flow";
+import type { TodayTarotProfileContext } from "./profile";
 
 export const TODAY_TAROT_SESSION_KEY = "mammuso:today-tarot:session";
 
@@ -37,7 +38,7 @@ export function todayInSeoul(now = new Date()) {
   return `${value.year}-${value.month}-${value.day}`;
 }
 
-export function prepareTodayTarotSession(now = new Date()): PreparedTodayTarotSession {
+export function prepareTodayTarotSession(profile: TodayTarotProfileContext, now = new Date()): PreparedTodayTarotSession {
   const shuffledCardIds = createTodayTarotDeckOrder();
   if (shuffledCardIds.length !== FULL_TAROT_DECK_SIZE) throw new Error("TODAY_TAROT_DECK_SIZE_MISMATCH");
 
@@ -47,6 +48,7 @@ export function prepareTodayTarotSession(now = new Date()): PreparedTodayTarotSe
     step: "selection",
     shuffledCardIds,
     preparedAt: now.toISOString(),
+    profileSource: profile.source,
     sajuDailyFlowStatus: "not-configured",
   };
 }

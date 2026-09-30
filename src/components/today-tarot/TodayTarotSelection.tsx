@@ -46,7 +46,7 @@ function getDeckCardStyle(distance: number): CSSProperties {
   } as CSSProperties;
 }
 
-export function TodayTarotSelection() {
+export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?: boolean }) {
   const router = useRouter();
   const [session, setSession] = useState<TodayTarotSession | null>(null);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
@@ -76,7 +76,7 @@ export function TodayTarotSelection() {
         setSession(parsed);
         // Begin in the middle of the already-shuffled deck so a natural 5–7 card fan is
         // visible immediately, without selecting or reordering anything.
-        const restoredIndex = parsed.selectedCardId ? parsed.shuffledCardIds.indexOf(parsed.selectedCardId) : Math.floor(parsed.shuffledCardIds.length / 2);
+        const restoredIndex = clarifierMode ? Math.floor(parsed.shuffledCardIds.length / 2) : (parsed.selectedCardId ? parsed.shuffledCardIds.indexOf(parsed.selectedCardId) : Math.floor(parsed.shuffledCardIds.length / 2));
         if (restoredIndex >= 0) {
           activeIndexRef.current = restoredIndex;
           setActiveIndex(restoredIndex);
@@ -86,7 +86,7 @@ export function TodayTarotSelection() {
     } catch {
       // A corrupt or stale browser session should be prepared again instead.
     }
-  }, []);
+  }, [clarifierMode]);
 
   useEffect(() => {
     const animationFrame = window.requestAnimationFrame(() => {
@@ -170,6 +170,7 @@ export function TodayTarotSelection() {
 
   function chooseCard(cardId: string, index: number) {
     if (ignoreSyntheticCardTap.current || isConfirming || isAnimatingRef.current) return;
+    if (clarifierMode && cardId === session?.selectedCardId) return;
     setSelectedCardId((current) => current === cardId ? null : cardId);
     setActiveIndex(index);
     activeIndexRef.current = index;
@@ -233,22 +234,23 @@ export function TodayTarotSelection() {
       y: targetCenterY - (bounds.top + bounds.height / 2),
     });
 
-    const orientation = Math.random() < 0.5 ? "upright" : "reversed";
+    const orientation = session.orientation ?? (Math.random() < 0.5 ? "upright" : "reversed");
     const nextSession: TodayTarotSession = {
       ...session,
       step: "reveal",
-      selectedCardId,
+      selectedCardId: clarifierMode ? session.selectedCardId : selectedCardId,
+      clarifierCardId: clarifierMode ? selectedCardId : session.clarifierCardId,
       orientation,
     };
     setSession(nextSession);
     window.sessionStorage.setItem(TODAY_TAROT_SESSION_KEY, JSON.stringify(nextSession));
     setIsConfirming(true);
-    window.setTimeout(() => router.push(todayTarotRoutes.reveal), 680);
+    window.setTimeout(() => router.push(clarifierMode ? `${todayTarotRoutes.reveal}?mode=clarifier` : todayTarotRoutes.reveal), 680);
   }
 
   if (!session) return <main className="today-tarot-page today-tarot-selection-page">
     <div className="today-tarot-app-surface">
-      <TodayTarotHeader backHref={todayTarotRoutes.preparing} />
+      <TodayTarotHeader backHref={clarifierMode ? todayTarotRoutes.result : todayTarotRoutes.preparing} />
       <section className="today-tarot-selection-empty"><h2>카드를 준비하고 있어요.</h2><a href={todayTarotRoutes.preparing}>준비 화면으로 돌아가기</a></section>
     </div>
   </main>;
@@ -262,11 +264,11 @@ export function TodayTarotSelection() {
 
   return <main className={`today-tarot-page today-tarot-selection-page ${isConfirming ? "is-confirming" : ""}`}>
     <div className="today-tarot-app-surface">
-      <TodayTarotHeader backHref={todayTarotRoutes.intro} />
+      <TodayTarotHeader backHref={clarifierMode ? todayTarotRoutes.result : todayTarotRoutes.intro} />
       <section className="today-tarot-selection" aria-labelledby="today-tarot-selection-title">
         <div className="today-tarot-selection-copy">
-          <h2 id="today-tarot-selection-title">지금, 마음이 끌리는 카드를<br />한 장 선택해주세요.</h2>
-          <p>첫 느낌이 가장 솔직한 답입니다.</p>
+          <h2 id="today-tarot-selection-title">{clarifierMode ? <>오늘의 흐름을 더 비출<br />보조카드 한 장을 골라주세요.</> : <>지금, 마음이 끌리는 카드를<br />한 장 선택해주세요.</>}</h2>
+          <p>{clarifierMode ? "메인카드와 다른 카드가 오늘의 조언을 보탭니다." : "첫 느낌이 가장 솔직한 답입니다."}</p>
         </div>
         <div
           className={`today-tarot-deck ${isDeckReady ? "is-ready" : ""} ${isDeckEntering ? "is-entering" : ""} ${selectedCardId ? "has-selection" : ""} ${isConfirming ? "is-confirming" : ""}`}
@@ -290,10 +292,11 @@ export function TodayTarotSelection() {
                   className={`today-tarot-deck-card ${isTransitionBuffer ? "is-transition-buffer" : ""} ${offset === 0 ? "is-active" : ""} ${isSelected ? "is-selected" : ""}`}
                   style={cardStyle}
                   ref={isSelected ? selectedCardElement : undefined}
-                  aria-label={`덱의 ${index + 1}번째 카드 선택`}
+                  aria-label={clarifierMode && cardId === session.selectedCardId ? "메인카드로 이미 선택됨" : `덱의 ${index + 1}번째 카드 선택`}
                   aria-pressed={isSelected}
                   aria-hidden={isTransitionBuffer}
                   tabIndex={isTransitionBuffer ? -1 : undefined}
+                  disabled={clarifierMode && cardId === session.selectedCardId}
                   onClick={() => chooseCard(cardId, index)}
                   onTransitionEnd={(event) => handleCardTransitionEnd(event, index, offset)}
                 ><span aria-hidden="true" /></button>;
@@ -305,9 +308,9 @@ export function TodayTarotSelection() {
           <p className="today-tarot-deck-position" aria-live="polite"><b>현재 위치</b> {positionIndex + 1} <span>/</span> {CARD_COUNT}</p>
         </div>
         <div className={`today-tarot-selection-confirmation ${selectedCardId ? "is-visible" : ""}`} aria-live="polite">
-          <p>{selectedCardId ? "이 카드로 진행할까요?" : "마음이 이끄는 카드를 골라주세요."}</p>
+          <p>{selectedCardId ? "이 카드로 진행할까요?" : clarifierMode ? "메인카드가 아닌 한 장을 골라주세요." : "마음이 이끄는 카드를 골라주세요."}</p>
           <button type="button" onClick={confirmCard} disabled={!selectedCardId || isConfirming}>
-            이 카드 선택하기
+            {clarifierMode ? "보조카드 선택하기" : "이 카드 선택하기"}
           </button>
         </div>
         {selectedIndex >= 0 && <span className="today-tarot-selection-status sr-only">덱의 {selectedIndex + 1}번째 카드를 선택했습니다.</span>}

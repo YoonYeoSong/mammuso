@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { todayTarotRoutes } from "@/lib/today-tarot/flow";
 import { persistTodayTarotSession, prepareTodayTarotSession } from "@/lib/today-tarot/session";
+import { readTodayTarotProfile } from "@/lib/today-tarot/profile";
 import { TodayTarotLoadingScene } from "./TodayTarotRitualLoading";
 
 const MINIMUM_PREPARATION_MS = 1700;
@@ -17,7 +18,9 @@ export function TodayTarotPreparation() {
 
     const complete = async () => {
       // Only the date, session, and deck order are prepared here; no card is selected.
-      const session = prepareTodayTarotSession();
+      const profile = readTodayTarotProfile();
+      if (!profile) { router.replace(`${todayTarotRoutes.intro}?start=1`); return; }
+      const session = prepareTodayTarotSession(profile);
       persistTodayTarotSession(session);
       const remaining = Math.max(0, MINIMUM_PREPARATION_MS - (performance.now() - startedAt));
       await new Promise<void>((resolve) => window.setTimeout(resolve, remaining));

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { CrystalSymbol } from "./CrystalSymbol";
 import { ServiceMenu } from "./ServiceMenu";
+import { DestinyTarotFooter } from "./DestinyTarotFooter";
 
 type ReadingPreview = {
   title: string;
@@ -95,6 +96,7 @@ export function DestinyTarotHome({ theme = "a" }: { theme?: "a" | "b" }) {
       <div className="destiny-content-surface">
       <MoodBanner />
       <RecentReading />
+      <DestinyTarotFooter />
       </div>
     </div>
     <BottomNavigation />
