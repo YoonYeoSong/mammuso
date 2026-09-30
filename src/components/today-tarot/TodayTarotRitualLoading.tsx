@@ -1,43 +1,42 @@
 import { TodayTarotHeader } from "./TodayTarotHeader";
 
-type TodayTarotRitualLoadingProps = {
+type TodayTarotLoadingSceneProps = {
   backHref: string;
-  headingId: string;
-  headingLines: readonly [string, string];
-  descriptionLines: readonly [string, string];
-  status: string;
   ariaLabel: string;
 };
 
-function MoonPhaseLoader({ ariaLabel }: { ariaLabel: string }) {
-  return <div className="today-tarot-ritual-moon-phases" aria-label={ariaLabel}>
-    <span className="today-tarot-ritual-phase today-tarot-ritual-phase--crescent-left" />
-    <span className="today-tarot-ritual-phase today-tarot-ritual-phase--quarter-left" />
-    <span className="today-tarot-ritual-phase today-tarot-ritual-phase--full" />
-    <span className="today-tarot-ritual-phase today-tarot-ritual-phase--quarter-right" />
-    <span className="today-tarot-ritual-phase today-tarot-ritual-phase--crescent-right" />
-  </div>;
-}
+const loadingMessages = [
+  "오늘의 흐름을 살펴보고 있어요…",
+  "선택한 카드의 이야기를 읽고 있어요…",
+  "두 흐름을 하나로 연결하고 있어요…",
+] as const;
 
-/** Shared visual shell for the two loading moments in today's tarot ritual. */
-export function TodayTarotRitualLoading({
+/** The single loading visual used before selection and while the reading is prepared. */
+export function TodayTarotLoadingScene({
   backHref,
-  headingId,
-  headingLines,
-  descriptionLines,
-  status,
   ariaLabel,
-}: TodayTarotRitualLoadingProps) {
+}: TodayTarotLoadingSceneProps) {
   return <main className="today-tarot-page today-tarot-ritual-page">
     <div className="today-tarot-app-surface">
       <TodayTarotHeader backHref={backHref} />
-      <section className="today-tarot-ritual-loading" aria-live="polite" aria-labelledby={headingId}>
-        <div className="today-tarot-ritual-loading-visual" aria-hidden="true" />
-        <div className="today-tarot-ritual-loading-copy">
-          <h2 id={headingId}>{headingLines[0]}<br />{headingLines[1]}</h2>
-          <p>{descriptionLines[0]}<br />{descriptionLines[1]}</p>
-          <MoonPhaseLoader ariaLabel={ariaLabel} />
-          <small className="today-tarot-ritual-loading-status">{status}</small>
+      <section className="today-tarot-loading-scene" aria-busy="true" aria-label={ariaLabel}>
+        <div className="today-tarot-loading-visual" aria-hidden="true">
+          <div className="today-tarot-crystal-effects">
+            <span className="today-tarot-crystal-mist today-tarot-crystal-mist--one" />
+            <span className="today-tarot-crystal-mist today-tarot-crystal-mist--two" />
+            <span className="today-tarot-crystal-glow" />
+            <span className="today-tarot-crystal-shimmer" />
+            <span className="today-tarot-crystal-star today-tarot-crystal-star--one" />
+            <span className="today-tarot-crystal-star today-tarot-crystal-star--two" />
+            <span className="today-tarot-crystal-star today-tarot-crystal-star--three" />
+            <span className="today-tarot-crystal-star today-tarot-crystal-star--four" />
+            <span className="today-tarot-crystal-star today-tarot-crystal-star--five" />
+          </div>
+        </div>
+        <div className="today-tarot-loading-copy" aria-live="polite">
+          <div className="today-tarot-loading-message-frame">
+            {loadingMessages.map((message) => <p key={message}>{message}</p>)}
+          </div>
         </div>
       </section>
     </div>

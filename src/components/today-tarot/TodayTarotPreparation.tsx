@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { todayTarotRoutes } from "@/lib/today-tarot/flow";
 import { persistTodayTarotSession, prepareTodayTarotSession } from "@/lib/today-tarot/session";
-import { TodayTarotRitualLoading } from "./TodayTarotRitualLoading";
+import { TodayTarotLoadingScene } from "./TodayTarotRitualLoading";
 
 const MINIMUM_PREPARATION_MS = 1700;
 
@@ -28,12 +28,8 @@ export function TodayTarotPreparation() {
     return () => { active = false; };
   }, [router]);
 
-  return <TodayTarotRitualLoading
+  return <TodayTarotLoadingScene
     backHref={todayTarotRoutes.intro}
-    headingId="today-tarot-preparation-title"
-    headingLines={["마음을 가다듬고", "오늘의 카드를 준비하고 있어요."]}
-    descriptionLines={["지금 이 순간,", "당신의 오늘 흐름을 준비하고 있습니다."]}
-    status="조금만 기다려주세요..."
     ariaLabel="오늘의 카드를 준비하는 중"
   />;
 }

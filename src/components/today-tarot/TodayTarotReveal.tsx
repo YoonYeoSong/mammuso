@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { TodayTarotRitualLoading } from "./TodayTarotRitualLoading";
+import { TodayTarotLoadingScene } from "./TodayTarotRitualLoading";
 import { TODAY_TAROT_SESSION_KEY } from "@/lib/today-tarot/session";
 import { todayTarotRoutes, type TodayTarotSession } from "@/lib/today-tarot/flow";
 
@@ -27,12 +27,8 @@ export function TodayTarotReveal() {
 
   if (!isConfirmed) return <main className="today-tarot-page today-tarot-ritual-page" />;
 
-  return <TodayTarotRitualLoading
+  return <TodayTarotLoadingScene
     backHref={todayTarotRoutes.selection}
-    headingId="today-tarot-interpretation-title"
-    headingLines={["당신의 사주와 카드를", "함께 해석하고 있어요."]}
-    descriptionLines={["조금만 기다려주세요.", "당신을 위한 이야기를 정리하고 있습니다."]}
-    status="해석 중..."
     ariaLabel="해석을 준비하는 중"
   />;
 }
