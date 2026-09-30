@@ -103,7 +103,7 @@ export function TodayTarotProfileForm({ mode }: { mode: ProfileMode }) {
         </div>
         <fieldset className="today-tarot-field-group today-tarot-gender"><legend>성별</legend><div>{genderOptions.map((option) => <button type="button" key={option.value} className={gender === option.value ? "is-selected" : ""} onClick={() => setGender(option.value)}>{option.label}</button>)}</div></fieldset>
         {error && <p className="today-tarot-form-error" role="alert">{error}</p>}
-        <button type="button" className="today-tarot-profile-submit" disabled={saving} onClick={submit}>{saving ? "저장하는 중…" : "오늘의 타로 시작하기"}<span aria-hidden="true">→</span></button>
+        <button type="button" className={mode === "guest" ? "today-tarot-start-cta" : "today-tarot-profile-submit"} disabled={saving} onClick={submit}>{saving ? "저장하는 중…" : "오늘의 타로 시작하기"}<span aria-hidden="true">→</span></button>
         {mode === "guest" && <aside className="today-tarot-privacy-note"><span aria-hidden="true">♢</span><p>입력한 정보는 이번 리딩에만 사용돼요. 사주 해석을 위해 일시적으로 처리되며, 리딩이 끝난 뒤 별도로 저장하지 않습니다.</p></aside>}
       </section>
     </div>
