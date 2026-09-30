@@ -9,35 +9,34 @@ import { TodayTarotLoadingScene } from "./TodayTarotRitualLoading";
 
 const MINIMUM_RITUAL_MS = 4500;
 const EXIT_TRANSITION_MS = 420;
-const wait = (milliseconds: number) => new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
 
 export function TodayTarotPreparation() {
   const router = useRouter();
+  const [apiReady, setApiReady] = useState(false);
+  const [sequenceReady, setSequenceReady] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
     let active = true;
+    const profile = readTodayTarotProfile();
+    if (!profile) { router.replace(`${todayTarotRoutes.intro}?start=1`); return () => { active = false; }; }
 
-    const complete = async () => {
-      const profile = readTodayTarotProfile();
-      if (!profile) { router.replace(`${todayTarotRoutes.intro}?start=1`); return; }
+    void Promise.resolve().then(() => {
+      const session = prepareTodayTarotSession(profile);
+      persistTodayTarotSession(session);
+    }).finally(() => { if (active) setApiReady(true); });
 
-      // Preparation and the visual sequence start together. If the preparation
-      // ever becomes asynchronous, this still resolves at max(work, ritual).
-      const prepareSession = Promise.resolve().then(() => {
-        const session = prepareTodayTarotSession(profile);
-        persistTodayTarotSession(session);
-      });
-      await Promise.all([prepareSession, wait(MINIMUM_RITUAL_MS)]);
-      if (!active) return;
-      setIsExiting(true);
-      await wait(EXIT_TRANSITION_MS);
-      if (active) router.replace(todayTarotRoutes.selection);
-    };
-
-    void complete();
-    return () => { active = false; };
+    const sequenceTimer = window.setTimeout(() => { if (active) setSequenceReady(true); }, MINIMUM_RITUAL_MS);
+    return () => { active = false; window.clearTimeout(sequenceTimer); };
   }, [router]);
+
+  useEffect(() => {
+    if (!apiReady || !sequenceReady) return;
+    let active = true;
+    setIsExiting(true);
+    const exitTimer = window.setTimeout(() => { if (active) router.replace(todayTarotRoutes.selection); }, EXIT_TRANSITION_MS);
+    return () => { active = false; window.clearTimeout(exitTimer); };
+  }, [apiReady, router, sequenceReady]);
 
   return <TodayTarotLoadingScene
     backHref={todayTarotRoutes.intro}

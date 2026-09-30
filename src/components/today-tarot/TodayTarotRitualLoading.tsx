@@ -34,14 +34,14 @@ export function TodayTarotLoadingScene({
   phase,
   isExiting = false,
 }: TodayTarotLoadingSceneProps) {
-  const [messageIndex, setMessageIndex] = useState(-1);
+  const [messageIndex, setMessageIndex] = useState(0);
   const messages = loadingMessages[phase];
 
   useEffect(() => {
+    setMessageIndex(0);
     const timers = [
-      window.setTimeout(() => setMessageIndex(0), 700),
-      window.setTimeout(() => setMessageIndex(1), 2100),
-      window.setTimeout(() => setMessageIndex(2), 3500),
+      window.setTimeout(() => setMessageIndex(1), 1500),
+      window.setTimeout(() => setMessageIndex(2), 3000),
     ];
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, [phase]);
@@ -69,7 +69,7 @@ export function TodayTarotLoadingScene({
         </div>
         <div className="today-tarot-loading-copy" aria-live="polite">
           <div className="today-tarot-loading-message-frame">
-            {messageIndex >= 0 && <p key={messages[messageIndex]} className={messageIndex === messages.length - 1 ? "is-persistent" : ""}><LoadingMessage message={messages[messageIndex]} /></p>}
+            <p key={messages[messageIndex]} className={messageIndex === messages.length - 1 ? "is-persistent" : ""}><LoadingMessage message={messages[messageIndex]} /></p>
           </div>
         </div>
       </section>

@@ -9,7 +9,9 @@ import { todayTarotRoutes, type TodayTarotSession } from "@/lib/today-tarot/flow
 /** Validates the confirmed session before showing the interpretation-loading scene. */
 export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: boolean }) {
   const router = useRouter();
-  const [session, setSession] = useState<TodayTarotSession | null>(null);
+  const [session, setSession] = useState<TodayTarotSession | null | undefined>(undefined);
+  const [apiReady, setApiReady] = useState(false);
+  const [sequenceReady, setSequenceReady] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
@@ -29,7 +31,6 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
   useEffect(() => {
     if (!session) return;
     let active = true;
-    const wait = (milliseconds: number) => new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
 
     const saveReading = async () => {
       try {
@@ -52,19 +53,22 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
       }
     };
 
-    const complete = async () => {
-      await Promise.all([saveReading(), wait(4500)]);
-      if (!active) return;
-      setIsExiting(true);
-      await wait(420);
-      if (active) router.replace(todayTarotRoutes.result);
-    };
-
-    void complete();
+    void saveReading().finally(() => { if (active) setApiReady(true); });
     return () => { active = false; };
-  }, [router, session]);
+  }, [session]);
 
-  if (!session) return <main className="today-tarot-page today-tarot-ritual-page" />;
+  useEffect(() => {
+    const sequenceTimer = window.setTimeout(() => setSequenceReady(true), 4500);
+    return () => window.clearTimeout(sequenceTimer);
+  }, []);
+
+  useEffect(() => {
+    if (!apiReady || !sequenceReady) return;
+    let active = true;
+    setIsExiting(true);
+    const exitTimer = window.setTimeout(() => { if (active) router.replace(todayTarotRoutes.result); }, 420);
+    return () => { active = false; window.clearTimeout(exitTimer); };
+  }, [apiReady, router, sequenceReady]);
 
   return <TodayTarotLoadingScene
     backHref={clarifierMode ? `${todayTarotRoutes.selection}?mode=clarifier` : todayTarotRoutes.selection}
