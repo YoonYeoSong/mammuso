@@ -1,6 +1,5 @@
-import Link from "next/link";
-import { todayTarotRoutes } from "@/lib/today-tarot/flow";
 import { TodayTarotHeader } from "./TodayTarotHeader";
+import { TodayTarotStart } from "./TodayTarotStart";
 
 type IntroBenefit = {
   title: string;
@@ -22,7 +21,7 @@ function BenefitIcon({ icon }: { icon: IntroBenefit["icon"] }) {
   return <svg viewBox="0 0 48 48" aria-hidden="true" {...shared}><path d="M8 37.5c8.4-1.1 10.5-10.6 18-14.5 4.9-2.5 8.3-1.3 14-8.5" /><path d="m35 13.2 5 .3-.4 5" /><path d="M10 12.5h8M10 18.5h5" /><circle cx="9" cy="37.5" r="2.5" /></svg>;
 }
 
-export function TodayTarotIntro() {
+export function TodayTarotIntro({ startOpen = false }: { startOpen?: boolean }) {
   return <main className="today-tarot-page today-tarot-intro-page">
     <div className="today-tarot-app-surface">
       <TodayTarotHeader />
@@ -43,7 +42,7 @@ export function TodayTarotIntro() {
       </section>
 
       <div className="today-tarot-cta-wrap">
-        <Link className="today-tarot-start-cta" href={todayTarotRoutes.preparing}>시작하기 <span aria-hidden="true">→</span></Link>
+        <TodayTarotStart openInitially={startOpen} />
       </div>
     </div>
   </main>;

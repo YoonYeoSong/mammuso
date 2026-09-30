@@ -1,29 +1,37 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { todayTarotRoutes } from "@/lib/today-tarot/flow";
 import { persistTodayTarotSession, prepareTodayTarotSession } from "@/lib/today-tarot/session";
 import { readTodayTarotProfile } from "@/lib/today-tarot/profile";
 import { TodayTarotLoadingScene } from "./TodayTarotRitualLoading";
 
-const MINIMUM_PREPARATION_MS = 1700;
+const MINIMUM_RITUAL_MS = 4500;
+const EXIT_TRANSITION_MS = 420;
+const wait = (milliseconds: number) => new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
 
 export function TodayTarotPreparation() {
   const router = useRouter();
+  const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
     let active = true;
-    const startedAt = performance.now();
 
     const complete = async () => {
-      // Only the date, session, and deck order are prepared here; no card is selected.
       const profile = readTodayTarotProfile();
       if (!profile) { router.replace(`${todayTarotRoutes.intro}?start=1`); return; }
-      const session = prepareTodayTarotSession(profile);
-      persistTodayTarotSession(session);
-      const remaining = Math.max(0, MINIMUM_PREPARATION_MS - (performance.now() - startedAt));
-      await new Promise<void>((resolve) => window.setTimeout(resolve, remaining));
+
+      // Preparation and the visual sequence start together. If the preparation
+      // ever becomes asynchronous, this still resolves at max(work, ritual).
+      const prepareSession = Promise.resolve().then(() => {
+        const session = prepareTodayTarotSession(profile);
+        persistTodayTarotSession(session);
+      });
+      await Promise.all([prepareSession, wait(MINIMUM_RITUAL_MS)]);
+      if (!active) return;
+      setIsExiting(true);
+      await wait(EXIT_TRANSITION_MS);
       if (active) router.replace(todayTarotRoutes.selection);
     };
 
@@ -34,5 +42,7 @@ export function TodayTarotPreparation() {
   return <TodayTarotLoadingScene
     backHref={todayTarotRoutes.intro}
     ariaLabel="오늘의 카드를 준비하는 중"
+    phase="preparing"
+    isExiting={isExiting}
   />;
 }

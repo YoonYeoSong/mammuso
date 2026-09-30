@@ -32,11 +32,6 @@ export function TodayTarotResult() {
     void fetch("/api/auth/me").then((response) => response.ok ? response.json() : { user: null }).then((data: { user: unknown }) => setMember(Boolean(data.user)));
   }, []);
 
-  useEffect(() => {
-    if (!session?.selectedCardId || !member || !session.id) return;
-    void fetch("/api/today-tarot/reading", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: session.id, dateKey: session.dateKey, mainCardId: session.selectedCardId, orientation: session.orientation ?? "upright", clarifierCardId: session.clarifierCardId }) });
-  }, [member, session]);
-
   if (!session) return <main className="today-tarot-page today-tarot-result-page"><div className="today-tarot-app-surface"><TodayTarotHeader /><section className="today-tarot-result-empty"><h2>리딩을 찾을 수 없어요.</h2><Link href={todayTarotRoutes.intro}>오늘의 타로 시작하기</Link></section></div></main>;
   const mainName = cardTitle(session.selectedCardId);
   const clarifierName = cardTitle(session.clarifierCardId);

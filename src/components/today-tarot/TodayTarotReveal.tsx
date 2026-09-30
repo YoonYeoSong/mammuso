@@ -9,7 +9,8 @@ import { todayTarotRoutes, type TodayTarotSession } from "@/lib/today-tarot/flow
 /** Validates the confirmed session before showing the interpretation-loading scene. */
 export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: boolean }) {
   const router = useRouter();
-  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [session, setSession] = useState<TodayTarotSession | null>(null);
+  const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
     try {
@@ -19,22 +20,56 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
         router.replace(todayTarotRoutes.selection);
         return;
       }
-      setIsConfirmed(true);
+      setSession(session);
     } catch {
       router.replace(todayTarotRoutes.selection);
     }
   }, [router]);
 
   useEffect(() => {
-    if (!isConfirmed) return;
-    const timer = window.setTimeout(() => router.replace(todayTarotRoutes.result), 1750);
-    return () => window.clearTimeout(timer);
-  }, [isConfirmed, router]);
+    if (!session) return;
+    let active = true;
+    const wait = (milliseconds: number) => new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
 
-  if (!isConfirmed) return <main className="today-tarot-page today-tarot-ritual-page" />;
+    const saveReading = async () => {
+      try {
+        const authResponse = await fetch("/api/auth/me");
+        const auth = authResponse.ok ? await authResponse.json() as { user: unknown } : { user: null };
+        if (!auth.user) return;
+        await fetch("/api/today-tarot/reading", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: session.id,
+            dateKey: session.dateKey,
+            mainCardId: session.selectedCardId,
+            orientation: session.orientation,
+            clarifierCardId: session.clarifierCardId,
+          }),
+        });
+      } catch {
+        // A save failure must not block the locally prepared reading.
+      }
+    };
+
+    const complete = async () => {
+      await Promise.all([saveReading(), wait(4500)]);
+      if (!active) return;
+      setIsExiting(true);
+      await wait(420);
+      if (active) router.replace(todayTarotRoutes.result);
+    };
+
+    void complete();
+    return () => { active = false; };
+  }, [router, session]);
+
+  if (!session) return <main className="today-tarot-page today-tarot-ritual-page" />;
 
   return <TodayTarotLoadingScene
     backHref={clarifierMode ? `${todayTarotRoutes.selection}?mode=clarifier` : todayTarotRoutes.selection}
     ariaLabel="해석을 준비하는 중"
+    phase="interpreting"
+    isExiting={isExiting}
   />;
 }
