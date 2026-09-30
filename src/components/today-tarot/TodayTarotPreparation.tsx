@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { todayTarotRoutes } from "@/lib/today-tarot/flow";
 import { persistTodayTarotSession, prepareTodayTarotSession } from "@/lib/today-tarot/session";
 import { readTodayTarotProfile } from "@/lib/today-tarot/profile";
 import { TodayTarotLoadingScene } from "./TodayTarotRitualLoading";
 
-const MINIMUM_RITUAL_MS = 4500;
 const EXIT_TRANSITION_MS = 420;
 
 export function TodayTarotPreparation() {
@@ -15,6 +14,7 @@ export function TodayTarotPreparation() {
   const [apiReady, setApiReady] = useState(false);
   const [sequenceReady, setSequenceReady] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const markSequenceReady = useCallback(() => setSequenceReady(true), []);
 
   useEffect(() => {
     let active = true;
@@ -26,8 +26,7 @@ export function TodayTarotPreparation() {
       persistTodayTarotSession(session);
     }).finally(() => { if (active) setApiReady(true); });
 
-    const sequenceTimer = window.setTimeout(() => { if (active) setSequenceReady(true); }, MINIMUM_RITUAL_MS);
-    return () => { active = false; window.clearTimeout(sequenceTimer); };
+    return () => { active = false; };
   }, [router]);
 
   useEffect(() => {
@@ -43,5 +42,6 @@ export function TodayTarotPreparation() {
     ariaLabel="오늘의 카드를 준비하는 중"
     phase="preparing"
     isExiting={isExiting}
+    onSequenceComplete={markSequenceReady}
   />;
 }

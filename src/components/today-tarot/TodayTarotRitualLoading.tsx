@@ -8,7 +8,10 @@ type TodayTarotLoadingSceneProps = {
   ariaLabel: string;
   phase: "preparing" | "interpreting";
   isExiting?: boolean;
+  onSequenceComplete?: () => void;
 };
+
+export const LOADING_MESSAGE_DURATION_MS = 1600;
 
 const loadingMessages = {
   preparing: [
@@ -33,18 +36,25 @@ export function TodayTarotLoadingScene({
   ariaLabel,
   phase,
   isExiting = false,
+  onSequenceComplete,
 }: TodayTarotLoadingSceneProps) {
   const [messageIndex, setMessageIndex] = useState(0);
   const messages = loadingMessages[phase];
 
   useEffect(() => {
     setMessageIndex(0);
-    const timers = [
-      window.setTimeout(() => setMessageIndex(1), 1500),
-      window.setTimeout(() => setMessageIndex(2), 3000),
-    ];
-    return () => timers.forEach((timer) => window.clearTimeout(timer));
-  }, [phase]);
+    const timers = messages.slice(1).map((_, index) => window.setTimeout(
+      () => setMessageIndex(index + 1),
+      LOADING_MESSAGE_DURATION_MS * (index + 1),
+    ));
+    return () => {
+      timers.forEach((timer) => window.clearTimeout(timer));
+    };
+  }, [messages, onSequenceComplete, phase]);
+
+  function handleMessageAnimationEnd(index: number) {
+    if (index === messages.length - 1 && !isExiting) onSequenceComplete?.();
+  }
 
   return <main className={`today-tarot-page today-tarot-ritual-page ${isExiting ? "is-exiting" : ""}`}>
     <div className="today-tarot-app-surface">
@@ -68,8 +78,10 @@ export function TodayTarotLoadingScene({
           </div>
         </div>
         <div className="today-tarot-loading-copy" aria-live="polite">
-          <div className="today-tarot-loading-message-frame">
-            <p key={messages[messageIndex]} className={messageIndex === messages.length - 1 ? "is-persistent" : ""}><LoadingMessage message={messages[messageIndex]} /></p>
+          <div className="today-tarot-loading-message-frame" aria-atomic="true">
+            {messages.map((message, index) => <p key={message} className={messageIndex === index ? "is-active" : ""} aria-hidden={messageIndex !== index} onAnimationEnd={() => handleMessageAnimationEnd(index)}>
+              <LoadingMessage message={message} />
+            </p>)}
           </div>
         </div>
       </section>

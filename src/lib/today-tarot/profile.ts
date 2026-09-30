@@ -1,4 +1,4 @@
-export type SajuGender = "female" | "male" | "other";
+export type SajuGender = "female" | "male";
 
 export type SajuProfileInput = {
   birthDate: string;
@@ -33,28 +33,18 @@ export function parseBirthDate(value: string) {
 }
 
 export function parseBirthTime(value: string, meridiem?: "am" | "pm") {
-  const normalized = value.trim().toLowerCase().replace(/\s/g, "");
-  if (!normalized) return { value: null, needsMeridiem: false };
-  const hasAm = /오전|am/.test(normalized);
-  const hasPm = /오후|pm/.test(normalized);
-  const digits = normalized.replace(/오전|오후|am|pm|시|분|:/g, "").replace(/[^0-9]/g, "");
-  let hour: number;
-  let minute = 0;
-  if (digits.length <= 2) hour = Number(digits);
-  else if (digits.length === 3 || digits.length === 4) {
-    hour = Number(digits.slice(0, -2));
-    minute = Number(digits.slice(-2));
-  } else return { value: null, needsMeridiem: false };
-  if (!Number.isInteger(hour) || !Number.isInteger(minute) || minute > 59) return { value: null, needsMeridiem: false };
-  const resolvedMeridiem = hasAm ? "am" : hasPm ? "pm" : meridiem;
-  if (hour >= 0 && hour <= 12 && !resolvedMeridiem && hour !== 0) return { value: null, needsMeridiem: true };
-  if (resolvedMeridiem) {
-    if (hour < 1 || hour > 12) return { value: null, needsMeridiem: false };
-    if (resolvedMeridiem === "am") hour = hour === 12 ? 0 : hour;
-    if (resolvedMeridiem === "pm") hour = hour === 12 ? 12 : hour + 12;
-  }
-  if (hour > 23) return { value: null, needsMeridiem: false };
-  return { value: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`, needsMeridiem: false };
+  const match = value.trim().match(/^(\d{1,2})(?::(\d{2}))?$/);
+  if (!match) return { value: null, needsMeridiem: false };
+
+  const hour = Number(match[1]);
+  const minute = match[2] === undefined ? 0 : Number(match[2]);
+  if (hour < 0 || hour > 12 || minute < 0 || minute > 59) return { value: null, needsMeridiem: false };
+  if (!meridiem) return { value: null, needsMeridiem: true };
+
+  const normalizedHour = meridiem === "am"
+    ? (hour === 12 ? 0 : hour)
+    : (hour === 0 || hour === 12 ? 12 : hour + 12);
+  return { value: `${String(normalizedHour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`, needsMeridiem: false };
 }
 
 export function persistTodayTarotProfile(profile: TodayTarotProfileContext) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TodayTarotLoadingScene } from "./TodayTarotRitualLoading";
 import { TODAY_TAROT_SESSION_KEY } from "@/lib/today-tarot/session";
@@ -13,6 +13,7 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
   const [apiReady, setApiReady] = useState(false);
   const [sequenceReady, setSequenceReady] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const markSequenceReady = useCallback(() => setSequenceReady(true), []);
 
   useEffect(() => {
     try {
@@ -58,11 +59,6 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
   }, [session]);
 
   useEffect(() => {
-    const sequenceTimer = window.setTimeout(() => setSequenceReady(true), 4500);
-    return () => window.clearTimeout(sequenceTimer);
-  }, []);
-
-  useEffect(() => {
     if (!apiReady || !sequenceReady) return;
     let active = true;
     setIsExiting(true);
@@ -75,5 +71,6 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
     ariaLabel="해석을 준비하는 중"
     phase="interpreting"
     isExiting={isExiting}
+    onSequenceComplete={markSequenceReady}
   />;
 }
