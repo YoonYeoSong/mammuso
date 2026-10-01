@@ -29,6 +29,8 @@ export type TodayTarotSession = {
   dateKey: string;
   step: TodayTarotStep;
   shuffledCardIds: string[];
+  /** Selected cards are immutable for the life of this shuffled reading. */
+  selectedCardIds: string[];
   selectedCardId?: string;
   clarifierCardId?: string;
   profileSource?: "guest" | "member";

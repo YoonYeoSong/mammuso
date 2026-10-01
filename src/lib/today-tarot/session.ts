@@ -1,4 +1,4 @@
-import { FULL_TAROT_DECK_SIZE, tarotDeckCapacity } from "./deck";
+import { FULL_TAROT_DECK_SIZE, shuffleTodayTarotDeck } from "./deck";
 import type { TodayTarotSession } from "./flow";
 import type { TodayTarotProfileContext } from "./profile";
 
@@ -11,25 +11,9 @@ type PreparedTodayTarotSession = TodayTarotSession & {
   sajuDailyFlowStatus: "not-configured";
 };
 
-const suitIds = (suit: "wands" | "cups" | "swords" | "pentacles") =>
-  Array.from({ length: tarotDeckCapacity[suit] }, (_, index) => `${suit}-${String(index + 1).padStart(2, "0")}`);
-
 /** Generates all 78 card positions without using any saju or AI input. */
 export function createTodayTarotDeckOrder(random: () => number = Math.random) {
-  const deck = [
-    ...Array.from({ length: tarotDeckCapacity.major }, (_, index) => `major-${String(index).padStart(2, "0")}`),
-    ...suitIds("wands"),
-    ...suitIds("cups"),
-    ...suitIds("swords"),
-    ...suitIds("pentacles"),
-  ];
-
-  for (let index = deck.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(random() * (index + 1));
-    [deck[index], deck[swapIndex]] = [deck[swapIndex], deck[index]];
-  }
-
-  return deck;
+  return shuffleTodayTarotDeck(undefined, random).map((card) => card.id);
 }
 
 export function todayInSeoul(now = new Date()) {
@@ -47,6 +31,7 @@ export function prepareTodayTarotSession(profile: TodayTarotProfileContext, now 
     dateKey: todayInSeoul(now),
     step: "selection",
     shuffledCardIds,
+    selectedCardIds: [],
     preparedAt: now.toISOString(),
     profileSource: profile.source,
     sajuDailyFlowStatus: "not-configured",

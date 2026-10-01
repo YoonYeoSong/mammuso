@@ -1,13 +1,7 @@
-export type TarotArcana = "major" | "wands" | "cups" | "swords" | "pentacles";
+import { allTarotAssets, getTarotAsset, type TarotDeckAsset } from "@/lib/tarot/assets";
 
-export type TodayTarotCard = {
-  id: string;
-  number: number;
-  nameKo: string;
-  nameEn: string;
-  arcana: TarotArcana;
-  image: string | null;
-};
+export type TarotArcana = "major" | "wands" | "cups" | "swords" | "pentacles";
+export type TodayTarotCard = TarotDeckAsset;
 
 /**
  * Asset paths live here so the card-selection UI never owns a file path.
@@ -19,19 +13,10 @@ export const todayTarotAssets = {
 } as const;
 
 /**
- * The production deck will contain 78 cards. Keep additions in this list only;
- * the selection flow must shuffle these cards independently of any saju context.
+ * Keep the interactive deck as a view of the asset registry. The registry has
+ * all 78 logical cards even while some artwork is intentionally unavailable.
  */
-export const todayTarotDeck: readonly TodayTarotCard[] = [
-  {
-    id: "major-00",
-    number: 0,
-    nameKo: "바보",
-    nameEn: "The Fool",
-    arcana: "major",
-    image: "/tarot/arcana/00-fool.png",
-  },
-] as const;
+export const todayTarotDeck: readonly TodayTarotCard[] = allTarotAssets;
 
 export const tarotDeckCapacity: Record<TarotArcana, number> = {
   major: 22,
@@ -44,7 +29,11 @@ export const tarotDeckCapacity: Record<TarotArcana, number> = {
 export const FULL_TAROT_DECK_SIZE = Object.values(tarotDeckCapacity).reduce((total, count) => total + count, 0);
 
 export function getTodayTarotCard(cardId: string) {
-  return todayTarotDeck.find((card) => card.id === cardId);
+  return getTarotAsset(cardId);
+}
+
+export function isTodayTarotCardReady(cardId: string) {
+  return getTodayTarotCard(cardId)?.imageReady === true;
 }
 
 /** Non-mutating Fisher–Yates shuffle. No saju value is accepted or used here. */

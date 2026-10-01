@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { TodayTarotHeader } from "./TodayTarotHeader";
 import { TODAY_TAROT_SESSION_KEY } from "@/lib/today-tarot/session";
 import { todayTarotRoutes, type TodayTarotSession } from "@/lib/today-tarot/flow";
+import { FULL_TAROT_DECK_SIZE, getTodayTarotCard } from "@/lib/today-tarot/deck";
 
-const CARD_COUNT = 78;
+const CARD_COUNT = FULL_TAROT_DECK_SIZE;
 const VISIBLE_CARD_OFFSETS = [-3, -2, -1, 0, 1, 2, 3] as const;
 const RENDERED_CARD_OFFSETS = [-4, ...VISIBLE_CARD_OFFSETS, 4] as const;
 const SWIPE_THRESHOLD = 36;
@@ -56,6 +57,7 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
   const [isDeckReady, setIsDeckReady] = useState(false);
   const [isDeckEntering, setIsDeckEntering] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [selectionNotice, setSelectionNotice] = useState<string | null>(null);
   const [transitionCard, setTransitionCard] = useState<TransitionCard | null>(null);
   const pointer = useRef<{ id: number; startX: number } | null>(null);
   const selectedCardElement = useRef<HTMLButtonElement | null>(null);
@@ -72,7 +74,11 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
 
     try {
       const parsed = JSON.parse(saved) as TodayTarotSession;
-      if (parsed.shuffledCardIds.length === CARD_COUNT) {
+      if (
+        parsed.shuffledCardIds.length === CARD_COUNT
+        && new Set(parsed.shuffledCardIds).size === CARD_COUNT
+        && parsed.shuffledCardIds.every((cardId) => getTodayTarotCard(cardId))
+      ) {
         setSession(parsed);
         // Begin in the middle of the already-shuffled deck so a natural 5–7 card fan is
         // visible immediately, without selecting or reordering anything.
@@ -153,6 +159,7 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
     // A selected card always occupies the center. Moving away resumes browsing,
     // so the previous selection is cleared without touching the deck order.
     setSelectedCardId(null);
+    setSelectionNotice(null);
     queuedMovesRef.current.push(direction);
     startQueuedMove();
   }
@@ -170,15 +177,30 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
 
   function chooseCard(cardId: string, index: number) {
     if (ignoreSyntheticCardTap.current || isConfirming || isAnimatingRef.current) return;
-    if (clarifierMode && cardId === session?.selectedCardId) return;
-    setSelectedCardId((current) => current === cardId ? null : cardId);
-    setActiveIndex(index);
+    const currentCard = getTodayTarotCard(cardId);
+    const selectedIds = session?.selectedCardIds ?? (session?.selectedCardId ? [session.selectedCardId] : []);
+    if (clarifierMode && selectedIds.includes(cardId)) return;
+
+    // Clicking a card directly always makes that card the visible center and
+    // binds selection to the same deckOrder position.
     activeIndexRef.current = index;
+    setActiveIndex(index);
     setPositionIndex(index);
+    if (!currentCard?.imageReady) {
+      setSelectedCardId(null);
+      setSelectionNotice("아직 준비 중인 카드입니다. 다른 카드를 선택해주세요.");
+      return;
+    }
+    setSelectionNotice(null);
+    setSelectedCardId((current) => current === cardId ? null : cardId);
   }
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
     if (isConfirming) return;
+    // Capturing a pointer that began on a card or arrow changes the eventual
+    // click target to the stage in some mobile browsers. Keep capture only for
+    // a genuine stage drag so normal card/button clicks reach their handlers.
+    if (event.target instanceof Element && event.target.closest(".today-tarot-deck-card, .today-tarot-deck-arrow")) return;
     pointer.current = { id: event.pointerId, startX: event.clientX };
     event.currentTarget.setPointerCapture(event.pointerId);
   }
@@ -212,11 +234,18 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
 
   function confirmCard() {
     if (!session || !selectedCardId || isConfirming) return;
+    const selectedCard = getTodayTarotCard(selectedCardId);
+    if (!selectedCard?.imageReady) {
+      setSelectedCardId(null);
+      setSelectionNotice("아직 준비 중인 카드입니다. 다른 카드를 선택해주세요.");
+      return;
+    }
+    if (session.shuffledCardIds[activeIndexRef.current] !== selectedCardId) return;
 
-    const selectedCard = selectedCardElement.current;
-    if (!selectedCard) return;
+    const selectedCardNode = selectedCardElement.current;
+    if (!selectedCardNode) return;
 
-    const bounds = selectedCard.getBoundingClientRect();
+    const bounds = selectedCardNode.getBoundingClientRect();
     const scale = 1.08;
     const scaledHeight = bounds.height * scale;
     const safeCenterTop = 20 + scaledHeight / 2;
@@ -235,9 +264,14 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
     });
 
     const orientation = session.orientation ?? (Math.random() < 0.5 ? "upright" : "reversed");
+    const priorSelectedIds = session.selectedCardIds ?? (session.selectedCardId ? [session.selectedCardId] : []);
+    const nextSelectedIds = clarifierMode
+      ? [...priorSelectedIds, selectedCardId]
+      : [selectedCardId];
     const nextSession: TodayTarotSession = {
       ...session,
       step: "reveal",
+      selectedCardIds: nextSelectedIds,
       selectedCardId: clarifierMode ? session.selectedCardId : selectedCardId,
       clarifierCardId: clarifierMode ? selectedCardId : session.clarifierCardId,
       orientation,
@@ -261,6 +295,7 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
     return cardId ? [{ cardId, index, offset }] : [];
   });
   const selectedIndex = selectedCardId ? session.shuffledCardIds.indexOf(selectedCardId) : -1;
+  const alreadySelectedIds = session.selectedCardIds ?? (session.selectedCardId ? [session.selectedCardId] : []);
 
   return <main className={`today-tarot-page today-tarot-selection-page ${isConfirming ? "is-confirming" : ""}`}>
     <div className="today-tarot-app-surface">
@@ -292,11 +327,11 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
                   className={`today-tarot-deck-card ${isTransitionBuffer ? "is-transition-buffer" : ""} ${offset === 0 ? "is-active" : ""} ${isSelected ? "is-selected" : ""}`}
                   style={cardStyle}
                   ref={isSelected ? selectedCardElement : undefined}
-                  aria-label={clarifierMode && cardId === session.selectedCardId ? "메인카드로 이미 선택됨" : `덱의 ${index + 1}번째 카드 선택`}
+                  aria-label={clarifierMode && alreadySelectedIds.includes(cardId) ? "이미 선택된 카드" : `덱의 ${index + 1}번째 카드 선택`}
                   aria-pressed={isSelected}
                   aria-hidden={isTransitionBuffer}
                   tabIndex={isTransitionBuffer ? -1 : undefined}
-                  disabled={clarifierMode && cardId === session.selectedCardId}
+                  disabled={clarifierMode && alreadySelectedIds.includes(cardId)}
                   onClick={() => chooseCard(cardId, index)}
                   onTransitionEnd={(event) => handleCardTransitionEnd(event, index, offset)}
                 ><span aria-hidden="true" /></button>;
@@ -313,6 +348,7 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
             {clarifierMode ? "보조카드 선택하기" : "이 카드 선택하기"}
           </button>
         </div>
+        {selectionNotice && <p className="today-tarot-selection-notice" role="status">{selectionNotice}</p>}
         {selectedIndex >= 0 && <span className="today-tarot-selection-status sr-only">덱의 {selectedIndex + 1}번째 카드를 선택했습니다.</span>}
       </section>
     </div>
