@@ -18,6 +18,7 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
   const [sequenceReady, setSequenceReady] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [cardRevealComplete, setCardRevealComplete] = useState(false);
+  const [isViewingInterpretation, setIsViewingInterpretation] = useState(false);
   const markSequenceReady = useCallback(() => setSequenceReady(true), []);
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
   }, [session]);
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || !isViewingInterpretation) return;
     let active = true;
 
     const saveReading = async () => {
@@ -69,28 +70,34 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
 
     void saveReading().finally(() => { if (active) setApiReady(true); });
     return () => { active = false; };
-  }, [session]);
+  }, [isViewingInterpretation, session]);
 
   useEffect(() => {
-    if (!apiReady || !sequenceReady) return;
+    if (!isViewingInterpretation || !apiReady || !sequenceReady) return;
     let active = true;
     setIsExiting(true);
     const exitTimer = window.setTimeout(() => { if (active) router.replace(todayTarotRoutes.result); }, 420);
     return () => { active = false; window.clearTimeout(exitTimer); };
-  }, [apiReady, router, sequenceReady]);
+  }, [apiReady, isViewingInterpretation, router, sequenceReady]);
 
   const revealedCardId = clarifierMode ? session?.clarifierCardId : session?.selectedCardId;
   const revealedCard = revealedCardId ? getTodayTarotCard(revealedCardId) : undefined;
 
-  if (session && revealedCard && !cardRevealComplete) return <main className="today-tarot-page today-tarot-card-reveal-page">
+  if (session && revealedCard && !isViewingInterpretation) return <main className="today-tarot-page today-tarot-card-reveal-page">
     <div className="today-tarot-app-surface">
-      <section className="today-tarot-card-reveal" aria-live="polite">
-        <p>{clarifierMode ? "보조카드 공개" : "선택한 카드 공개"}</p>
+      <section className={`today-tarot-card-reveal ${cardRevealComplete ? "is-complete" : ""}`} aria-live="polite">
+        <p>{clarifierMode ? "당신이 선택한 보조카드" : "당신이 선택한 카드"}</p>
         <div className={`today-tarot-card-reveal-art ${session.orientation === "reversed" ? "is-reversed" : ""}`}>
-          <Image src={revealedCard.image} alt={`${revealedCard.nameKo} 카드`} fill sizes="min(62vw, 236px)" priority />
+          <Image src={revealedCard.image} alt={`${revealedCard.nameKo} 카드`} fill sizes="(max-width: 480px) 64vw, 246px" priority />
         </div>
         <h1>{revealedCard.nameKo}</h1>
-        <small>{revealedCard.nameEn} · {session.orientation === "reversed" ? "역방향" : "정방향"}</small>
+        <small>{session.orientation === "reversed" ? "역방향" : "정방향"}</small>
+        {cardRevealComplete && <div className="today-tarot-card-reveal-next">
+          <p>이 카드가 전하는 오늘의 운명을 확인해볼까요?</p>
+          <button type="button" onClick={() => setIsViewingInterpretation(true)}>
+            {clarifierMode ? "보조카드 해석 보기" : "운명 확인하기"}
+          </button>
+        </div>}
       </section>
     </div>
   </main>;
