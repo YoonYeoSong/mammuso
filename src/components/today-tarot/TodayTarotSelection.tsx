@@ -13,8 +13,11 @@ const RENDERED_CARD_OFFSETS = [-4, ...VISIBLE_CARD_OFFSETS, 4] as const;
 const SWIPE_THRESHOLD = 36;
 const DRAG_INTENT_THRESHOLD = 6;
 const DIRECTION_LOCK_RATIO = 1.15;
-const FLICK_DISTANCE_THRESHOLD = 18;
+const FLICK_DISTANCE_THRESHOLD = 30;
 const FLICK_VELOCITY_THRESHOLD = 0.45;
+const DRAG_VISUAL_RESISTANCE = 0.14;
+const MAX_DRAG_VISUAL_OFFSET = 38;
+const MAX_FLICK_STEPS = 7;
 const CARD_STEP = 78;
 const SNAP_DURATION_MS = 220;
 const SNAP_FALLBACK_MS = SNAP_DURATION_MS + 80;
@@ -22,13 +25,31 @@ const DECK_ENTRANCE_MS = 700;
 
 type DeckCard = { cardId: string; index: number; offset: number };
 type TransitionCard = { left: number; top: number; width: number; height: number; x: number; y: number };
+type QueuedMove = { direction: -1 | 1; duration: number };
 type DeckPointer = {
   id: number;
   startX: number;
   startY: number;
-  startTime: number;
+  recentX: number;
+  recentTime: number;
+  velocityX: number;
   intent: "pending" | "horizontal" | "vertical";
 };
+
+function clamp(value: number, minimum: number, maximum: number) {
+  return Math.max(minimum, Math.min(maximum, value));
+}
+
+function getRouletteDurations(stepCount: number) {
+  if (stepCount === 1) return [SNAP_DURATION_MS];
+
+  // Each move still uses the existing one-card transition. The short early
+  // steps and slower finish make a multi-card flick read as a wheel decelerating.
+  return Array.from({ length: stepCount }, (_, index) => {
+    const progress = index / (stepCount - 1);
+    return Math.round(105 + 140 * progress ** 1.7);
+  });
+}
 
 function getDeckCardStyle(distance: number): CSSProperties {
   const absoluteDistance = Math.abs(distance);
@@ -65,6 +86,8 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
   const [positionIndex, setPositionIndex] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isInterruptingMomentum, setIsInterruptingMomentum] = useState(false);
+  const [cardTransitionDuration, setCardTransitionDuration] = useState(SNAP_DURATION_MS);
   const [isDeckReady, setIsDeckReady] = useState(false);
   const [isDeckEntering, setIsDeckEntering] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -75,10 +98,11 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
   const ignoreSyntheticCardTap = useRef(false);
   const ignoreSyntheticCardTapTimer = useRef<number | null>(null);
   const activeIndexRef = useRef(0);
-  const queuedMovesRef = useRef<Array<-1 | 1>>([]);
+  const queuedMovesRef = useRef<QueuedMove[]>([]);
   const isAnimatingRef = useRef(false);
   const snapFallbackTimer = useRef<number | null>(null);
   const snapFrame = useRef<number | null>(null);
+  const interruptionFrame = useRef<number | null>(null);
 
   useEffect(() => {
     const saved = window.sessionStorage.getItem(TODAY_TAROT_SESSION_KEY);
@@ -121,6 +145,7 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
   useEffect(() => () => {
     if (snapFallbackTimer.current !== null) window.clearTimeout(snapFallbackTimer.current);
     if (snapFrame.current !== null) window.cancelAnimationFrame(snapFrame.current);
+    if (interruptionFrame.current !== null) window.cancelAnimationFrame(interruptionFrame.current);
     if (ignoreSyntheticCardTapTimer.current !== null) window.clearTimeout(ignoreSyntheticCardTapTimer.current);
   }, []);
 
@@ -143,16 +168,17 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
 
   function startQueuedMove() {
     if (!session || isConfirming || isAnimatingRef.current) return;
-    const direction = queuedMovesRef.current.shift();
-    if (!direction) return;
+    const move = queuedMovesRef.current.shift();
+    if (!move) return;
 
-    const nextIndex = Math.max(0, Math.min(session.shuffledCardIds.length - 1, activeIndexRef.current + direction));
+    const nextIndex = Math.max(0, Math.min(session.shuffledCardIds.length - 1, activeIndexRef.current + move.direction));
     if (nextIndex === activeIndexRef.current) {
       startQueuedMove();
       return;
     }
 
     isAnimatingRef.current = true;
+    setCardTransitionDuration(move.duration);
     activeIndexRef.current = nextIndex;
     setActiveIndex(nextIndex);
     // transitionend is authoritative; this only covers browsers that do not
@@ -160,21 +186,45 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
     snapFallbackTimer.current = window.setTimeout(finishSnap, SNAP_FALLBACK_MS);
   }
 
-  function moveDeck(direction: -1 | 1) {
+  function moveDeck(direction: -1 | 1, requestedSteps = 1) {
     if (!session || isConfirming) return;
     const queuedTarget = queuedMovesRef.current.reduce(
-      (index, queuedDirection) => Math.max(0, Math.min(session.shuffledCardIds.length - 1, index + queuedDirection)),
+      (index, queuedMove) => Math.max(0, Math.min(session.shuffledCardIds.length - 1, index + queuedMove.direction)),
       activeIndexRef.current,
     );
-    const nextTarget = Math.max(0, Math.min(session.shuffledCardIds.length - 1, queuedTarget + direction));
-    if (nextTarget === queuedTarget) return;
+    const availableSteps = direction > 0
+      ? session.shuffledCardIds.length - 1 - queuedTarget
+      : queuedTarget;
+    const stepCount = Math.min(requestedSteps, availableSteps);
+    if (stepCount <= 0) return;
 
     // A selected card always occupies the center. Moving away resumes browsing,
     // so the previous selection is cleared without touching the deck order.
     setSelectedCardId(null);
     setSelectionNotice(null);
-    queuedMovesRef.current.push(direction);
+    getRouletteDurations(stepCount).forEach((duration) => {
+      queuedMovesRef.current.push({ direction, duration });
+    });
     startQueuedMove();
+  }
+
+  function interruptMomentum() {
+    if (!isAnimatingRef.current && queuedMovesRef.current.length === 0) return;
+    queuedMovesRef.current = [];
+    if (snapFallbackTimer.current !== null) {
+      window.clearTimeout(snapFallbackTimer.current);
+      snapFallbackTimer.current = null;
+    }
+    isAnimatingRef.current = false;
+    setPositionIndex(activeIndexRef.current);
+    // Disable the in-flight CSS transition for one frame so a new gesture
+    // starts from a stable card rather than fighting a stale wheel animation.
+    setIsInterruptingMomentum(true);
+    if (interruptionFrame.current !== null) window.cancelAnimationFrame(interruptionFrame.current);
+    interruptionFrame.current = window.requestAnimationFrame(() => {
+      interruptionFrame.current = null;
+      setIsInterruptingMomentum(false);
+    });
   }
 
   function handleCardTransitionEnd(event: TransitionEvent<HTMLButtonElement>, index: number, offset: number) {
@@ -218,6 +268,7 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
     if (isConfirming) return;
+    interruptMomentum();
     // A new pointer sequence is an intentional follow-up interaction, not the
     // compatibility click dispatched by the preceding swipe.
     if (ignoreSyntheticCardTap.current) {
@@ -236,9 +287,21 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
       id: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
-      startTime: event.timeStamp,
+      recentX: event.clientX,
+      recentTime: event.timeStamp,
+      velocityX: 0,
       intent: "pending",
     };
+  }
+
+  function recordPointerVelocity(event: PointerEvent<HTMLDivElement>, activePointer: DeckPointer) {
+    const elapsed = Math.max(1, event.timeStamp - activePointer.recentTime);
+    const instantaneousVelocity = (event.clientX - activePointer.recentX) / elapsed;
+    // Weight the latest sample most heavily: release velocity should describe
+    // the flick at the end of the gesture, not how long the finger was held.
+    activePointer.velocityX = activePointer.velocityX * 0.3 + instantaneousVelocity * 0.7;
+    activePointer.recentX = event.clientX;
+    activePointer.recentTime = event.timeStamp;
   }
 
   function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
@@ -261,9 +324,10 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
     }
 
     if (pointer.current.intent !== "horizontal") return;
-    // Keep the deck physically coupled to the pointer while dragging. Its
-    // release transition is handled by CSS only after this state is cleared.
-    setDragOffset(horizontalOffset);
+    recordPointerVelocity(event, pointer.current);
+    // Navigation still sees the full gesture distance, while the fan gets
+    // only a small resisted nudge instead of following the finger off-screen.
+    setDragOffset(clamp(horizontalOffset * DRAG_VISUAL_RESISTANCE, -MAX_DRAG_VISUAL_OFFSET, MAX_DRAG_VISUAL_OFFSET));
   }
 
   function finishPointer(event: PointerEvent<HTMLDivElement>) {
@@ -271,9 +335,9 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
     const activePointer = pointer.current;
     const offset = event.clientX - activePointer.startX;
     const wasHorizontalDrag = activePointer.intent === "horizontal";
-    const elapsed = Math.max(1, event.timeStamp - activePointer.startTime);
-    const velocity = Math.abs(offset) / elapsed;
-    const wasFlick = Math.abs(offset) >= FLICK_DISTANCE_THRESHOLD && velocity >= FLICK_VELOCITY_THRESHOLD;
+    if (wasHorizontalDrag && event.clientX !== activePointer.recentX) recordPointerVelocity(event, activePointer);
+    const speed = Math.abs(activePointer.velocityX);
+    const wasFlick = Math.abs(offset) >= FLICK_DISTANCE_THRESHOLD && speed >= FLICK_VELOCITY_THRESHOLD;
     pointer.current = null;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     if (wasHorizontalDrag) setIsDragging(false);
@@ -288,7 +352,10 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
         ignoreSyntheticCardTap.current = false;
         ignoreSyntheticCardTapTimer.current = null;
       }, 600);
-      moveDeck(offset < 0 ? 1 : -1);
+      const distanceSteps = Math.max(1, Math.floor(Math.abs(offset) / 150) + 1);
+      const velocitySteps = 1 + Math.floor(Math.max(0, speed - 0.65) / 0.36);
+      const stepCount = clamp(Math.max(distanceSteps, velocitySteps), 1, MAX_FLICK_STEPS);
+      moveDeck(offset < 0 ? 1 : -1, stepCount);
     }
   }
 
@@ -375,7 +442,7 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
           <p>{clarifierMode ? "메인카드와 다른 카드가 오늘의 조언을 보탭니다." : "첫 느낌이 가장 솔직한 답입니다."}</p>
         </div>
         <div
-          className={`today-tarot-deck ${isDeckReady ? "is-ready" : ""} ${isDeckEntering ? "is-entering" : ""} ${selectedCardId ? "has-selection" : ""} ${isConfirming ? "is-confirming" : ""}`}
+          className={`today-tarot-deck ${isDeckReady ? "is-ready" : ""} ${isDeckEntering ? "is-entering" : ""} ${selectedCardId ? "has-selection" : ""} ${isConfirming ? "is-confirming" : ""} ${isInterruptingMomentum ? "is-interrupting-momentum" : ""}`}
           aria-label="섞인 78장 타로 덱"
         >
           <div
@@ -385,7 +452,13 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
             onPointerUp={finishPointer}
             onPointerCancel={cancelPointer}
           >
-            <div className={`today-tarot-deck-cards ${isDragging ? "is-dragging" : ""}`} style={{ transform: `translate3d(${dragOffset}px, 0, 0)` }}>
+            <div
+              className={`today-tarot-deck-cards ${isDragging ? "is-dragging" : ""}`}
+              style={{
+                transform: `translate3d(${dragOffset}px, 0, 0)`,
+                "--deck-step-duration": `${cardTransitionDuration}ms`,
+              } as CSSProperties}
+            >
               {visibleCards.map(({ cardId, index, offset }) => {
                 const isSelected = selectedCardId === cardId;
                 const isTransitionBuffer = Math.abs(offset) > 3;
