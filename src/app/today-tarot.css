@@ -63,11 +63,11 @@ body > main.today-tarot-page { position: relative; width: min(100%, 480px) !impo
 .today-tarot-loading-copy { position: relative; z-index: 3; display: grid; min-height: clamp(128px, 18.5dvh, 166px); place-items: start center; padding: clamp(46px, 7dvh, 65px) 24px max(18px, env(safe-area-inset-bottom)); background: linear-gradient(180deg, transparent 0, rgba(0, 2, 14, .18) 21%, rgba(0, 2, 14, .73) 62%, var(--tarot-stage-bg) 100%); text-align: center; }
 .today-tarot-loading-message-frame { position: relative; z-index: 3; width: 100%; height: 60px; overflow: visible; }
 .today-tarot-loading-message-frame p { position: absolute; z-index: 1; inset: 0; margin: 0; color: #fff6e7; font-family: var(--destiny-serif, "Batang", serif); font-size: clamp(14px, 3.7vw, 16px); font-weight: 400; letter-spacing: -.065em; line-height: 1.6; opacity: 0; text-shadow: 0 1px 12px rgba(3, 4, 25, .9); transform: translateY(4px); will-change: opacity, transform; }
-.today-tarot-loading-message-frame p.is-active { animation: today-tarot-loading-message 1.6s ease-in-out both; }
+.today-tarot-loading-message-frame p.is-active { animation: today-tarot-loading-message 440ms ease-out both; }
 .today-tarot-ritual-page.is-exiting { pointer-events:none; animation: today-tarot-loading-exit .42s ease-in both; }
 .today-tarot-ritual-page.is-exiting .today-tarot-loading-message-frame p { animation: today-tarot-loading-message-exit .18s ease-in both; }
 @keyframes today-tarot-loading-enter { from { opacity: 0; } to { opacity: 1; } }
-@keyframes today-tarot-loading-message { 0% { opacity: 0; transform: translateY(4px); } 18%, 72% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-3px); } }
+@keyframes today-tarot-loading-message { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes today-tarot-loading-message-exit { to { opacity: 0; transform: translateY(-3px); } }
 @keyframes today-tarot-loading-exit { 0%, 28% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes today-tarot-crystal-nebula { from { opacity: .5; transform: translate3d(-4%, 3%, 0) rotate(-5deg) scale(.96); } to { opacity: .82; transform: translate3d(7%, -5%, 0) rotate(6deg) scale(1.06); } }
@@ -91,7 +91,7 @@ body > main.today-tarot-page { position: relative; width: min(100%, 480px) !impo
 .today-tarot-deck-cards { position: absolute; z-index: 1; top: 52%; left: 50%; width: 0; height: 0; transition: transform 220ms cubic-bezier(.2, .8, .25, 1); will-change: transform; }
 .today-tarot-deck-cards.is-dragging { transition: none; }
 .today-tarot-deck-card { position: absolute; z-index: var(--deck-z-index); top: 0; left: 0; width: clamp(128px, 36vw, 154px); aspect-ratio: 714 / 1210; overflow: hidden; border: 0; border-radius: 10px; padding: 0; background: transparent; box-shadow: 0 8px 15px rgba(0, 0, 15, .26); cursor: pointer; opacity: var(--deck-opacity); transform: translate3d(var(--deck-x), var(--deck-y), 0) translate(-50%, -50%) rotate(var(--deck-rotation)) scale(var(--deck-scale)); transform-origin: 50% 100%; transition: transform var(--deck-step-duration, 220ms) cubic-bezier(.2, .8, .25, 1), opacity 200ms ease-out, filter 200ms ease-out, box-shadow var(--deck-step-duration, 220ms) ease-out; will-change: transform, opacity; }
-.today-tarot-deck.is-interrupting-momentum .today-tarot-deck-card { transition: none; }
+.today-tarot-deck.is-in-continuous-motion .today-tarot-deck-card { transition: none; }
 .today-tarot-deck-card.is-transition-buffer { pointer-events: none; }
 .today-tarot-deck-card span { display: block; width: 100%; height: 100%; border-radius: inherit; background: url("/tarot/back/today-tarot-card-back.png") center / 100% 100% no-repeat; }.today-tarot-deck-card::after { position: absolute; z-index: 1; inset: 0; border: 1px solid rgba(248, 239, 221, .58); border-radius: inherit; content: ""; opacity: 0; pointer-events: none; transition: opacity 280ms ease; }
 .today-tarot-deck-card:focus-visible { outline: 1px solid rgba(255, 245, 224, .9); outline-offset: 4px; }
