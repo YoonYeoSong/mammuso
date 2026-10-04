@@ -180,9 +180,7 @@ function createMinorTarotAssets(suit: TarotSuit): TarotDeckAsset[] {
     nameKo: `${suitNames[suit].ko} ${rankKo}`,
     nameEn: `${rankEn} of ${suitNames[suit].en}`,
     image: minorArtworkPath(suit, slug),
-    // The last nine Pentacles retain their shuffled positions until their
-    // supplied artwork lands, but can never be revealed before then.
-    imageReady: suit !== "pentacles" || index < 5,
+    imageReady: true,
   }));
 }
 

@@ -11,6 +11,7 @@ const CARD_COUNT = FULL_TAROT_DECK_SIZE;
 const VISIBLE_CARD_OFFSETS = [-3, -2, -1, 0, 1, 2, 3] as const;
 const RENDERED_CARD_OFFSETS = [-4, ...VISIBLE_CARD_OFFSETS, 4] as const;
 const SWIPE_THRESHOLD = 36;
+const DRAG_INTENT_THRESHOLD = 8;
 const DRAG_FEEDBACK_LIMIT = 22;
 const CARD_STEP = 78;
 const SNAP_DURATION_MS = 320;
@@ -19,6 +20,12 @@ const DECK_ENTRANCE_MS = 700;
 
 type DeckCard = { cardId: string; index: number; offset: number };
 type TransitionCard = { left: number; top: number; width: number; height: number; x: number; y: number };
+type DeckPointer = {
+  id: number;
+  startX: number;
+  startY: number;
+  intent: "pending" | "horizontal" | "vertical";
+};
 
 function getDeckCardStyle(distance: number): CSSProperties {
   const absoluteDistance = Math.abs(distance);
@@ -59,7 +66,7 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
   const [isConfirming, setIsConfirming] = useState(false);
   const [selectionNotice, setSelectionNotice] = useState<string | null>(null);
   const [transitionCard, setTransitionCard] = useState<TransitionCard | null>(null);
-  const pointer = useRef<{ id: number; startX: number } | null>(null);
+  const pointer = useRef<DeckPointer | null>(null);
   const selectedCardElement = useRef<HTMLButtonElement | null>(null);
   const ignoreSyntheticCardTap = useRef(false);
   const activeIndexRef = useRef(0);
@@ -197,27 +204,47 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
     if (isConfirming) return;
-    // Capturing a pointer that began on a card or arrow changes the eventual
-    // click target to the stage in some mobile browsers. Keep capture only for
-    // a genuine stage drag so normal card/button clicks reach their handlers.
-    if (event.target instanceof Element && event.target.closest(".today-tarot-deck-card, .today-tarot-deck-arrow")) return;
-    pointer.current = { id: event.pointerId, startX: event.clientX };
-    event.currentTarget.setPointerCapture(event.pointerId);
+    // Card buttons occupy most of the fan, so gestures must begin on them as
+    // well as on empty stage space. Do not capture yet: a short tap must still
+    // reach its button's click handler. Capture only after a horizontal drag
+    // has been identified below.
+    if (event.target instanceof Element && event.target.closest(".today-tarot-deck-arrow")) return;
+    pointer.current = {
+      id: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      intent: "pending",
+    };
   }
 
   function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
     if (!pointer.current || pointer.current.id !== event.pointerId || isConfirming) return;
-    const nextOffset = Math.max(-DRAG_FEEDBACK_LIMIT, Math.min(DRAG_FEEDBACK_LIMIT, event.clientX - pointer.current.startX));
+    const horizontalOffset = event.clientX - pointer.current.startX;
+    const verticalOffset = event.clientY - pointer.current.startY;
+
+    if (pointer.current.intent === "pending") {
+      if (Math.abs(verticalOffset) >= DRAG_INTENT_THRESHOLD && Math.abs(verticalOffset) > Math.abs(horizontalOffset)) {
+        pointer.current.intent = "vertical";
+        return;
+      }
+      if (Math.abs(horizontalOffset) < DRAG_INTENT_THRESHOLD) return;
+      pointer.current.intent = "horizontal";
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+
+    if (pointer.current.intent !== "horizontal") return;
+    const nextOffset = Math.max(-DRAG_FEEDBACK_LIMIT, Math.min(DRAG_FEEDBACK_LIMIT, horizontalOffset));
     setDragOffset(nextOffset);
   }
 
   function finishPointer(event: PointerEvent<HTMLDivElement>) {
     if (!pointer.current || pointer.current.id !== event.pointerId) return;
     const offset = event.clientX - pointer.current.startX;
+    const wasHorizontalDrag = pointer.current.intent === "horizontal";
     pointer.current = null;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     setDragOffset(0);
-    if (Math.abs(offset) >= SWIPE_THRESHOLD) {
+    if (wasHorizontalDrag && Math.abs(offset) >= SWIPE_THRESHOLD) {
       // Some mobile browsers still emit a click at the end of a drag. Keep that
       // synthetic click from selecting the card under the finger.
       ignoreSyntheticCardTap.current = true;
@@ -229,6 +256,7 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
   function cancelPointer(event: PointerEvent<HTMLDivElement>) {
     if (!pointer.current || pointer.current.id !== event.pointerId) return;
     pointer.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     setDragOffset(0);
   }
 
