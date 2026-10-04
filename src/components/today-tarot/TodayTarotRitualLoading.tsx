@@ -11,23 +11,32 @@ type TodayTarotLoadingSceneProps = {
   onSequenceComplete?: () => void;
 };
 
-export const LOADING_MESSAGE_DURATION_MS = 1500;
+const MESSAGE_FADE_IN_MS = 300;
+const MESSAGE_HOLD_MS = 800;
+const MESSAGE_FADE_OUT_MS = 280;
+const FINAL_MESSAGE_EXTRA_HOLD_MS = 1000;
+export const LOADING_MESSAGE_DURATION_MS = MESSAGE_FADE_IN_MS + MESSAGE_HOLD_MS + MESSAGE_FADE_OUT_MS;
+const FINAL_MESSAGE_DURATION_MS = MESSAGE_FADE_IN_MS + MESSAGE_HOLD_MS + FINAL_MESSAGE_EXTRA_HOLD_MS;
 
 const loadingMessages = {
   preparing: [
-    "오늘의 흐름을 살펴보고 있어요.",
-    "입력한 정보를 바탕으로\n오늘의 사주 흐름을 정리하고 있어요.",
-    "당신의 오늘을 위한\n카드를 준비하고 있어요.",
+    "당신의 오늘을 살펴보고 있어요",
+    "오늘의 흐름을 준비하고 있어요",
+    "이제, 당신의 카드를 만나볼까요?",
   ],
   interpreting: [
-    "선택한 카드의 의미를 읽고 있어요.",
-    "오늘의 사주 흐름과\n카드를 함께 살펴보고 있어요.",
-    "당신을 위한 오늘의 이야기를\n정리하고 있어요.",
+    "선택한 카드를 확인하고 있어요",
+    "카드가 전하는 의미를 읽고 있어요",
+    "오늘의 흐름과 카드를\n함께 살펴보고 있어요",
+    "두 흐름이 만나는 지점을 찾고 있어요",
+    "당신을 위한 오늘의 이야기를\n정리하고 있어요",
+    "곧 결과를 보여드릴게요",
   ],
 } as const;
 
 function LoadingMessage({ message }: { message: string }) {
-  return <>{message.split("\n").map((line, index) => <span key={`${line}-${index}`}>{line}{index === 0 && <br />}</span>)}</>;
+  const lines = message.split("\n");
+  return <>{lines.map((line, index) => <span key={`${line}-${index}`}>{line}{index < lines.length - 1 && <br />}</span>)}</>;
 }
 
 /** The single loading visual used before selection and while the reading is prepared. */
@@ -43,17 +52,26 @@ export function TodayTarotLoadingScene({
 
   useEffect(() => {
     setMessageIndex(0);
-    const messageTimers = messages.slice(1).map((_, index) => window.setTimeout(
-      () => setMessageIndex(index + 1),
-      LOADING_MESSAGE_DURATION_MS * (index + 1),
-    ));
-    const completeTimer = window.setTimeout(
-      () => onSequenceComplete?.(),
-      LOADING_MESSAGE_DURATION_MS * messages.length,
-    );
+    let currentMessageIndex = 0;
+    let timer: number | undefined;
+
+    const advanceSequence = () => {
+      const isFinalMessage = currentMessageIndex === messages.length - 1;
+      timer = window.setTimeout(() => {
+        if (isFinalMessage) {
+          onSequenceComplete?.();
+          return;
+        }
+        currentMessageIndex += 1;
+        setMessageIndex(currentMessageIndex);
+        advanceSequence();
+      }, isFinalMessage ? FINAL_MESSAGE_DURATION_MS : LOADING_MESSAGE_DURATION_MS);
+    };
+
+    advanceSequence();
+
     return () => {
-      messageTimers.forEach((timer) => window.clearTimeout(timer));
-      window.clearTimeout(completeTimer);
+      if (timer !== undefined) window.clearTimeout(timer);
     };
   }, [messages, onSequenceComplete, phase]);
 
@@ -86,6 +104,9 @@ export function TodayTarotLoadingScene({
             >
               <LoadingMessage message={messages[messageIndex]} />
             </p>
+          </div>
+          <div className="today-tarot-loading-progress" aria-hidden="true">
+            {messages.map((message, index) => <span key={message} className={index === messageIndex ? "is-active" : ""} />)}
           </div>
         </div>
       </section>
