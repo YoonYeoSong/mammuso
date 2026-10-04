@@ -11,10 +11,12 @@ const CARD_COUNT = FULL_TAROT_DECK_SIZE;
 const VISIBLE_CARD_OFFSETS = [-3, -2, -1, 0, 1, 2, 3] as const;
 const RENDERED_CARD_OFFSETS = [-4, ...VISIBLE_CARD_OFFSETS, 4] as const;
 const SWIPE_THRESHOLD = 36;
-const DRAG_INTENT_THRESHOLD = 8;
-const DRAG_FEEDBACK_LIMIT = 22;
+const DRAG_INTENT_THRESHOLD = 6;
+const DIRECTION_LOCK_RATIO = 1.15;
+const FLICK_DISTANCE_THRESHOLD = 18;
+const FLICK_VELOCITY_THRESHOLD = 0.45;
 const CARD_STEP = 78;
-const SNAP_DURATION_MS = 320;
+const SNAP_DURATION_MS = 220;
 const SNAP_FALLBACK_MS = SNAP_DURATION_MS + 80;
 const DECK_ENTRANCE_MS = 700;
 
@@ -24,6 +26,7 @@ type DeckPointer = {
   id: number;
   startX: number;
   startY: number;
+  startTime: number;
   intent: "pending" | "horizontal" | "vertical";
 };
 
@@ -61,6 +64,7 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
   const [activeIndex, setActiveIndex] = useState(0);
   const [positionIndex, setPositionIndex] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const [isDeckReady, setIsDeckReady] = useState(false);
   const [isDeckEntering, setIsDeckEntering] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -69,6 +73,7 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
   const pointer = useRef<DeckPointer | null>(null);
   const selectedCardElement = useRef<HTMLButtonElement | null>(null);
   const ignoreSyntheticCardTap = useRef(false);
+  const ignoreSyntheticCardTapTimer = useRef<number | null>(null);
   const activeIndexRef = useRef(0);
   const queuedMovesRef = useRef<Array<-1 | 1>>([]);
   const isAnimatingRef = useRef(false);
@@ -116,6 +121,7 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
   useEffect(() => () => {
     if (snapFallbackTimer.current !== null) window.clearTimeout(snapFallbackTimer.current);
     if (snapFrame.current !== null) window.cancelAnimationFrame(snapFrame.current);
+    if (ignoreSyntheticCardTapTimer.current !== null) window.clearTimeout(ignoreSyntheticCardTapTimer.current);
   }, []);
 
   function finishSnap() {
@@ -183,7 +189,15 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
   }
 
   function chooseCard(cardId: string, index: number) {
-    if (ignoreSyntheticCardTap.current || isConfirming || isAnimatingRef.current) return;
+    if (ignoreSyntheticCardTap.current) {
+      ignoreSyntheticCardTap.current = false;
+      if (ignoreSyntheticCardTapTimer.current !== null) {
+        window.clearTimeout(ignoreSyntheticCardTapTimer.current);
+        ignoreSyntheticCardTapTimer.current = null;
+      }
+      return;
+    }
+    if (isConfirming || isAnimatingRef.current) return;
     const currentCard = getTodayTarotCard(cardId);
     const selectedIds = session?.selectedCardIds ?? (session?.selectedCardId ? [session.selectedCardId] : []);
     if (clarifierMode && selectedIds.includes(cardId)) return;
@@ -204,6 +218,15 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
     if (isConfirming) return;
+    // A new pointer sequence is an intentional follow-up interaction, not the
+    // compatibility click dispatched by the preceding swipe.
+    if (ignoreSyntheticCardTap.current) {
+      ignoreSyntheticCardTap.current = false;
+      if (ignoreSyntheticCardTapTimer.current !== null) {
+        window.clearTimeout(ignoreSyntheticCardTapTimer.current);
+        ignoreSyntheticCardTapTimer.current = null;
+      }
+    }
     // Card buttons occupy most of the fan, so gestures must begin on them as
     // well as on empty stage space. Do not capture yet: a short tap must still
     // reach its button's click handler. Capture only after a horizontal drag
@@ -213,6 +236,7 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
       id: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
+      startTime: event.timeStamp,
       intent: "pending",
     };
   }
@@ -223,40 +247,57 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
     const verticalOffset = event.clientY - pointer.current.startY;
 
     if (pointer.current.intent === "pending") {
-      if (Math.abs(verticalOffset) >= DRAG_INTENT_THRESHOLD && Math.abs(verticalOffset) > Math.abs(horizontalOffset)) {
+      const horizontalDistance = Math.abs(horizontalOffset);
+      const verticalDistance = Math.abs(verticalOffset);
+      if (horizontalDistance < DRAG_INTENT_THRESHOLD && verticalDistance < DRAG_INTENT_THRESHOLD) return;
+      if (verticalDistance > horizontalDistance * DIRECTION_LOCK_RATIO) {
         pointer.current.intent = "vertical";
         return;
       }
-      if (Math.abs(horizontalOffset) < DRAG_INTENT_THRESHOLD) return;
+      if (horizontalDistance <= verticalDistance * DIRECTION_LOCK_RATIO) return;
       pointer.current.intent = "horizontal";
       event.currentTarget.setPointerCapture(event.pointerId);
+      setIsDragging(true);
     }
 
     if (pointer.current.intent !== "horizontal") return;
-    const nextOffset = Math.max(-DRAG_FEEDBACK_LIMIT, Math.min(DRAG_FEEDBACK_LIMIT, horizontalOffset));
-    setDragOffset(nextOffset);
+    // Keep the deck physically coupled to the pointer while dragging. Its
+    // release transition is handled by CSS only after this state is cleared.
+    setDragOffset(horizontalOffset);
   }
 
   function finishPointer(event: PointerEvent<HTMLDivElement>) {
     if (!pointer.current || pointer.current.id !== event.pointerId) return;
-    const offset = event.clientX - pointer.current.startX;
-    const wasHorizontalDrag = pointer.current.intent === "horizontal";
+    const activePointer = pointer.current;
+    const offset = event.clientX - activePointer.startX;
+    const wasHorizontalDrag = activePointer.intent === "horizontal";
+    const elapsed = Math.max(1, event.timeStamp - activePointer.startTime);
+    const velocity = Math.abs(offset) / elapsed;
+    const wasFlick = Math.abs(offset) >= FLICK_DISTANCE_THRESHOLD && velocity >= FLICK_VELOCITY_THRESHOLD;
     pointer.current = null;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    if (wasHorizontalDrag) setIsDragging(false);
     setDragOffset(0);
-    if (wasHorizontalDrag && Math.abs(offset) >= SWIPE_THRESHOLD) {
+    if (wasHorizontalDrag && (Math.abs(offset) >= SWIPE_THRESHOLD || wasFlick)) {
       // Some mobile browsers still emit a click at the end of a drag. Keep that
-      // synthetic click from selecting the card under the finger.
+      // synthetic click from selecting the card under the finger. The guard is
+      // reset by the next real pointer down, so a follow-up tap stays immediate.
       ignoreSyntheticCardTap.current = true;
-      window.setTimeout(() => { ignoreSyntheticCardTap.current = false; }, 180);
+      if (ignoreSyntheticCardTapTimer.current !== null) window.clearTimeout(ignoreSyntheticCardTapTimer.current);
+      ignoreSyntheticCardTapTimer.current = window.setTimeout(() => {
+        ignoreSyntheticCardTap.current = false;
+        ignoreSyntheticCardTapTimer.current = null;
+      }, 600);
       moveDeck(offset < 0 ? 1 : -1);
     }
   }
 
   function cancelPointer(event: PointerEvent<HTMLDivElement>) {
     if (!pointer.current || pointer.current.id !== event.pointerId) return;
+    const wasHorizontalDrag = pointer.current.intent === "horizontal";
     pointer.current = null;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    if (wasHorizontalDrag) setIsDragging(false);
     setDragOffset(0);
   }
 
@@ -344,7 +385,7 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
             onPointerUp={finishPointer}
             onPointerCancel={cancelPointer}
           >
-            <div className="today-tarot-deck-cards" style={{ transform: `translate3d(${dragOffset}px, 0, 0)` }}>
+            <div className={`today-tarot-deck-cards ${isDragging ? "is-dragging" : ""}`} style={{ transform: `translate3d(${dragOffset}px, 0, 0)` }}>
               {visibleCards.map(({ cardId, index, offset }) => {
                 const isSelected = selectedCardId === cardId;
                 const isTransitionBuffer = Math.abs(offset) > 3;
