@@ -11,7 +11,7 @@ type TodayTarotLoadingSceneProps = {
   onSequenceComplete?: () => void;
 };
 
-export const LOADING_MESSAGE_DURATION_MS = 1600;
+export const LOADING_MESSAGE_DURATION_MS = 1500;
 
 const loadingMessages = {
   preparing: [
@@ -80,7 +80,10 @@ export function TodayTarotLoadingScene({
         </div>
         <div className="today-tarot-loading-copy" aria-live="polite">
           <div className="today-tarot-loading-message-frame" aria-atomic="true">
-            <p key={messages[messageIndex]} className="is-active">
+            <p
+              key={messages[messageIndex]}
+              className={`is-active ${messageIndex === messages.length - 1 ? "is-final" : ""}`}
+            >
               <LoadingMessage message={messages[messageIndex]} />
             </p>
           </div>
