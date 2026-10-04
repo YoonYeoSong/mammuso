@@ -13,7 +13,7 @@ type TodayTarotLoadingSceneProps = {
 
 const MESSAGE_FADE_IN_MS = 300;
 const MESSAGE_HOLD_MS = 800;
-const MESSAGE_FADE_OUT_MS = 280;
+const MESSAGE_FADE_OUT_MS = 360;
 const FINAL_MESSAGE_EXTRA_HOLD_MS = 1000;
 export const LOADING_MESSAGE_DURATION_MS = MESSAGE_FADE_IN_MS + MESSAGE_HOLD_MS + MESSAGE_FADE_OUT_MS;
 const FINAL_MESSAGE_DURATION_MS = MESSAGE_FADE_IN_MS + MESSAGE_HOLD_MS + FINAL_MESSAGE_EXTRA_HOLD_MS;
@@ -48,10 +48,12 @@ export function TodayTarotLoadingScene({
   onSequenceComplete,
 }: TodayTarotLoadingSceneProps) {
   const [messageIndex, setMessageIndex] = useState(0);
+  const [isLeaving, setIsLeaving] = useState(false);
   const messages = loadingMessages[phase];
 
   useEffect(() => {
     setMessageIndex(0);
+    setIsLeaving(false);
     let currentMessageIndex = 0;
     let timer: number | undefined;
 
@@ -62,10 +64,14 @@ export function TodayTarotLoadingScene({
           onSequenceComplete?.();
           return;
         }
-        currentMessageIndex += 1;
-        setMessageIndex(currentMessageIndex);
-        advanceSequence();
-      }, isFinalMessage ? FINAL_MESSAGE_DURATION_MS : LOADING_MESSAGE_DURATION_MS);
+        setIsLeaving(true);
+        timer = window.setTimeout(() => {
+          currentMessageIndex += 1;
+          setMessageIndex(currentMessageIndex);
+          setIsLeaving(false);
+          advanceSequence();
+        }, MESSAGE_FADE_OUT_MS);
+      }, isFinalMessage ? FINAL_MESSAGE_DURATION_MS : MESSAGE_FADE_IN_MS + MESSAGE_HOLD_MS);
     };
 
     advanceSequence();
@@ -97,16 +103,18 @@ export function TodayTarotLoadingScene({
           </div>
         </div>
         <div className="today-tarot-loading-copy" aria-live="polite">
-          <div className="today-tarot-loading-message-frame" aria-atomic="true">
-            <p
-              key={messages[messageIndex]}
-              className={`is-active ${messageIndex === messages.length - 1 ? "is-final" : ""}`}
-            >
-              <LoadingMessage message={messages[messageIndex]} />
-            </p>
-          </div>
-          <div className="today-tarot-loading-progress" aria-hidden="true">
-            {messages.map((message, index) => <span key={message} className={index === messageIndex ? "is-active" : ""} />)}
+          <div className="today-tarot-loading-content">
+            <div className="today-tarot-loading-message-frame" aria-atomic="true">
+              <p
+                key={messages[messageIndex]}
+                className={`is-active ${isLeaving ? "is-leaving" : ""} ${messageIndex === messages.length - 1 ? "is-final" : ""}`}
+              >
+                <LoadingMessage message={messages[messageIndex]} />
+              </p>
+            </div>
+            <div className="today-tarot-loading-progress" aria-hidden="true">
+              {messages.map((message, index) => <span key={message} className={index === messageIndex ? "is-active" : ""} />)}
+            </div>
           </div>
         </div>
       </section>
