@@ -21,6 +21,12 @@ body > main.today-tarot-page { --today-tarot-display: var(--font-maru-buri), "Ma
 .today-tarot-page a:focus-visible { outline: 2px solid #fff3d7; outline-offset: 4px; }
 .today-tarot-app-surface { display: flex; width: min(100%, 480px); min-height: 100dvh; flex-direction: column; margin: 0 auto; padding: max(10px, env(safe-area-inset-top)) 24px max(20px, env(safe-area-inset-bottom)); }
 
+/* The introduction is a single, fixed mobile scene. Prevent long-press drags
+   from exposing a spare vertical scroll area while preserving taps on its CTA. */
+html:has(.today-tarot-intro-page), body:has(.today-tarot-intro-page) { width: 100%; height: 100%; min-height: 100%; overflow: hidden; overscroll-behavior: none; }
+.today-tarot-intro-page { position: fixed !important; inset: 0; height: 100dvh; min-height: 0 !important; max-height: 100dvh; overflow: hidden; overscroll-behavior: none; touch-action: pan-x; }
+.today-tarot-intro-page .today-tarot-app-surface { height: 100%; min-height: 0; overflow: hidden; }
+
 .today-tarot-header { display: grid; grid-template-columns: 42px 1fr 42px; min-height: 46px; flex: 0 0 auto; align-items: center; }
 .today-tarot-header h1 { margin: 0; color: var(--today-tarot-ivory); font-family: var(--destiny-serif, "Batang", serif); font-size: 16px; font-weight: 500; letter-spacing: -.09em; text-align: center; text-shadow: 0 1px 9px rgba(4, 4, 26, .55); }
 .today-tarot-back { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 50%; color: var(--today-tarot-ivory); text-decoration: none; }
@@ -44,7 +50,7 @@ body > main.today-tarot-page { --today-tarot-display: var(--font-maru-buri), "Ma
 .today-tarot-start-cta:active { filter: brightness(1.12); transform: scale(.98); }
 
 .today-tarot-ritual-page { height: 100dvh; min-height: 0 !important; max-height: 100dvh; overflow-x: clip; overflow-y: hidden; background: var(--tarot-stage-bg) !important; overscroll-behavior-y: none; }
-.today-tarot-ritual-page::before { background-image: url("/illustrations/today-tarot-prepare-bg.jpg"); background-position: 50% 0; background-size: 100% auto; }
+.today-tarot-ritual-page::before { background-image: url("/illustrations/today-tarot-prepare-bg.jpg"); background-position: 50% -18px; background-size: 100% auto; }
 .today-tarot-ritual-page::after { background: linear-gradient(180deg, rgba(5, 7, 35, .06) 0%, rgba(8, 8, 39, .02) 47%, rgba(9, 10, 43, .12) 55%, rgba(2, 3, 20, .53) 66%, var(--tarot-stage-bg) 78%, var(--tarot-stage-bg) 100%); }
 .today-tarot-ritual-page .today-tarot-app-surface { position: relative; width: min(100%, 480px); height: 100%; min-height: 0; padding: max(10px, env(safe-area-inset-top)) 0 0; overflow: hidden; }
 .today-tarot-ritual-page .today-tarot-header { position: relative; z-index: 2; padding: 0 24px; }
@@ -65,7 +71,7 @@ body > main.today-tarot-page { --today-tarot-display: var(--font-maru-buri), "Ma
    message region transparent prevents its absolute box from drawing a second,
    visibly horizontal fade over the crystal ball on shorter mobile viewports. */
 .today-tarot-loading-copy { position: absolute; z-index: 30; right: 0; bottom: clamp(64px, 10dvh, 120px); left: 0; display: grid; min-height: clamp(188px, 24dvh, 220px); place-items: start center; padding: clamp(32px, 4.7dvh, 44px) 24px max(18px, env(safe-area-inset-bottom)); background: transparent; pointer-events: none; text-align: center; }
-.today-tarot-loading-content { display: grid; width: 100%; justify-items: center; gap: 8px; }
+.today-tarot-loading-content { display: grid; width: 100%; justify-items: center; gap: 8px; transform: translateY(clamp(12px, 2dvh, 18px)); }
 .today-tarot-loading-message-frame { position: relative; z-index: 1; width: 100%; height: 60px; overflow: visible; }
 .today-tarot-loading-message-frame p { position: absolute; z-index: 1; inset: 0; display: block; margin: 0; color: #fff9ed; font-family: var(--destiny-serif, "Batang", serif); font-size: clamp(16px, 4.2vw, 18px); font-weight: 600; letter-spacing: -.06em; line-height: 1.6; opacity: 1; text-shadow: 0 2px 12px rgba(0, 0, 15, 1), 0 0 10px rgba(255, 244, 223, .32); transform: translateY(0); will-change: opacity, transform; }
 .today-tarot-loading-message-frame p.is-active { visibility: visible; animation: today-tarot-loading-message-enter .3s ease-out both; }.today-tarot-loading-message-frame p.is-active.is-leaving { animation: today-tarot-loading-message-exit .36s cubic-bezier(.33,0,.2,1) both; }
@@ -143,7 +149,11 @@ body > main.today-tarot-page { --today-tarot-display: var(--font-maru-buri), "Ma
    same deep navy used by the extended reading. The artwork never repeats. */
 .today-tarot-result-page { container-type: inline-size; background: var(--tarot-stage-bg) !important; }
 .today-tarot-result-page::before { background-image: url("/illustrations/today-tarot-result-bg.jpg"); background-position: top center; background-size: 100% auto; background-repeat: no-repeat; opacity: 1; }
-.today-tarot-result-page::after { background: linear-gradient(180deg, rgba(0, 2, 14, 0) 0, rgba(0, 2, 14, 0) 118cqw, var(--tarot-stage-bg) 216.58cqw); }
+.today-tarot-result-page::after { background: linear-gradient(180deg, rgba(0, 2, 14, .56) 0, rgba(0, 2, 14, .3) 25cqw, transparent 70cqw), linear-gradient(180deg, rgba(0, 2, 14, 0) 0, rgba(0, 2, 14, 0) 118cqw, var(--tarot-stage-bg) 216.58cqw); }
+.today-tarot-result-page .today-tarot-header h1 { text-shadow: 0 2px 10px rgba(0, 0, 14, .96), 0 0 18px rgba(0, 0, 14, .7); }
+.today-tarot-result-kicker { color: #eee5fa; font-weight: 600; text-shadow: 0 2px 8px rgba(0, 0, 14, .95); }
+.today-tarot-result h2 { color: #fff7e9; text-shadow: 0 2px 10px rgba(0, 0, 14, .95), 0 0 18px rgba(0, 0, 14, .55); }
+.today-tarot-result-lead { color: #e4deec; text-shadow: 0 2px 8px rgba(0, 0, 14, .92); }
 
 /* Keep the complete supplied card visible. Scaling the artwork to hide its
    export matte also removed the gold border and made the card look clipped. */
