@@ -28,21 +28,10 @@ export type TodayTarotSession = {
   id?: string;
   dateKey: string;
   step: TodayTarotStep;
-  shuffledCardIds: string[];
-  /** Selected cards are immutable for the life of this shuffled reading. */
-  selectedCardIds: string[];
-  selectedCardId?: string;
-  clarifierCardId?: string;
-  profileSource?: "guest" | "member";
-  /** Randomized only when the visitor confirms their own card selection. */
-  orientation?: "upright" | "reversed";
-};
-
-/**
- * This data is resolved only after the visitor selects a card. It deliberately
- * does not participate in `shuffledCardIds` or selection state.
- */
-export type TodayTarotInterpretationContext = {
-  selectedCardId: string;
-  sajuDailyFlow: string;
+  /** Generated once when the reading starts and reused for both draws. */
+  deckOrder: string[];
+  mainCardId?: string;
+  mainOrientation?: "upright" | "reversed";
+  clarifierCardId?: string | null;
+  clarifierOrientation?: "upright" | "reversed" | null;
 };

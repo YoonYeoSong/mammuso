@@ -25,10 +25,11 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
     try {
       const saved = window.sessionStorage.getItem(TODAY_TAROT_SESSION_KEY);
       const session = saved ? JSON.parse(saved) as TodayTarotSession : null;
-      const cardId = clarifierMode ? session?.clarifierCardId : session?.selectedCardId;
+      const cardId = clarifierMode ? session?.clarifierCardId : session?.mainCardId;
+      const orientation = clarifierMode ? session?.clarifierOrientation : session?.mainOrientation;
       const selectedCard = cardId ? getTodayTarotCard(cardId) : undefined;
-      if (!session?.selectedCardId || !session.orientation || !selectedCard?.imageReady) {
-        router.replace(todayTarotRoutes.selection);
+      if (!session?.mainCardId || !session.mainOrientation || !cardId || !orientation || !selectedCard?.imageReady) {
+        router.replace(clarifierMode ? `${todayTarotRoutes.selection}?mode=clarifier` : todayTarotRoutes.selection);
         return;
       }
       setSession(session);
@@ -58,8 +59,8 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
           body: JSON.stringify({
             sessionId: session.id,
             dateKey: session.dateKey,
-            mainCardId: session.selectedCardId,
-            orientation: session.orientation,
+            mainCardId: session.mainCardId,
+            orientation: session.mainOrientation,
             clarifierCardId: session.clarifierCardId,
           }),
         });
@@ -80,18 +81,19 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
     return () => { active = false; window.clearTimeout(exitTimer); };
   }, [apiReady, isViewingInterpretation, router, sequenceReady]);
 
-  const revealedCardId = clarifierMode ? session?.clarifierCardId : session?.selectedCardId;
+  const revealedCardId = clarifierMode ? session?.clarifierCardId : session?.mainCardId;
   const revealedCard = revealedCardId ? getTodayTarotCard(revealedCardId) : undefined;
+  const revealedOrientation = clarifierMode ? session?.clarifierOrientation : session?.mainOrientation;
 
   if (session && revealedCard && !isViewingInterpretation) return <main className="today-tarot-page today-tarot-card-reveal-page">
     <div className="today-tarot-app-surface">
       <section className={`today-tarot-card-reveal ${cardRevealComplete ? "is-complete" : ""}`} aria-live="polite">
         <p>{clarifierMode ? "당신이 선택한 보조카드" : "당신이 선택한 카드"}</p>
-        <div className={`today-tarot-card-reveal-art ${session.orientation === "reversed" ? "is-reversed" : ""}`}>
+        <div className={`today-tarot-card-reveal-art ${revealedOrientation === "reversed" ? "is-reversed" : ""}`}>
           <Image src={revealedCard.image} alt={`${revealedCard.nameKo} 카드`} fill sizes="(max-width: 480px) 64vw, 246px" priority />
         </div>
         <h1>{revealedCard.nameKo}</h1>
-        <small>{session.orientation === "reversed" ? "역방향" : "정방향"}</small>
+        <small>{revealedOrientation === "reversed" ? "역방향" : "정방향"}</small>
         {cardRevealComplete && <div className="today-tarot-card-reveal-next">
           <p>이 카드가 전하는 오늘의 운명을 확인해볼까요?</p>
           <button type="button" onClick={() => setIsViewingInterpretation(true)}>
@@ -106,6 +108,7 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
     backHref={clarifierMode ? `${todayTarotRoutes.selection}?mode=clarifier` : todayTarotRoutes.selection}
     ariaLabel="해석을 준비하는 중"
     phase="interpreting"
+    interpretationMode={clarifierMode ? "combined" : "main"}
     isExiting={isExiting}
     onSequenceComplete={markSequenceReady}
   />;

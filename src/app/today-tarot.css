@@ -189,3 +189,16 @@ html:has(.today-tarot-ritual-page), body:has(.today-tarot-ritual-page) { width: 
 .today-tarot-ritual-page { position: fixed !important; inset: 0; width: min(100%, 480px) !important; height: 100dvh; margin: 0 auto !important; touch-action: none; }
 
 @media (max-width:359px) { .today-tarot-profile-form,.today-tarot-result { padding-top:20px; }.today-tarot-profile-copy h2,.today-tarot-result h2 { font-size:23px; } }
+
+/* Temporary authentication state and the locked first card preserve the existing
+   surfaces while making the test-only flow unambiguous. */
+.today-tarot-choice--member:disabled { border-color:rgba(195,190,206,.18); background:rgba(255,255,255,.028); color:#aaa4b9; cursor:default; opacity:.52; pointer-events:none; }
+.today-tarot-choice--member b em { margin-left:6px; color:#b4adbf; font-family:var(--destiny-sans,"Apple SD Gothic Neo",sans-serif); font-size:10px; font-style:normal; letter-spacing:0; vertical-align:middle; }
+.today-tarot-choice-test-note { color:#aaa4c1!important; }
+.today-tarot-deck-card.is-locked { cursor:not-allowed; filter:grayscale(.76) saturate(.3) brightness(.62); opacity:calc(var(--deck-opacity) * .62); }
+.today-tarot-deck-card.is-locked em { position:absolute; z-index:2; right:7px; bottom:8px; border-radius:999px; padding:3px 5px; background:rgba(6,8,27,.68); color:rgba(243,235,222,.8); font-size:8px; font-style:normal; line-height:1; pointer-events:none; }
+.today-tarot-reading-cards { display:flex; justify-content:center; }
+.today-tarot-reading-cards.has-clarifier { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; align-items:start; }
+.today-tarot-reading-cards.has-clarifier .today-tarot-main-card-art,.today-tarot-reading-cards.has-clarifier .today-tarot-main-card-placeholder { width:min(100%,138px); }
+.today-tarot-reading-cards.has-clarifier .today-tarot-main-card h3 { margin-top:9px; font-size:16px; }
+.today-tarot-reading-cards.has-clarifier .today-tarot-main-card p { margin-bottom:8px; }

@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { todayTarotRoutes } from "@/lib/today-tarot/flow";
-import { persistTodayTarotSession, prepareTodayTarotSession } from "@/lib/today-tarot/session";
-import { readTodayTarotProfile } from "@/lib/today-tarot/profile";
+import { persistTodayTarotSession, prepareTodayTarotSession, TODAY_TAROT_SESSION_KEY } from "@/lib/today-tarot/session";
+import { FULL_TAROT_DECK_SIZE, getTodayTarotCard } from "@/lib/today-tarot/deck";
+import type { TodayTarotSession } from "@/lib/today-tarot/flow";
 import { TodayTarotLoadingScene } from "./TodayTarotRitualLoading";
 
 const EXIT_TRANSITION_MS = 420;
@@ -18,12 +19,14 @@ export function TodayTarotPreparation() {
 
   useEffect(() => {
     let active = true;
-    const profile = readTodayTarotProfile();
-    if (!profile) { router.replace(`${todayTarotRoutes.intro}?start=1`); return () => { active = false; }; }
-
     void Promise.resolve().then(() => {
-      const session = prepareTodayTarotSession(profile);
-      persistTodayTarotSession(session);
+      try {
+        const saved = window.sessionStorage.getItem(TODAY_TAROT_SESSION_KEY);
+        const existing = saved ? JSON.parse(saved) as TodayTarotSession : null;
+        const hasStableDeck = existing?.deckOrder?.length === FULL_TAROT_DECK_SIZE && new Set(existing.deckOrder).size === FULL_TAROT_DECK_SIZE && existing.deckOrder.every(getTodayTarotCard);
+        if (hasStableDeck) return;
+      } catch { /* A stale session is replaced below. */ }
+      persistTodayTarotSession(prepareTodayTarotSession());
     }).finally(() => { if (active) setApiReady(true); });
 
     return () => { active = false; };

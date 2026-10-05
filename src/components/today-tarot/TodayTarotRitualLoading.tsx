@@ -7,6 +7,7 @@ type TodayTarotLoadingSceneProps = {
   backHref: string;
   ariaLabel: string;
   phase: "preparing" | "interpreting";
+  interpretationMode?: "main" | "combined";
   isExiting?: boolean;
   onSequenceComplete?: () => void;
 };
@@ -20,19 +21,22 @@ const FINAL_MESSAGE_DURATION_MS = MESSAGE_FADE_IN_MS + MESSAGE_HOLD_MS + FINAL_M
 
 const loadingMessages = {
   preparing: [
-    "당신의 오늘을 살펴보고 있어요",
-    "오늘의 흐름을 준비하고 있어요",
-    "이제, 당신의 카드를 만나볼까요?",
+    "오늘의 카드를 준비하고 있어요.",
+    "카드를 천천히 섞고 있어요.",
+    "오늘 당신을 기다리는 카드를 펼치고 있어요.",
   ],
   interpreting: [
-    "선택한 카드를 확인하고 있어요",
-    "카드가 전하는 의미를 읽고 있어요",
-    "오늘의 흐름과 카드를\n함께 살펴보고 있어요",
-    "두 흐름이 만나는 지점을 찾고 있어요",
-    "당신을 위한 오늘의 이야기를\n정리하고 있어요",
-    "곧 결과를 보여드릴게요",
+    "선택한 카드를 읽고 있어요.",
+    "카드가 전하는 오늘의 흐름을 살펴보고 있어요.",
+    "오늘 필요한 메시지를 정리하고 있어요.",
   ],
 } as const;
+
+const combinedInterpretationMessages = [
+  "두 카드의 흐름을 함께 살펴보고 있어요.",
+  "보조 카드가 더해준 의미를 읽고 있어요.",
+  "오늘의 메시지를 조금 더 선명하게 정리하고 있어요.",
+] as const;
 
 function LoadingMessage({ message }: { message: string }) {
   const lines = message.split("\n");
@@ -44,12 +48,15 @@ export function TodayTarotLoadingScene({
   backHref,
   ariaLabel,
   phase,
+  interpretationMode = "main",
   isExiting = false,
   onSequenceComplete,
 }: TodayTarotLoadingSceneProps) {
   const [messageIndex, setMessageIndex] = useState(0);
   const [isLeaving, setIsLeaving] = useState(false);
-  const messages = loadingMessages[phase];
+  const messages = phase === "interpreting" && interpretationMode === "combined"
+    ? combinedInterpretationMessages
+    : loadingMessages[phase];
 
   useEffect(() => {
     setMessageIndex(0);

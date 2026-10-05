@@ -9,7 +9,7 @@ type IntroBenefit = {
 
 const benefits: IntroBenefit[] = [
   { icon: "sun", title: "하루 1회 무료 리딩", description: "매일 새로운 이야기를 만나요." },
-  { icon: "moon", title: "내 사주와 함께 보는 해석", description: "오늘의 흐름을 더 깊게 읽어요." },
+  { icon: "moon", title: "카드 한 장으로 보는 해석", description: "오늘의 흐름을 가볍게 읽어요." },
   { icon: "path", title: "짧지만 명확한 조언", description: "오늘을 위한 방향을 제시해요." },
 ];
 
@@ -32,7 +32,7 @@ export function TodayTarotIntro({ startOpen = false }: { startOpen?: boolean }) 
         </div>
       </section>
 
-      <p className="today-tarot-formula"><span>사주 속 오늘의 흐름</span><b>×</b><span>내가 선택한 타로</span></p>
+      <p className="today-tarot-formula"><span>오늘의 흐름</span><b>×</b><span>내가 선택한 타로</span></p>
 
       <section className="today-tarot-benefits" aria-label="오늘의 타로 안내">
         {benefits.map((benefit) => <article key={benefit.title} className="today-tarot-benefit">
