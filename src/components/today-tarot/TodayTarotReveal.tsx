@@ -96,6 +96,7 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
         </div>
         <h1>{revealedCard.nameKo}</h1>
         <span className="today-tarot-card-orientation">{revealedOrientation === "reversed" ? "역방향" : "정방향"}<OrientationInfoTrigger onClick={() => setIsOrientationSheetOpen(true)} /></span>
+        <p className="today-tarot-card-orientation-help"><span aria-hidden="true">ⓘ</span> 문양을 누르면 카드 방향에 대한 설명을 확인할 수 있어요.</p>
         {cardRevealComplete && <div className="today-tarot-card-reveal-next">
           <p>이 카드가 전하는 오늘의 운명을 확인해볼까요?</p>
           <button type="button" onClick={() => setIsViewingInterpretation(true)}>

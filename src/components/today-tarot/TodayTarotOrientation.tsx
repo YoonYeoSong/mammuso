@@ -31,7 +31,7 @@ export function OrientationBottomSheet({ open, onClose }: { open: boolean; onClo
       <div className="today-tarot-orientation-sheet-heading"><h2 id="today-tarot-orientation-title">정방향과 역방향</h2><button type="button" onClick={onClose} aria-label="방향 설명 닫기">×</button></div>
       <p><b>정방향</b>은 카드가 가진 메시지가 자연스럽게 드러나는 흐름을 뜻해요.</p>
       <p><b>역방향</b>은 그 메시지를 조금 다르게 바라보거나, 안쪽의 마음을 살펴볼 때를 뜻해요.</p>
-      <p className="today-tarot-orientation-sheet-note">좋고 나쁨의 구분이 아니라, 오늘의 메시지를 읽는 또 하나의 방향이에요.</p>
+      <p className="today-tarot-orientation-sheet-note">역방향이라고 해서 나쁜 카드라는 뜻은 아니에요. 오늘의 메시지를 읽는 또 하나의 방향이에요.</p>
     </section>
   </div>;
 }

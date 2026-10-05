@@ -29,6 +29,7 @@ export function TodayTarotIntro({ startOpen = false }: { startOpen?: boolean }) 
         <div className="today-tarot-intro-copy">
           <h2 id="today-tarot-intro-title">지금, 당신의 오늘을<br />카드 한 장에 담아볼까요?</h2>
           <p>오늘의 흐름을 비추는 카드가<br />당신에게 전하는 메시지를 확인해보세요.</p>
+          <p className="today-tarot-intro-orientation-note">카드의 정방향 · 역방향은 무작위로 결정돼요.</p>
         </div>
       </section>
 
