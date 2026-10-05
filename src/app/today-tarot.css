@@ -141,11 +141,28 @@ body > main.today-tarot-page { position: relative; width: min(100%, 480px) !impo
 .today-tarot-result-page::before { background-image: url("/illustrations/today-tarot-result-bg.jpg"); background-position: top center; background-size: 100% auto; background-repeat: no-repeat; opacity: 1; }
 .today-tarot-result-page::after { background: linear-gradient(180deg, rgba(0, 2, 14, 0) 0, rgba(0, 2, 14, 0) 118cqw, var(--tarot-stage-bg) 216.58cqw); }
 
-/* The source card JPEGs include a thin black export matte. Crop only that
-   matte within the existing card frame, without changing the frame's size. */
-.today-tarot-main-card-art { overflow: hidden; border-radius: 11px; }
-.today-tarot-main-card-art img { object-fit: cover; transform: scale(1.08); }
-.today-tarot-main-card-art.is-reversed img { transform: rotate(180deg) scale(1.08); }
+/* Keep the complete supplied card visible. Scaling the artwork to hide its
+   export matte also removed the gold border and made the card look clipped. */
+.today-tarot-main-card-art { overflow: visible; border-radius: 0; }
+.today-tarot-main-card-art img { object-fit: contain; transform: none; }
+.today-tarot-main-card-art.is-reversed img { transform: rotate(180deg); }
+
+/* The selected-card confirmation is a single, fixed mobile scene. Resize the
+   card for short browser viewports so the confirmation button never creates a
+   spare scrollable area below the screen. */
+.today-tarot-card-reveal-page { height: 100dvh; min-height: 0 !important; max-height: 100dvh; overflow: hidden !important; overscroll-behavior-y: none; }
+.today-tarot-card-reveal-page .today-tarot-app-surface { height: 100%; min-height: 0; overflow: hidden; }
+.today-tarot-card-reveal { min-height: 0; flex: 1 1 auto; height: 100%; overflow: hidden; padding: 16px 0 max(16px, env(safe-area-inset-bottom)); }
+.today-tarot-card-reveal-art { width: auto; height: min(108.5vw, 417px, calc(100dvh - 230px)); }
+.today-tarot-card-reveal-next { margin-top: 18px; }
+
+@media (max-height: 620px) {
+  .today-tarot-card-reveal { padding-top: 10px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+  .today-tarot-card-reveal>p { margin-bottom: 8px; }
+  .today-tarot-card-reveal h1 { margin-top: 10px; font-size: 23px; }
+  .today-tarot-card-reveal-next { gap: 8px; margin-top: 12px; }
+  .today-tarot-card-reveal-next button { min-height: 48px; }
+}
 
 /* Loading is a fixed scene, not a scrollable document. */
 html:has(.today-tarot-ritual-page), body:has(.today-tarot-ritual-page) { width: 100%; height: 100%; min-height: 100%; overflow: hidden; overscroll-behavior: none; }
