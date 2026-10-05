@@ -71,7 +71,7 @@ function RecentReading({ reading = mockReading }: { reading?: ReadingPreview | n
       <button type="button" className="destiny-view-all">전체보기 <span aria-hidden="true">›</span></button>
     </div>
     {reading ? <article className="destiny-reading-card">
-      <div className="destiny-reading-thumbnail"><Image src={reading.thumbnail} alt="" fill sizes="64px" /></div>
+      <div className="destiny-reading-thumbnail"><Image src={reading.thumbnail} alt="" fill sizes="40px" /></div>
       <div><h3>{reading.title}</h3><time dateTime={reading.date.replaceAll(".", "-")}>{reading.date}</time></div>
     </article> : <div className="destiny-reading-empty"><CrystalSymbol name="star" /><p>아직 남겨진 리딩이 없어요.</p></div>}
   </section>;
