@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { TodayTarotLoadingScene } from "./TodayTarotRitualLoading";
+import { OrientationBottomSheet, OrientationInfoTrigger } from "./TodayTarotOrientation";
 import { TODAY_TAROT_SESSION_KEY } from "@/lib/today-tarot/session";
 import { todayTarotRoutes, type TodayTarotSession } from "@/lib/today-tarot/flow";
 import { getTodayTarotCard } from "@/lib/today-tarot/deck";
@@ -19,6 +20,7 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
   const [isExiting, setIsExiting] = useState(false);
   const [cardRevealComplete, setCardRevealComplete] = useState(false);
   const [isViewingInterpretation, setIsViewingInterpretation] = useState(false);
+  const [isOrientationSheetOpen, setIsOrientationSheetOpen] = useState(false);
   const markSequenceReady = useCallback(() => setSequenceReady(true), []);
 
   useEffect(() => {
@@ -93,7 +95,7 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
           <Image src={revealedCard.image} alt={`${revealedCard.nameKo} 카드`} fill sizes="(max-width: 480px) 64vw, 246px" priority />
         </div>
         <h1>{revealedCard.nameKo}</h1>
-        <small>{revealedOrientation === "reversed" ? "역방향" : "정방향"}</small>
+        <span className="today-tarot-card-orientation">{revealedOrientation === "reversed" ? "역방향" : "정방향"}<OrientationInfoTrigger onClick={() => setIsOrientationSheetOpen(true)} /></span>
         {cardRevealComplete && <div className="today-tarot-card-reveal-next">
           <p>이 카드가 전하는 오늘의 운명을 확인해볼까요?</p>
           <button type="button" onClick={() => setIsViewingInterpretation(true)}>
@@ -101,7 +103,7 @@ export function TodayTarotReveal({ clarifierMode = false }: { clarifierMode?: bo
           </button>
         </div>}
       </section>
-    </div>
+    </div><OrientationBottomSheet open={isOrientationSheetOpen} onClose={() => setIsOrientationSheetOpen(false)} />
   </main>;
 
   return <TodayTarotLoadingScene
