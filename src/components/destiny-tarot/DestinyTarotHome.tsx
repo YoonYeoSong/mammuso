@@ -12,7 +12,7 @@ type ReadingPreview = {
 const mockReading: ReadingPreview = {
   title: "그 사람과의 궁합",
   date: "2026.09.19",
-  thumbnail: "/tarot/back/tarot-card-back.png",
+  thumbnail: "/tarot/back/today-tarot-card-back.png",
 };
 
 function CrystalCount({ count }: { count: number }) {

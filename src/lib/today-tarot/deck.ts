@@ -8,7 +8,7 @@ export type TodayTarotCard = TarotDeckAsset;
  * `null` is an intentional placeholder for cards whose artwork has not arrived yet.
  */
 export const todayTarotAssets = {
-  cardBackImage: "/tarot/back/tarot-card-back.png",
+  cardBackImage: "/tarot/back/today-tarot-card-back.png",
   cardFrontPlaceholderImage: null,
 } as const;
 
