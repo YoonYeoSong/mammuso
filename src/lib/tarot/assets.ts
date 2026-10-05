@@ -37,6 +37,8 @@ export type TarotDeckAsset = {
   imageReady: boolean;
 };
 
+const asPng = (file: string) => file.replace(/\.jpg$/, ".png");
+
 const wandArtworkFiles: Record<WandCardRank, string> = {
   ace: "01-ace-of-wands.jpg",
   two: "02-two-of-wands.jpg",
@@ -106,23 +108,23 @@ const pentaclesArtworkFiles: Record<PentaclesCardRank, string> = {
 };
 
 export function tarotArtworkPath(card: TarotCard) {
-  return `/tarot/arcana/${String(card.number).padStart(2, "0")}-${card.id}.jpg`;
+  return `/tarot/arcana/${String(card.number).padStart(2, "0")}-${card.id}.png`;
 }
 
 export function wandArtworkPath(rank: WandCardRank) {
-  return `/tarot/wands/${wandArtworkFiles[rank]}`;
+  return `/tarot/wands/${asPng(wandArtworkFiles[rank])}`;
 }
 
 export function cupArtworkPath(rank: CupCardRank) {
-  return `/tarot/cups/${cupArtworkFiles[rank]}`;
+  return `/tarot/cups/${asPng(cupArtworkFiles[rank])}`;
 }
 
 export function swordArtworkPath(rank: SwordCardRank) {
-  return `/tarot/swords/${swordArtworkFiles[rank]}`;
+  return `/tarot/swords/${asPng(swordArtworkFiles[rank])}`;
 }
 
 export function pentaclesArtworkPath(rank: PentaclesCardRank) {
-  return `/tarot/pentacles/${pentaclesArtworkFiles[rank]}`;
+  return `/tarot/pentacles/${asPng(pentaclesArtworkFiles[rank])}`;
 }
 
 const majorCards = [
@@ -167,7 +169,7 @@ const majorTarotAssets: TarotDeckAsset[] = majorCards.map(([slug, nameKo, nameEn
   rank,
   nameKo,
   nameEn,
-  image: `/tarot/arcana/${String(rank).padStart(2, "0")}-${slug}.jpg`,
+  image: `/tarot/arcana/${String(rank).padStart(2, "0")}-${slug}.png`,
   imageReady: true,
 }));
 
