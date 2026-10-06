@@ -4,7 +4,7 @@ import type { Answers, DecisionResult, PreliminaryResult } from "@/lib/cases/typ
 import type { TarotCard, TarotCategory } from "@/lib/tarot/cards";
 import { dreamAnalysisSchema, dreamReadingSchema, type DreamAnalysis, type DreamExtracted, type DreamReading, type DreamTurn } from "@/lib/dream/types";
 import { dreamAnalysisSystemPrompt, dreamReadingSystemPrompt } from "@/lib/dream/prompts";
-import type { DestinyCardCountRecommendation, DestinyChatReply, DestinyConversationMessage, DestinySpread } from "@/lib/destiny-tarot/types";
+import type { DestinyCardCountRecommendation, DestinyChatReply, DestinyConversationMessage, DestinyReadingInput, DestinyReadingResponse, DestinySpread } from "@/lib/destiny-tarot/types";
 
 const respondentNoticeSchema = z.object({ summary: z.string().min(10).max(140), issues: z.array(z.string().min(4).max(100)).min(1).max(2) });
 const preliminarySchema = z.object({ summary: z.string().min(10).max(140), knownFacts: z.array(z.string().min(2).max(110)).max(2), openQuestions: z.array(z.string().min(2).max(110)).max(2), opinion: z.string().min(20).max(180), clerkComment: z.string().min(12).max(100) });
@@ -38,6 +38,22 @@ const destinySpreadSchema = z.object({
     description: z.string().min(1).max(180),
   })).min(3).max(10),
 });
+const destinyReadingSchema = z.object({
+  revealMessages: z.array(z.object({
+    spreadPositionId: z.string().min(1).max(32),
+    message: z.string().min(8).max(360),
+  })).min(3).max(10),
+  reading: z.object({
+    overallSummary: z.string().min(18).max(700),
+    positions: z.array(z.object({
+      spreadPositionId: z.string().min(1).max(32),
+      interpretation: z.string().min(18).max(1200),
+    })).min(3).max(10),
+    connections: z.string().min(18).max(1100),
+    coreConclusion: z.string().min(18).max(700),
+    actionAdvice: z.string().min(18).max(700),
+  }),
+});
 export type TarotReading = z.infer<typeof tarotReadingSchema>;
 
 export interface AIProvider {
@@ -49,6 +65,7 @@ export interface AIProvider {
   generateDestinyTarotChat(input: { conversation: DestinyConversationMessage[]; followUpCount: number }): Promise<DestinyChatReply>;
   generateDestinyCardCountRecommendation(input: { summary: string; finalQuestion: string }): Promise<DestinyCardCountRecommendation>;
   generateDestinySpread(input: { concernSummary: string; finalQuestion: string; cardCount: 3 | 5 | 10 }): Promise<DestinySpread>;
+  generateDestinyReading(input: DestinyReadingInput): Promise<DestinyReadingResponse>;
   analyzeDream(input: { dream: string; turns: DreamTurn[]; followupCount: number }): Promise<DreamAnalysis>;
   generateDreamReading(input: { dream: string; turns: DreamTurn[]; extracted: DreamExtracted; scoreFactors: string[]; amount: number; verdict: string }): Promise<DreamReading>;
 }
@@ -95,6 +112,14 @@ class GroqAIProvider implements AIProvider {
   }
   generateDestinySpread(input: { concernSummary: string; finalQuestion: string; cardCount: 3 | 5 | 10 }): Promise<DestinySpread> {
     return this.ask(`운명타로 PHASE 3입니다. 사용자의 실제 질문을 위한 개인화된 카드 자리 ${input.cardCount}개를 설계하세요. 이 응답은 오직 각 자리가 무엇을 읽는지 정하는 용도입니다. 실제 카드, cardId, 카드 순서, CSS 좌표, 카드 방향, 사용자 선택을 절대 만들거나 언급하지 마세요.\n\n고민 요약: ${input.concernSummary}\n확정 질문: ${input.finalQuestion}\n\n템플릿은 linear, choice, relationship, cross, deep 중 하나입니다. 질문이 선택의 비교라면 choice, 관계라면 relationship, 여러 변수가 얽힌 깊은 고민이라면 deep 또는 cross를 고려하되, 반드시 ${input.cardCount}개의 position만 반환하세요. 각 position의 id는 position-1부터 position-${input.cardCount}까지 순서대로, order는 1부터 ${input.cardCount}까지 순서대로 지정하세요. label은 짧고 구체적으로, description은 그 자리가 질문의 무엇을 살펴보는지 한 문장으로 작성하세요. 흔한 고정 배열보다 이 질문의 선택지·관계·맥락이 드러나게 만드세요. 미래를 단정하거나 불안을 부추기지 마세요.\nSchema: {"template":"choice","positions":[{"id":"position-1","order":1,"label":"","description":""}]}`, destinySpreadSchema, "당신은 달빛 아래에서 사용자의 고민에 맞는 카드 자리를 차분히 설계하는 한국어 타로 안내자입니다. 타로는 오락과 자기성찰을 위한 콘텐츠로 다루며, 카드를 뽑거나 결과를 예언하지 않습니다. 반드시 한국어만 사용하고 마크다운은 쓰지 마세요.", 1);
+  }
+  generateDestinyReading(input: DestinyReadingInput): Promise<DestinyReadingResponse> {
+    const readingDepth = input.cardCount === 3
+      ? "3장 핵심 리딩입니다. 각 자리는 2~3문장, 전체 문단은 간결하게 쓰세요."
+      : input.cardCount === 5
+        ? "5장 심층 리딩입니다. 각 자리의 변수와 선택의 흐름을 구체적으로 연결하세요."
+        : "10장 전체 리딩입니다. 각 자리를 충분히 읽고, 반복되는 suit·에너지·흐름과 카드 사이의 보완 또는 긴장을 구체적으로 연결하세요. 같은 말을 늘여 쓰지 마세요.";
+    return this.ask(`운명타로 PHASE 4입니다. 아래는 사용자가 직접 선택해 완성한 스프레드입니다. 카드 순서, 방향, 자리 의미는 확정된 사실이므로 절대 바꾸거나 새 카드·새 자리를 만들지 마세요. 이 리딩은 자기성찰용이며 확정적 미래 예언이나 중요한 결정을 대신하지 않습니다. "반드시", "무조건", "성공한다" 같은 단정은 금지하고, "이런 흐름을 시사합니다", "고려해볼 수 있습니다"처럼 가능성의 언어를 사용하세요.\n\n고민 요약: ${input.concernSummary}\n확정 질문: ${input.finalQuestion}\n카드 수: ${input.cardCount}\n스프레드 템플릿: ${input.spreadTemplate}\n자리와 카드: ${JSON.stringify(input.positions.map((position) => ({ ...position, card: input.cards.find((card) => card.spreadPositionId === position.id) })))}\n\n먼저 revealMessages에는 각 자리별 1~3문장의 짧고 따뜻한 핵심 메시지를 작성하세요. revealMessages와 reading.positions는 각각 모든 position-${1}부터 position-${input.cardCount}까지 정확히 한 번씩 포함해야 합니다.\n\nreading.overallSummary는 전체 흐름의 짧은 종합입니다. reading.positions의 interpretation은 카드의 사전적 뜻을 나열하지 말고, 반드시 그 자리의 label·description, 카드명, 방향, 사용자의 질문을 연결하세요. reading.connections는 카드들이 서로 강화·보완·긴장하는 관계를 설명하세요. reading.coreConclusion은 이번 리딩의 핵심을, reading.actionAdvice는 사용자가 오늘 참고할 수 있는 구체적이고 부담 없는 행동 방향을 제시하세요.\n\n${readingDepth}\nSchema: {"revealMessages":[{"spreadPositionId":"position-1","message":""}],"reading":{"overallSummary":"","positions":[{"spreadPositionId":"position-1","interpretation":""}],"connections":"","coreConclusion":"","actionAdvice":""}}`, destinyReadingSchema, "당신은 달빛 아래에서 사용자의 고민을 차분히 읽는 한국어 타로 안내자입니다. 타로는 오락과 자기성찰을 위한 콘텐츠로 다룹니다. 카드의 역방향은 경고나 나쁜 결과가 아니라, 에너지가 내면화되거나 조정되는 흐름으로도 읽습니다. 반드시 한국어만 사용하고 마크다운은 쓰지 마세요.", 1);
   }
   async analyzeDream(input: { dream: string; turns: DreamTurn[]; followupCount: number }): Promise<DreamAnalysis> {
     const turns = input.turns.length ? input.turns.map((turn, index) => `${index + 1}. 질문: ${turn.question}\n답변: ${turn.answer}`).join("\n") : "없음";

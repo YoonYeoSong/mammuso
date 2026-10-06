@@ -40,6 +40,47 @@ export type DestinySelectedCard = {
   orientation: "upright" | "reversed";
 };
 
+export type DestinyReadingCard = {
+  spreadPositionId: string;
+  cardId: string;
+  cardName: string;
+  orientation: "upright" | "reversed";
+  arcana: "major" | "minor";
+  suit: "wands" | "cups" | "swords" | "pentacles" | null;
+};
+
+export type DestinyReadingInput = {
+  concernSummary: string;
+  finalQuestion: string;
+  cardCount: DestinyCardCount;
+  spreadTemplate: DestinySpreadTemplate;
+  positions: DestinySpreadPosition[];
+  cards: DestinyReadingCard[];
+};
+
+export type DestinyRevealMessage = {
+  spreadPositionId: string;
+  message: string;
+};
+
+export type DestinyPositionInterpretation = {
+  spreadPositionId: string;
+  interpretation: string;
+};
+
+export type DestinyFinalReading = {
+  overallSummary: string;
+  positions: DestinyPositionInterpretation[];
+  connections: string;
+  coreConclusion: string;
+  actionAdvice: string;
+};
+
+export type DestinyReadingResponse = {
+  revealMessages: DestinyRevealMessage[];
+  reading: DestinyFinalReading;
+};
+
 /**
  * Phase 1 saves the conversational foundation; the optional fields are the
  * stable hand-off contract for the later spread, selection, and reveal phases.

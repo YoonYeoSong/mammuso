@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useState } from "react";
 import styles from "./DestinyTarotExperience.module.css";
+import { DestinyTarotReveal } from "./DestinyTarotReveal";
 import { DestinySpreadSelection } from "./DestinySpreadSelection";
 import { createDestinyDeckOrder, createFallbackDestinySpread, hasStableDestinyDeckOrder, normalizeDestinySpread } from "@/lib/destiny-tarot/spread";
 import type { DestinyCardCount, DestinyChatReply, DestinyConversationMessage, DestinyOrientationMode, DestinyTarotSessionDraft } from "@/lib/destiny-tarot/types";
 
-type Phase = "intro" | "chat" | "review" | "orientation" | "cardCount" | "spreadLoading" | "spreadSelection" | "phaseFourPlaceholder";
+type Phase = "intro" | "chat" | "review" | "orientation" | "cardCount" | "spreadLoading" | "spreadSelection" | "reveal";
 type RecommendationStatus = "idle" | "loading" | "ready" | "unavailable";
 
 const welcomeMessage = "지금 가장 마음에 걸리는 이야기를 들려주세요. 서두르지 않아도 괜찮아요.";
@@ -285,17 +286,16 @@ export function DestinyTarotExperience() {
     </section>
   </main>;
 
-  if (phase === "spreadSelection" && session?.spreadPositions && session.deckOrder) return <DestinySpreadSelection session={session} setSession={setSession} onMessageCheck={() => setPhase("phaseFourPlaceholder")} />;
+  if (phase === "spreadSelection" && session?.spreadPositions && session.deckOrder) return <DestinySpreadSelection session={session} setSession={setSession} onMessageCheck={() => setPhase("reveal")} />;
 
-  if (phase === "phaseFourPlaceholder" && session) return <main className={styles.page}>
-    <section className={`${styles.surface} ${styles.spreadPreparation}`} aria-labelledby="destiny-phase-four-title">
-      <Avatar />
-      <p className={styles.eyebrow}>NEXT · PHASE 4</p>
-      <h1 id="destiny-phase-four-title">카드의 메시지를<br />준비하고 있어요.</h1>
-      <p className={styles.confirmedQuestion}>스프레드는 완성되었지만, 카드는 아직 뒤집지 않았어요.</p>
-      <p className={styles.confirmedCopy}>카드 공개와 해석은 다음 PHASE에서 이어집니다.</p>
-    </section>
-  </main>;
+  if (phase === "reveal" && session) return <DestinyTarotReveal session={session} onRestart={() => {
+    setSession(null);
+    setConversation([]);
+    setDraft("");
+    setError("");
+    setRecommendationStatus("idle");
+    setPhase("intro");
+  }} />;
 
   return <main className={styles.page}>
     <section className={`${styles.surface} ${styles.chat}`} aria-labelledby="destiny-chat-title">
