@@ -4,6 +4,7 @@ import type { Answers, DecisionResult, PreliminaryResult } from "@/lib/cases/typ
 import type { TarotCard, TarotCategory } from "@/lib/tarot/cards";
 import { dreamAnalysisSchema, dreamReadingSchema, type DreamAnalysis, type DreamExtracted, type DreamReading, type DreamTurn } from "@/lib/dream/types";
 import { dreamAnalysisSystemPrompt, dreamReadingSystemPrompt } from "@/lib/dream/prompts";
+import type { DestinyChatReply, DestinyConversationMessage } from "@/lib/destiny-tarot/types";
 
 const respondentNoticeSchema = z.object({ summary: z.string().min(10).max(140), issues: z.array(z.string().min(4).max(100)).min(1).max(2) });
 const preliminarySchema = z.object({ summary: z.string().min(10).max(140), knownFacts: z.array(z.string().min(2).max(110)).max(2), openQuestions: z.array(z.string().min(2).max(110)).max(2), opinion: z.string().min(20).max(180), clerkComment: z.string().min(12).max(100) });
@@ -20,6 +21,10 @@ const tarotReadingSchema = z.object({
   takeaway: z.string().min(25).max(220),
   tinyAction: z.string().min(8).max(80),
 });
+const destinyTarotChatSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("ASK"), assistantMessage: z.string().min(8).max(240), quickReplies: z.array(z.string().min(2).max(60)).max(4) }),
+  z.object({ status: z.literal("READY"), assistantMessage: z.string().min(8).max(180), summary: z.string().min(16).max(260), finalQuestion: z.string().min(12).max(300) }),
+]);
 export type TarotReading = z.infer<typeof tarotReadingSchema>;
 
 export interface AIProvider {
@@ -28,6 +33,7 @@ export interface AIProvider {
   generateJointDecision(input: { applicantStatement: string; incidentDate: string | null; applicantAnswers: Answers; respondentStatement: string; respondentAnswers: Answers }): Promise<DecisionResult>;
   generateAppealDecision(input: { applicantStatement: string; incidentDate: string | null; applicantAnswers: Answers; respondentStatement: string; respondentAnswers: Answers; previousResult: DecisionResult; appealText: string }): Promise<DecisionResult>;
   generateTarotReading(input: { category: TarotCategory; question: string; cards: TarotCard[] }): Promise<TarotReading>;
+  generateDestinyTarotChat(input: { conversation: DestinyConversationMessage[]; followUpCount: number }): Promise<DestinyChatReply>;
   analyzeDream(input: { dream: string; turns: DreamTurn[]; followupCount: number }): Promise<DreamAnalysis>;
   generateDreamReading(input: { dream: string; turns: DreamTurn[]; extracted: DreamExtracted; scoreFactors: string[]; amount: number; verdict: string }): Promise<DreamReading>;
 }
@@ -64,6 +70,10 @@ class GroqAIProvider implements AIProvider {
     const question = input.question || `${input.category}에 관한 지금의 흐름`;
     const cardInfo = input.cards.map((card, index) => `${index + 1}번째 ${card.name} (${card.keywords.join(", ")})`).join(" / ");
     return this.ask(`사용자의 질문: ${question}\n카테고리: ${input.category}\n뽑은 카드: ${cardInfo}\n\n카드 순서대로 cardReadings를 작성하세요. 점괘를 사실·예언처럼 단정하거나 불안·의존을 부추기지 마세요. 카드는 생각을 정리하는 가벼운 계기로 다루고, 친한 친구처럼 구체적이되 과장하지 마세요. opening은 세 카드가 함께 비추는 현재 흐름, takeaway는 질문에 대한 균형 잡힌 한 문단, tinyAction은 오늘 할 수 있는 작은 행동 하나입니다.\nSchema: {"headline":"","opening":"","cardReadings":[{"title":"","meaning":""},{"title":"","meaning":""},{"title":"","meaning":""}],"takeaway":"","tinyAction":""}`, tarotReadingSchema, "당신은 밝고 다정한 한국어 타로 리더입니다. 타로는 오락과 자기성찰을 위한 콘텐츠임을 자연스럽게 반영하세요. 반드시 한국어만 사용하고, 건강·법률·금융·안전 관련 결정을 단정하지 마세요. 공포를 유발하거나 미래를 확정하는 표현은 금지합니다. JSON의 값은 짧고 자연스러운 한국어로 작성하세요.", 1);
+  }
+  generateDestinyTarotChat(input: { conversation: DestinyConversationMessage[]; followUpCount: number }): Promise<DestinyChatReply> {
+    const transcript = input.conversation.map((message) => `${message.role === "user" ? "사용자" : "안내자"}: ${message.content}`).join("\n");
+    return this.ask(`아래는 운명타로를 시작하기 전 사용자의 고민 상담 대화입니다.\n\n${transcript}\n\n추가 질문을 이미 ${input.followUpCount}회 했습니다.\n\n현재 정보만으로 사용자의 고민을 타로용 질문으로 자연스럽게 정리하기 어렵다면 status를 ASK로 하고, 한국어로 된 의미 있는 추가 질문 하나만 assistantMessage에 작성하세요. 한 번에 하나만 묻고, 선택지가 도움 될 때만 quickReplies에 2~4개를 넣으세요. 자유 입력은 항상 가능하므로 선택지를 강요하지 마세요.\n\n정보가 충분하면 status를 READY로 하세요. 특히 추가 질문이 4회 이상이면 반드시 READY로 하세요. READY일 때 summary는 사용자가 실제로 말한 내용만 근거로 1~2문장으로 정리하고, finalQuestion은 사용자가 성찰할 수 있는 한 문장 타로 질문으로 작성하세요. 사실·미래·상대 마음을 단정하거나 사용자를 불안하게 만들지 마세요. 건강·법률·금융·안전 결정을 대신하지 마세요. 사주, 생년월일, 출생시간, 성별은 요구하거나 언급하지 마세요.\n\nSchema: ASK는 {"status":"ASK","assistantMessage":"","quickReplies":[]}, READY는 {"status":"READY","assistantMessage":"","summary":"","finalQuestion":""}`, destinyTarotChatSchema, "당신은 달빛 아래에서 사용자의 고민을 차분히 듣는 한국어 타로 안내자입니다. 타로는 오락과 자기성찰을 위한 콘텐츠로 다루며, 짧고 따뜻하지만 모호하지 않게 말합니다. 반드시 한국어만 사용하고 마크다운은 쓰지 마세요.", 1);
   }
   async analyzeDream(input: { dream: string; turns: DreamTurn[]; followupCount: number }): Promise<DreamAnalysis> {
     const turns = input.turns.length ? input.turns.map((turn, index) => `${index + 1}. 질문: ${turn.question}\n답변: ${turn.answer}`).join("\n") : "없음";
@@ -122,7 +132,7 @@ function assertKoreanOutput(value: unknown): void {
   };
   collect(value);
   const containsLatinWord = /\b[a-zA-Z]{4,}\b/;
-  const allowedEnum = /^(SUFFICIENT|NEEDS_FOLLOWUP|UNKNOWN)$/;
+  const allowedEnum = /^(SUFFICIENT|NEEDS_FOLLOWUP|UNKNOWN|ASK|READY)$/;
   if (textValues.some((text) => text.trim() && !allowedEnum.test(text) && (!/[가-힣]/.test(text) || containsLatinWord.test(text)))) throw new Error("AI_LANGUAGE_NOT_KOREAN");
 }
 

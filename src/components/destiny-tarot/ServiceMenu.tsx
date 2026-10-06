@@ -7,11 +7,12 @@ type Service = {
   destination: string;
   background: "daily" | "destiny" | "compatibility";
   featured?: boolean;
+  available?: boolean;
 };
 
 const services: Service[] = [
   { title: "오늘의 타로", description: "오늘의 흐름을\n카드 한 장으로", icon: "sun", destination: "/today-tarot", background: "daily", featured: true },
-  { title: "운명타로", description: "당신의 고민을\n깊게 들여다봐요", icon: "star", destination: "/destiny-tarot", background: "destiny" },
+  { title: "운명타로", description: "당신의 고민을\n깊게 들여다봐요", icon: "star", destination: "/destiny-tarot", background: "destiny", available: true },
   { title: "운명궁합", description: "두 사람의\n흐름을 함께", icon: "heart", destination: "/destiny-compatibility", background: "compatibility" },
 ];
 
@@ -45,9 +46,9 @@ function ServiceCard({ service }: { service: Service }) {
     </span>
   </>;
 
-  if (service.featured) {
+  if (service.featured || service.available) {
     return <Link
-      className={`destiny-service-card destiny-service-card--${service.background} is-featured`}
+      className={`destiny-service-card destiny-service-card--${service.background} ${service.featured ? "is-featured" : ""}`}
       href={service.destination}
       aria-label={`${service.title} 시작하기`}
     >
