@@ -15,6 +15,11 @@ export type DestinyOrientationMode = "uprightOnly" | "mixed";
 export type DestinyCardCount = 3 | 5 | 10;
 export type DestinyDeckViewMode = "fan" | "grid";
 
+export type DestinyCardCountRecommendation = {
+  recommendedCardCount: DestinyCardCount;
+  reason: string;
+};
+
 export type DestinySpreadPosition = {
   id: string;
   order: number;
@@ -40,7 +45,8 @@ export type DestinyTarotSessionDraft = {
   finalQuestion: string;
   orientationMode?: DestinyOrientationMode;
   cardCount?: DestinyCardCount;
-  recommendedCardCount?: DestinyCardCount;
+  recommendedCardCount: DestinyCardCount | null;
+  recommendationReason?: string | null;
   spreadTemplate?: string;
   spreadPositions?: DestinySpreadPosition[];
   deckOrder?: string[];

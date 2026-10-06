@@ -3,11 +3,17 @@
 import Link from "next/link";
 import { FormEvent, KeyboardEvent, useMemo, useState } from "react";
 import styles from "./DestinyTarotExperience.module.css";
-import type { DestinyChatReply, DestinyConversationMessage, DestinyTarotSessionDraft } from "@/lib/destiny-tarot/types";
+import type { DestinyCardCount, DestinyChatReply, DestinyConversationMessage, DestinyOrientationMode, DestinyTarotSessionDraft } from "@/lib/destiny-tarot/types";
 
-type Phase = "intro" | "chat" | "review" | "confirmed";
+type Phase = "intro" | "chat" | "review" | "orientation" | "cardCount" | "spreadPreparation";
+type RecommendationStatus = "idle" | "loading" | "ready" | "unavailable";
 
 const welcomeMessage = "지금 가장 마음에 걸리는 이야기를 들려주세요. 서두르지 않아도 괜찮아요.";
+const cardCountOptions: Array<{ count: DestinyCardCount; title: string; description: string; traits: string }> = [
+  { count: 3, title: "3장 · 핵심 리딩", description: "질문의 핵심 흐름을 간결하게 살펴봐요.", traits: "빠름 · 핵심 중심 · 단순한 질문에 적합" },
+  { count: 5, title: "5장 · 심층 리딩", description: "현재 상황과 여러 변수를 조금 더 깊게 살펴봐요.", traits: "균형 잡힌 깊이 · 선택/관계/고민에 적합" },
+  { count: 10, title: "10장 · 전체 리딩", description: "질문을 둘러싼 전체 흐름과 세부적인 관계를 깊게 살펴봐요.", traits: "가장 깊은 리딩 · 복잡한 고민과 여러 변수에 적합" },
+];
 
 function createMessage(role: DestinyConversationMessage["role"], content: string, quickReplies?: string[]): DestinyConversationMessage {
   return { id: `${role}-${crypto.randomUUID()}`, role, content, quickReplies };
@@ -17,6 +23,10 @@ function Avatar() {
   return <span className={styles.avatar} aria-hidden="true" />;
 }
 
+function CardGlyph({ reversed = false }: { reversed?: boolean }) {
+  return <span className={`${styles.cardGlyph} ${reversed ? styles.cardGlyphReversed : ""}`} aria-hidden="true"><i>✦</i></span>;
+}
+
 export function DestinyTarotExperience() {
   const [phase, setPhase] = useState<Phase>("intro");
   const [conversation, setConversation] = useState<DestinyConversationMessage[]>([]);
@@ -24,10 +34,45 @@ export function DestinyTarotExperience() {
   const [session, setSession] = useState<DestinyTarotSessionDraft | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState("");
+  const [recommendationStatus, setRecommendationStatus] = useState<RecommendationStatus>("idle");
 
   const canSend = draft.trim().length >= 2 && !isSending;
   const reviewQuestion = session?.finalQuestion ?? "";
   const currentFollowUp = useMemo(() => Math.max(0, conversation.filter((message) => message.role === "user").length - 1), [conversation]);
+
+  function loadCardCountRecommendation() {
+    if (!session || recommendationStatus !== "idle") return;
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 7000);
+    setRecommendationStatus("loading");
+    void fetch("/api/destiny-tarot/card-count-recommendation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ summary: session.summary, finalQuestion: session.finalQuestion }),
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const payload = await response.json() as { recommendation?: { recommendedCardCount?: unknown; reason?: unknown } };
+        const recommendation = payload.recommendation;
+        const recommendedCardCount = recommendation?.recommendedCardCount;
+        const recommendationReason = recommendation?.reason;
+        if (!response.ok || ![3, 5, 10].includes(recommendedCardCount as number) || typeof recommendationReason !== "string") {
+          throw new Error("RECOMMENDATION_UNAVAILABLE");
+        }
+        setSession((current) => current ? {
+          ...current,
+          recommendedCardCount: recommendedCardCount as DestinyCardCount,
+          recommendationReason,
+        } : current);
+        setRecommendationStatus("ready");
+      })
+      .catch(() => {
+        setSession((current) => current ? { ...current, recommendedCardCount: null, recommendationReason: null } : current);
+        setRecommendationStatus("unavailable");
+      })
+      .finally(() => window.clearTimeout(timeoutId));
+  }
 
   function beginChat() {
     setConversation([createMessage("assistant", welcomeMessage)]);
@@ -67,8 +112,11 @@ export function DestinyTarotExperience() {
           conversation: completedConversation,
           summary: reply.summary,
           finalQuestion: reply.finalQuestion,
+          recommendedCardCount: null,
+          recommendationReason: null,
           viewMode: "fan",
         });
+        setRecommendationStatus("idle");
         setPhase("review");
       }
     } catch (caught) {
@@ -76,6 +124,14 @@ export function DestinyTarotExperience() {
     } finally {
       setIsSending(false);
     }
+  }
+
+  function selectOrientation(orientationMode: DestinyOrientationMode) {
+    setSession((current) => current ? { ...current, orientationMode } : current);
+  }
+
+  function selectCardCount(cardCount: DestinyCardCount) {
+    setSession((current) => current ? { ...current, cardCount } : current);
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -106,22 +162,80 @@ export function DestinyTarotExperience() {
     <section className={`${styles.surface} ${styles.review}`} aria-labelledby="destiny-review-title">
       <button className={styles.textButton} type="button" onClick={() => setPhase("chat")}>← 대화로 돌아가기</button>
       <div className={styles.reviewHeading}><Avatar /><div><p className={styles.eyebrow}>READY · YOUR QUESTION</p><h1 id="destiny-review-title">이렇게 고민을<br />정리해봤어요.</h1></div></div>
-      <section className={styles.summaryCard} aria-label="고민 요약"><p>고민 요약</p><strong>{session.summary ?? ""}</strong></section>
-      <label className={styles.questionEditor}><span>이번에 살펴볼 질문</span><textarea value={reviewQuestion} onChange={(event) => setSession((current) => current ? { ...current, finalQuestion: event.target.value } : current)} maxLength={300} aria-describedby="destiny-question-help" /></label>
+      <section className={styles.summaryCard} aria-label="고민 요약"><p>고민 요약</p><strong>{session.summary}</strong></section>
+      <label className={styles.questionEditor}><span>이번에 살펴볼 질문</span><textarea value={reviewQuestion} onChange={(event) => {
+        setSession((current) => current ? { ...current, finalQuestion: event.target.value, recommendedCardCount: null, recommendationReason: null } : current);
+        setRecommendationStatus("idle");
+      }} maxLength={300} aria-describedby="destiny-question-help" /></label>
       <p className={styles.editorHelp} id="destiny-question-help">그대로 사용하거나, 지금 마음에 더 맞는 표현으로 수정할 수 있어요.</p>
-      <button className={styles.primaryButton} type="button" disabled={reviewQuestion.trim().length < 8} onClick={() => setPhase("confirmed")}>이 질문으로 리딩 준비하기 <span>→</span></button>
+      <button className={styles.primaryButton} type="button" disabled={reviewQuestion.trim().length < 8} onClick={() => {
+        setSession((current) => current ? { ...current, finalQuestion: current.finalQuestion.trim() } : current);
+        setPhase("orientation");
+      }}>이 질문으로 리딩 준비하기 <span>→</span></button>
     </section>
   </main>;
 
-  if (phase === "confirmed" && session) return <main className={styles.page}>
-    <section className={`${styles.surface} ${styles.confirmed}`} aria-labelledby="destiny-confirmed-title">
+  if (phase === "orientation" && session) return <main className={styles.page}>
+    <section className={`${styles.surface} ${styles.selection}`} aria-labelledby="destiny-orientation-title">
+      <button className={styles.textButton} type="button" onClick={() => setPhase("review")}>← 질문으로 돌아가기</button>
+      <p className={styles.step}>STEP 1 / 2</p>
+      <p className={styles.eyebrow}>THE WAY THE CARDS SPEAK</p>
+      <h1 id="destiny-orientation-title">카드의 방향을<br />선택해주세요</h1>
+      <p className={styles.selectionLead}>카드를 어떤 방식으로 읽을지 선택할 수 있어요.</p>
+      <div className={styles.optionStack} role="group" aria-label="카드 방향">
+        <button className={`${styles.optionCard} ${session.orientationMode === "uprightOnly" ? styles.optionSelected : ""}`} type="button" onClick={() => selectOrientation("uprightOnly")} aria-pressed={session.orientationMode === "uprightOnly"}>
+          <span className={styles.optionTop}><CardGlyph /><span><strong>정방향만</strong><small>모든 카드를 정방향으로 읽어요.</small></span><b className={styles.check}>✓</b></span>
+          <span className={styles.optionDescription}>보다 단순하고 명확하게 카드의 기본 흐름을 살펴봅니다.</span>
+        </button>
+        <button className={`${styles.optionCard} ${session.orientationMode === "mixed" ? styles.optionSelected : ""}`} type="button" onClick={() => selectOrientation("mixed")} aria-pressed={session.orientationMode === "mixed"}>
+          <span className={styles.optionTop}><span className={styles.pairedGlyphs}><CardGlyph /><CardGlyph reversed /></span><span><strong>정방향 + 역방향</strong><small>카드마다 방향이 무작위로 결정돼요.</small></span><b className={styles.check}>✓</b></span>
+          <span className={styles.recommendBadge}>✦ 추천</span>
+          <span className={styles.optionDescription}>조금 더 세밀하고 입체적으로 카드의 흐름을 살펴봅니다.</span>
+          <span className={styles.orientationNote}>역방향이라고 해서 나쁜 의미라는 뜻은 아니에요.</span>
+        </button>
+      </div>
+      <details className={styles.orientationInfo}><summary>정방향과 역방향은 어떻게 다른가요?</summary><p><strong>정방향</strong>은 카드의 기본적인 의미와 흐름이 비교적 직접적으로 나타납니다.</p><p><strong>역방향</strong>은 의미가 약해지거나 막혀 있거나, 내면에서 작용하거나 다른 방식으로 표현될 수 있어요. 역방향이 곧 나쁜 카드를 뜻하지는 않아요.</p></details>
+      <button className={styles.primaryButton} type="button" disabled={!session.orientationMode} onClick={() => {
+        setPhase("cardCount");
+        loadCardCountRecommendation();
+      }}>다음 <span>→</span></button>
+    </section>
+  </main>;
+
+  if (phase === "cardCount" && session) return <main className={styles.page}>
+    <section className={`${styles.surface} ${styles.selection}`} aria-labelledby="destiny-card-count-title">
+      <button className={styles.textButton} type="button" onClick={() => setPhase("orientation")}>← 카드 방향으로 돌아가기</button>
+      <p className={styles.step}>STEP 2 / 2</p>
+      <p className={styles.eyebrow}>YOUR READING DEPTH</p>
+      <h1 id="destiny-card-count-title">몇 장의 카드로<br />살펴볼까요?</h1>
+      <p className={styles.selectionLead}>카드가 많을수록 질문의 흐름을 더 여러 각도에서 살펴볼 수 있어요.</p>
+      {recommendationStatus === "loading" && <div className={styles.recommendationLoading} role="status"><i /><span>당신의 질문에 어울리는<br />리딩 깊이를 살펴보고 있어요.</span></div>}
+      <div className={styles.countOptionStack} role="group" aria-label="카드 장수">
+        {cardCountOptions.map((option) => {
+          const isRecommended = session.recommendedCardCount === option.count;
+          const isSelected = session.cardCount === option.count;
+          return <button className={`${styles.countOption} ${isSelected ? styles.optionSelected : ""} ${isRecommended ? styles.recommendedOption : ""}`} type="button" key={option.count} onClick={() => selectCardCount(option.count)} aria-pressed={isSelected}>
+            <span className={styles.countOptionHeader}><strong>{option.title}</strong>{isRecommended && <em>✦ 추천</em>}<b className={styles.check}>✓</b></span>
+            <span className={styles.countDescription}>{option.description}</span>
+            <span className={styles.countTraits}>{option.traits}</span>
+            {isRecommended && session.recommendationReason && <span className={styles.recommendationReason}><b>AI 추천</b>{session.recommendationReason}</span>}
+          </button>;
+        })}
+      </div>
+      {recommendationStatus === "unavailable" && <p className={styles.recommendationFallback}>추천을 준비하지 못했어요. 원하시는 리딩 깊이를 직접 선택해주세요.</p>}
+      <button className={styles.primaryButton} type="button" disabled={!session.cardCount} onClick={() => setPhase("spreadPreparation")}>운명 스프레드 만들기 <span>→</span></button>
+    </section>
+  </main>;
+
+  if (phase === "spreadPreparation" && session) return <main className={styles.page}>
+    <section className={`${styles.surface} ${styles.spreadPreparation}`} aria-labelledby="destiny-preparation-title">
       <Avatar />
-      <p className={styles.eyebrow}>QUESTION CONFIRMED</p>
-      <h1 id="destiny-confirmed-title">질문을<br />마음에 담아두었어요.</h1>
+      <p className={styles.eyebrow}>PHASE 3 · NEXT</p>
+      <h1 id="destiny-preparation-title">당신의 질문에 맞는<br />운명 스프레드를<br />준비할게요.</h1>
       <p className={styles.confirmedQuestion}>“{session.finalQuestion}”</p>
-      <p className={styles.confirmedCopy}>다음 단계에서 카드 방향과 장수를 직접 고르고, 이 질문에 맞는 스프레드를 준비하게 됩니다.</p>
-      <button className={styles.secondaryButton} type="button" onClick={() => setPhase("review")}>질문 다시 수정하기</button>
-      <Link className={styles.homeButton} href="/">운명타로 홈으로</Link>
+      <p className={styles.preparationMeta}>{session.orientationMode === "mixed" ? "정방향과 역방향을 함께" : "정방향만"} · {session.cardCount}장 리딩</p>
+      <p className={styles.confirmedCopy}>스프레드와 실제 카드 선택은 다음 단계에서 이어집니다.</p>
+      <button className={styles.secondaryButton} type="button" onClick={() => setPhase("cardCount")}>구성 다시 선택하기</button>
     </section>
   </main>;
 
