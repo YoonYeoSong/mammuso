@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
 import styles from "./DestinyTarotExperience.module.css";
 import { DestinyTarotReveal } from "./DestinyTarotReveal";
 import { DestinySpreadSelection } from "./DestinySpreadSelection";
@@ -11,7 +11,7 @@ import type { DestinyCardCount, DestinyChatReply, DestinyConversationMessage, De
 type Phase = "intro" | "chat" | "review" | "orientation" | "cardCount" | "spreadLoading" | "spreadSelection" | "reveal";
 type RecommendationStatus = "idle" | "loading" | "ready" | "unavailable";
 
-const welcomeMessage = "지금 가장 마음에 걸리는 이야기를 들려주세요. 서두르지 않아도 괜찮아요.";
+const welcomeMessage = "안녕하세요.\n저는 달빛 안내자예요.\n\n지금 마음에 가장 걸리는 이야기를 편하게 들려주세요.\n\n이야기를 듣고, 타로에 필요한 질문을 함께 정리해드릴게요.";
 const cardCountOptions: Array<{ count: DestinyCardCount; title: string; description: string; traits: string }> = [
   { count: 3, title: "3장 · 핵심 리딩", description: "질문의 핵심 흐름을 간결하게 살펴봐요.", traits: "빠름 · 핵심 중심 · 단순한 질문에 적합" },
   { count: 5, title: "5장 · 심층 리딩", description: "현재 상황과 여러 변수를 조금 더 깊게 살펴봐요.", traits: "균형 잡힌 깊이 · 선택/관계/고민에 적합" },
@@ -20,6 +20,12 @@ const cardCountOptions: Array<{ count: DestinyCardCount; title: string; descript
 
 function createMessage(role: DestinyConversationMessage["role"], content: string, quickReplies?: string[]): DestinyConversationMessage {
   return { id: `${role}-${crypto.randomUUID()}`, role, content, quickReplies };
+}
+
+function formatAssistantReply(reply: DestinyChatReply) {
+  return reply.status === "ASK"
+    ? [reply.acknowledgement, reply.question].filter(Boolean).join("\n\n")
+    : reply.assistantMessage;
 }
 
 function Avatar() {
@@ -42,8 +48,6 @@ export function DestinyTarotExperience() {
 
   const canSend = draft.trim().length >= 2 && !isSending;
   const reviewQuestion = session?.finalQuestion ?? "";
-  const currentFollowUp = useMemo(() => Math.max(0, conversation.filter((message) => message.role === "user").length - 1), [conversation]);
-
   useEffect(() => {
     if (phase !== "spreadLoading") return;
     const messages = ["당신의 질문을 다시 살펴보고 있어요.", "카드가 놓일 자리를 정하고 있어요.", "당신만의 운명 스프레드를 준비하고 있어요."];
@@ -115,7 +119,7 @@ export function DestinyTarotExperience() {
       if (!response.ok || !payload.reply) throw new Error(payload.message ?? "대화를 이어가지 못했어요.");
 
       const reply = payload.reply;
-      const assistantMessage = createMessage("assistant", reply.assistantMessage, reply.status === "ASK" ? reply.quickReplies : undefined);
+      const assistantMessage = createMessage("assistant", formatAssistantReply(reply), reply.status === "ASK" ? reply.quickReplies : undefined);
       const completedConversation = [...nextConversation, assistantMessage];
       setConversation(completedConversation);
 
@@ -300,7 +304,7 @@ export function DestinyTarotExperience() {
   return <main className={styles.page}>
     <section className={`${styles.surface} ${styles.chat}`} aria-labelledby="destiny-chat-title">
       <header className={styles.chatHeader}><button className={styles.textButton} type="button" onClick={() => setPhase("intro")}>← 처음으로</button><div><Avatar /><span id="destiny-chat-title">달빛 안내자</span></div></header>
-      <p className={styles.chatGuide}>당신의 이야기를 듣고, 필요한 질문 하나만 더 건넬게요. {currentFollowUp ? `추가 질문 ${currentFollowUp}회` : ""}</p>
+      <p className={styles.chatGuide}>천천히 이야기해 주세요. 필요한 만큼만 함께 질문을 정리할게요.</p>
       <div className={styles.messages} aria-live="polite">
         {conversation.map((message) => <div className={`${styles.messageRow} ${message.role === "user" ? styles.userRow : styles.assistantRow}`} key={message.id}>
           {message.role === "assistant" && <Avatar />}

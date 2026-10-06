@@ -19,8 +19,9 @@ export function createDestinyChatFallback(conversation: DestinyConversationMessa
   if (!forceReady && followUpCount < MAX_DESTINY_FOLLOW_UPS && !hasSpecificContext) {
     return {
       status: "ASK",
-      assistantMessage: "그 고민에서 가장 마음을 망설이게 하는 지점은 무엇인가요? 한 가지 장면이나 선택지를 들려주셔도 좋아요.",
-      quickReplies: ["계속할지 바꿀지 고민이에요", "상대의 마음이 궁금해요", "어떤 선택이 맞을지 모르겠어요"],
+      acknowledgement: "말씀해주신 고민이 마음에 오래 남아 있으신 것 같아요. 조금 더 잘 살펴볼 수 있도록 하나만 여쭤볼게요.",
+      question: "지금 가장 궁금한 건 어떤 부분에 가까우세요?",
+      quickReplies: ["언제쯤 변화가 있을지 궁금해요", "상대의 마음이 궁금해요", "어떤 선택이 좋을지 고민돼요"],
     };
   }
 

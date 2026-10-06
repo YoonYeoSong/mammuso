@@ -104,20 +104,24 @@ function orientationWord(orientation: "upright" | "reversed") {
 /** A complete local reading keeps the selected spread available if the AI is unreachable. */
 export function createFallbackDestinyReading(input: DestinyReadingInput): DestinyReadingResponse {
   const cardFor = (positionId: string) => input.cards.find((card) => card.spreadPositionId === positionId)!;
+  const firstPosition = input.positions[0];
+  const lastPosition = input.positions.at(-1)!;
+  const firstCard = cardFor(firstPosition.id);
+  const lastCard = cardFor(lastPosition.id);
   return {
     revealMessages: input.positions.map((position) => {
       const card = cardFor(position.id);
       return { spreadPositionId: position.id, message: `${position.label}의 자리에서 ${card.cardName} 카드는 ${orientationWord(card.orientation)} 흐름을 비춰요. 지금의 마음과 조건을 한 번 더 살피며 받아들여 보세요.` };
     }),
     reading: {
-      overallSummary: `${input.cardCount}장의 카드는 질문을 한 번에 단정하기보다, 지금의 마음과 선택의 조건을 차례로 살펴보라고 이야기해요. 각 자리에서 느껴지는 부분을 연결해 보면 다음 행동의 우선순위가 조금 더 선명해질 수 있어요.`,
+      overallSummary: `이번 리딩은 “${input.finalQuestion}”에 대해 결론을 서두르기보다, 현재 조건을 확인한 뒤 다음 선택을 준비하는 쪽에 무게를 둡니다. 특히 ${firstPosition.label}의 ${firstCard.cardName} ${firstCard.orientation === "reversed" ? "역방향" : "정방향"}과 ${lastPosition.label}의 ${lastCard.cardName} ${lastCard.orientation === "reversed" ? "역방향" : "정방향"}이 시작과 다음 방향을 함께 살피게 합니다.`,
       positions: input.positions.map((position) => {
         const card = cardFor(position.id);
         return { spreadPositionId: position.id, interpretation: `${position.label}은 ${position.description} ${card.cardName}의 ${card.orientation === "reversed" ? "역방향" : "정방향"}은 이 자리를 서두른 결론보다 현재의 감각과 조건을 세심하게 확인하는 흐름으로 읽게 합니다. 이 카드가 떠올리게 하는 한 가지를 구체적으로 적어보면 좋겠어요.` };
       }),
-      connections: `각 카드는 독립된 답이라기보다 서로의 빈칸을 채우는 관점이에요. 앞자리에서 확인한 마음을 다음 자리의 조건과 함께 놓고 보면, 한쪽으로 급하게 기울지 않고 균형 잡힌 선택을 준비할 수 있습니다.`,
-      coreConclusion: "이번 리딩은 정답을 미리 정하기보다, 내 마음의 기준과 현실의 조건을 함께 확인할 때 다음 방향이 또렷해질 수 있음을 시사해요.",
-      actionAdvice: "오늘은 가장 마음에 남는 자리 하나를 골라, 그 카드가 떠올리게 한 사실과 바라는 점을 각각 한 문장으로 적어보세요. 작은 확인이 다음 선택을 훨씬 편안하게 만들어줄 수 있어요.",
+      connections: `${firstPosition.label}의 ${firstCard.cardName}에서 출발한 시선이 ${lastPosition.label}의 ${lastCard.cardName}까지 이어집니다. 앞자리에서 확인한 마음과 조건을 다음 자리의 조언과 함께 놓을 때, 어느 한쪽으로 급하게 기울기보다 근거 있는 선택을 준비할 수 있습니다.`,
+      coreConclusion: `이번 리딩은 “${input.finalQuestion}”에 대해, 지금 당장 답을 확정하기보다 다음 선택을 실제로 준비하는 쪽에 무게를 둡니다. ${firstPosition.label}의 ${firstCard.cardName} ${firstCard.orientation === "reversed" ? "역방향" : "정방향"}과 ${lastPosition.label}의 ${lastCard.cardName} ${lastCard.orientation === "reversed" ? "역방향" : "정방향"}이 현재의 확인과 다음 방향을 함께 보여줍니다. 그래서 오늘은 결론을 미루는 것이 아니라, 선택에 필요한 조건을 한 가지라도 확인하며 받아들이는 것이 좋습니다.`,
+      actionAdvice: `${firstPosition.label}과 ${lastPosition.label}에서 가장 마음에 남는 조건을 하나씩 적고, 두 조건을 모두 만족시키려면 이번 주에 할 수 있는 가장 작은 행동 하나를 정해보세요.`,
     },
   };
 }

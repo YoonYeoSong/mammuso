@@ -8,7 +8,7 @@ export type DestinyConversationMessage = {
 };
 
 export type DestinyChatReply =
-  | { status: "ASK"; assistantMessage: string; quickReplies: string[] }
+  | { status: "ASK"; acknowledgement: string; question: string; quickReplies: string[] }
   | { status: "READY"; assistantMessage: string; summary: string; finalQuestion: string };
 
 export type DestinyOrientationMode = "uprightOnly" | "mixed";
