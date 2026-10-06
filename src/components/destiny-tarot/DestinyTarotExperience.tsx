@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, KeyboardEvent, useMemo, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useState } from "react";
 import styles from "./DestinyTarotExperience.module.css";
+import { DestinySpreadSelection } from "./DestinySpreadSelection";
+import { createDestinyDeckOrder, createFallbackDestinySpread, hasStableDestinyDeckOrder, normalizeDestinySpread } from "@/lib/destiny-tarot/spread";
 import type { DestinyCardCount, DestinyChatReply, DestinyConversationMessage, DestinyOrientationMode, DestinyTarotSessionDraft } from "@/lib/destiny-tarot/types";
 
-type Phase = "intro" | "chat" | "review" | "orientation" | "cardCount" | "spreadPreparation";
+type Phase = "intro" | "chat" | "review" | "orientation" | "cardCount" | "spreadLoading" | "spreadSelection" | "phaseFourPlaceholder";
 type RecommendationStatus = "idle" | "loading" | "ready" | "unavailable";
 
 const welcomeMessage = "지금 가장 마음에 걸리는 이야기를 들려주세요. 서두르지 않아도 괜찮아요.";
@@ -35,10 +37,20 @@ export function DestinyTarotExperience() {
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState("");
   const [recommendationStatus, setRecommendationStatus] = useState<RecommendationStatus>("idle");
+  const [spreadLoadingMessage, setSpreadLoadingMessage] = useState("당신의 질문을 다시 살펴보고 있어요.");
 
   const canSend = draft.trim().length >= 2 && !isSending;
   const reviewQuestion = session?.finalQuestion ?? "";
   const currentFollowUp = useMemo(() => Math.max(0, conversation.filter((message) => message.role === "user").length - 1), [conversation]);
+
+  useEffect(() => {
+    if (phase !== "spreadLoading") return;
+    const messages = ["당신의 질문을 다시 살펴보고 있어요.", "카드가 놓일 자리를 정하고 있어요.", "당신만의 운명 스프레드를 준비하고 있어요."];
+    let index = 0;
+    setSpreadLoadingMessage(messages[index]);
+    const interval = window.setInterval(() => { index = (index + 1) % messages.length; setSpreadLoadingMessage(messages[index]); }, 1300);
+    return () => window.clearInterval(interval);
+  }, [phase]);
 
   function loadCardCountRecommendation() {
     if (!session || recommendationStatus !== "idle") return;
@@ -111,6 +123,7 @@ export function DestinyTarotExperience() {
           originalConcern: nextConversation.find((message) => message.role === "user")?.content ?? trimmed,
           conversation: completedConversation,
           summary: reply.summary,
+          concernSummary: reply.summary,
           finalQuestion: reply.finalQuestion,
           recommendedCardCount: null,
           recommendationReason: null,
@@ -132,6 +145,40 @@ export function DestinyTarotExperience() {
 
   function selectCardCount(cardCount: DestinyCardCount) {
     setSession((current) => current ? { ...current, cardCount } : current);
+  }
+
+  async function startSpread() {
+    if (!session || !session.cardCount || !session.orientationMode || !session.finalQuestion.trim()) return;
+    const cardCount = session.cardCount;
+    const fallback = createFallbackDestinySpread(cardCount);
+    setPhase("spreadLoading");
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+    let spread = fallback;
+    try {
+      const response = await fetch("/api/destiny-tarot/spread", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ concernSummary: session.concernSummary || session.summary, finalQuestion: session.finalQuestion, cardCount }),
+        signal: controller.signal,
+      });
+      const payload = await response.json() as { spread?: unknown };
+      if (response.ok) spread = normalizeDestinySpread(payload.spread, cardCount);
+    } catch {
+      // The local fallback deliberately keeps the ritual moving when AI is unavailable.
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+
+    setSession((current) => current ? {
+      ...current,
+      spreadTemplate: spread.template,
+      spreadPositions: spread.positions,
+      deckOrder: hasStableDestinyDeckOrder(current.deckOrder) ? current.deckOrder : createDestinyDeckOrder(),
+      selectedCards: current.selectedCards ?? [],
+      viewMode: current.viewMode ?? "fan",
+    } : current);
+    setPhase("spreadSelection");
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -223,19 +270,30 @@ export function DestinyTarotExperience() {
         })}
       </div>
       {recommendationStatus === "unavailable" && <p className={styles.recommendationFallback}>추천을 준비하지 못했어요. 원하시는 리딩 깊이를 직접 선택해주세요.</p>}
-      <button className={styles.primaryButton} type="button" disabled={!session.cardCount} onClick={() => setPhase("spreadPreparation")}>운명 스프레드 만들기 <span>→</span></button>
+      <button className={styles.primaryButton} type="button" disabled={!session.cardCount} onClick={() => void startSpread()}>운명 스프레드 만들기 <span>→</span></button>
     </section>
   </main>;
 
-  if (phase === "spreadPreparation" && session) return <main className={styles.page}>
-    <section className={`${styles.surface} ${styles.spreadPreparation}`} aria-labelledby="destiny-preparation-title">
+  if (phase === "spreadLoading" && session) return <main className={styles.page}>
+    <section className={`${styles.surface} ${styles.spreadPreparation}`} aria-labelledby="destiny-preparation-title" aria-live="polite" aria-busy="true">
       <Avatar />
-      <p className={styles.eyebrow}>PHASE 3 · NEXT</p>
-      <h1 id="destiny-preparation-title">당신의 질문에 맞는<br />운명 스프레드를<br />준비할게요.</h1>
+      <p className={styles.eyebrow}>DESTINY SPREAD</p>
+      <h1 id="destiny-preparation-title">당신의 질문에 맞는<br />카드의 자리를<br />만들고 있어요.</h1>
       <p className={styles.confirmedQuestion}>“{session.finalQuestion}”</p>
-      <p className={styles.preparationMeta}>{session.orientationMode === "mixed" ? "정방향과 역방향을 함께" : "정방향만"} · {session.cardCount}장 리딩</p>
-      <p className={styles.confirmedCopy}>스프레드와 실제 카드 선택은 다음 단계에서 이어집니다.</p>
-      <button className={styles.secondaryButton} type="button" onClick={() => setPhase("cardCount")}>구성 다시 선택하기</button>
+      <p className={styles.preparationMeta}>{spreadLoadingMessage}</p>
+      <div className={styles.spreadLoadingStars} aria-hidden="true"><i /><i /><i /></div>
+    </section>
+  </main>;
+
+  if (phase === "spreadSelection" && session?.spreadPositions && session.deckOrder) return <DestinySpreadSelection session={session} setSession={setSession} onMessageCheck={() => setPhase("phaseFourPlaceholder")} />;
+
+  if (phase === "phaseFourPlaceholder" && session) return <main className={styles.page}>
+    <section className={`${styles.surface} ${styles.spreadPreparation}`} aria-labelledby="destiny-phase-four-title">
+      <Avatar />
+      <p className={styles.eyebrow}>NEXT · PHASE 4</p>
+      <h1 id="destiny-phase-four-title">카드의 메시지를<br />준비하고 있어요.</h1>
+      <p className={styles.confirmedQuestion}>스프레드는 완성되었지만, 카드는 아직 뒤집지 않았어요.</p>
+      <p className={styles.confirmedCopy}>카드 공개와 해석은 다음 PHASE에서 이어집니다.</p>
     </section>
   </main>;
 

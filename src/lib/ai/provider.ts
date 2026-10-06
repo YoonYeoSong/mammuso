@@ -4,7 +4,7 @@ import type { Answers, DecisionResult, PreliminaryResult } from "@/lib/cases/typ
 import type { TarotCard, TarotCategory } from "@/lib/tarot/cards";
 import { dreamAnalysisSchema, dreamReadingSchema, type DreamAnalysis, type DreamExtracted, type DreamReading, type DreamTurn } from "@/lib/dream/types";
 import { dreamAnalysisSystemPrompt, dreamReadingSystemPrompt } from "@/lib/dream/prompts";
-import type { DestinyCardCountRecommendation, DestinyChatReply, DestinyConversationMessage } from "@/lib/destiny-tarot/types";
+import type { DestinyCardCountRecommendation, DestinyChatReply, DestinyConversationMessage, DestinySpread } from "@/lib/destiny-tarot/types";
 
 const respondentNoticeSchema = z.object({ summary: z.string().min(10).max(140), issues: z.array(z.string().min(4).max(100)).min(1).max(2) });
 const preliminarySchema = z.object({ summary: z.string().min(10).max(140), knownFacts: z.array(z.string().min(2).max(110)).max(2), openQuestions: z.array(z.string().min(2).max(110)).max(2), opinion: z.string().min(20).max(180), clerkComment: z.string().min(12).max(100) });
@@ -29,6 +29,15 @@ const destinyCardCountRecommendationSchema = z.object({
   recommendedCardCount: z.union([z.literal(3), z.literal(5), z.literal(10)]),
   reason: z.string().min(12).max(180),
 });
+const destinySpreadSchema = z.object({
+  template: z.enum(["linear", "choice", "relationship", "cross", "deep"]),
+  positions: z.array(z.object({
+    id: z.string().min(1).max(32),
+    order: z.number().int().min(1).max(10),
+    label: z.string().min(1).max(32),
+    description: z.string().min(1).max(180),
+  })).min(3).max(10),
+});
 export type TarotReading = z.infer<typeof tarotReadingSchema>;
 
 export interface AIProvider {
@@ -39,6 +48,7 @@ export interface AIProvider {
   generateTarotReading(input: { category: TarotCategory; question: string; cards: TarotCard[] }): Promise<TarotReading>;
   generateDestinyTarotChat(input: { conversation: DestinyConversationMessage[]; followUpCount: number }): Promise<DestinyChatReply>;
   generateDestinyCardCountRecommendation(input: { summary: string; finalQuestion: string }): Promise<DestinyCardCountRecommendation>;
+  generateDestinySpread(input: { concernSummary: string; finalQuestion: string; cardCount: 3 | 5 | 10 }): Promise<DestinySpread>;
   analyzeDream(input: { dream: string; turns: DreamTurn[]; followupCount: number }): Promise<DreamAnalysis>;
   generateDreamReading(input: { dream: string; turns: DreamTurn[]; extracted: DreamExtracted; scoreFactors: string[]; amount: number; verdict: string }): Promise<DreamReading>;
 }
@@ -82,6 +92,9 @@ class GroqAIProvider implements AIProvider {
   }
   generateDestinyCardCountRecommendation(input: { summary: string; finalQuestion: string }): Promise<DestinyCardCountRecommendation> {
     return this.ask(`운명타로 PHASE 2입니다. 아래 고민 요약과 확정 질문에 가장 어울리는 리딩 카드 장수를 3, 5, 10 중 정확히 하나 추천하세요. 사용자가 직접 고를 수 있는 참고 추천일 뿐이며, 카드를 선택하거나 해석하지 마세요.\n\n고민 요약: ${input.summary}\n확정 질문: ${input.finalQuestion}\n\n3장은 핵심 흐름을 빠르게 보는 간결한 리딩, 5장은 현재 상황과 여러 변수를 균형 있게 보는 심층 리딩, 10장은 복잡한 고민과 여러 관계를 전체적으로 보는 깊은 리딩입니다. reason은 1~2문장, 180자 이내로 사용자의 고민에 맞춰 자연스러운 한국어로 쓰세요. 미래를 단정하거나 불안을 부추기지 마세요.\nSchema: {"recommendedCardCount":5,"reason":""}`, destinyCardCountRecommendationSchema, "당신은 달빛 아래에서 사용자의 고민을 차분히 정리하는 한국어 타로 안내자입니다. 타로는 오락과 자기성찰을 위한 콘텐츠로 다루며, 카드 장수 추천을 강요하지 않습니다. 반드시 한국어만 사용하고 마크다운은 쓰지 마세요.", 1);
+  }
+  generateDestinySpread(input: { concernSummary: string; finalQuestion: string; cardCount: 3 | 5 | 10 }): Promise<DestinySpread> {
+    return this.ask(`운명타로 PHASE 3입니다. 사용자의 실제 질문을 위한 개인화된 카드 자리 ${input.cardCount}개를 설계하세요. 이 응답은 오직 각 자리가 무엇을 읽는지 정하는 용도입니다. 실제 카드, cardId, 카드 순서, CSS 좌표, 카드 방향, 사용자 선택을 절대 만들거나 언급하지 마세요.\n\n고민 요약: ${input.concernSummary}\n확정 질문: ${input.finalQuestion}\n\n템플릿은 linear, choice, relationship, cross, deep 중 하나입니다. 질문이 선택의 비교라면 choice, 관계라면 relationship, 여러 변수가 얽힌 깊은 고민이라면 deep 또는 cross를 고려하되, 반드시 ${input.cardCount}개의 position만 반환하세요. 각 position의 id는 position-1부터 position-${input.cardCount}까지 순서대로, order는 1부터 ${input.cardCount}까지 순서대로 지정하세요. label은 짧고 구체적으로, description은 그 자리가 질문의 무엇을 살펴보는지 한 문장으로 작성하세요. 흔한 고정 배열보다 이 질문의 선택지·관계·맥락이 드러나게 만드세요. 미래를 단정하거나 불안을 부추기지 마세요.\nSchema: {"template":"choice","positions":[{"id":"position-1","order":1,"label":"","description":""}]}`, destinySpreadSchema, "당신은 달빛 아래에서 사용자의 고민에 맞는 카드 자리를 차분히 설계하는 한국어 타로 안내자입니다. 타로는 오락과 자기성찰을 위한 콘텐츠로 다루며, 카드를 뽑거나 결과를 예언하지 않습니다. 반드시 한국어만 사용하고 마크다운은 쓰지 마세요.", 1);
   }
   async analyzeDream(input: { dream: string; turns: DreamTurn[]; followupCount: number }): Promise<DreamAnalysis> {
     const turns = input.turns.length ? input.turns.map((turn, index) => `${index + 1}. 질문: ${turn.question}\n답변: ${turn.answer}`).join("\n") : "없음";
