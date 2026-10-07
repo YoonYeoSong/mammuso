@@ -69,3 +69,48 @@
 .revealPage .tarotArt,.revealPage .cardUnavailable,.revealPage .revealHeroFace,.revealPage .revealHeroFront{background:transparent}
 .revealPage .revealHeroFlip{box-shadow:0 7px 18px rgba(0,0,22,.31)}
 .revealPage .revealHeroFace{border-color:rgba(251,227,177,.43)}
+
+/* Destiny-only card presentation -------------------------------------------------
+   The source BACK had a large transparent tail below the gold frame.  Its Destiny
+   derivative is cropped without resampling and padded from the measured visual
+   bounds, so the gold border has equal optical margins on all four sides.
+   Keep this scope out of .finalResult and all Today Tarot selectors. */
+.spreadSelection,.revealPage{--destiny-card-inset:3px}
+.spreadSelection .destinyCardBack,.revealPage .destinyCardBack{background-image:url('/destiny-tarot/destiny-card-back.png');background-position:center;background-repeat:no-repeat;background-size:100% 100%}
+
+/* A card shell owns the frame and one uniform safe inset.  The asset itself is
+   centered by grid, never with directional positioning or a resting transform. */
+.spreadSelection .deckCardButton,.spreadSelection .selectedSlotCard,.revealPage .revealSlotCard{display:grid;box-sizing:content-box;place-items:center;padding:var(--destiny-card-inset);overflow:hidden}
+.spreadSelection .selectedSlotCard,.spreadSelection .deckCardButton{aspect-ratio:886 / 1489}
+.spreadSelection .selectedSlotCard{width:min(76px,calc(100% - (var(--destiny-card-inset) * 2)))}
+.spreadSelection .slotCard:not(.selectedSlotCard){padding:0}
+.spreadSelection .deckCardButton{width:clamp(70px,18.5vw,88px)}
+.spreadSelection .gridDeck{grid-template-columns:repeat(auto-fill,minmax(62px,1fr))}
+.spreadSelection .gridDeckCard{width:calc(100% - (var(--destiny-card-inset) * 2))}
+
+/* Reveal starts from the measured BACK ratio.  A revealed front retains its own
+   native visual ratio; object-fit: cover removes only each front PNG's symmetric
+   transparent side canvas, never its artwork. */
+.revealPage .revealSlotCard{width:min(76px,calc(100% - (var(--destiny-card-inset) * 2)));aspect-ratio:886 / 1489;background:transparent}
+.revealPage .revealedSlot .revealSlotCard{aspect-ratio:805 / 1280}
+.revealPage .tarotArt{overflow:hidden}
+.revealPage .tarotArt img{object-fit:cover}
+
+/* The focus card uses the same symmetric inset for its back and front faces. */
+.revealPage .revealHeroFlip{box-sizing:border-box;/* 166px shell minus the 2 × (3px inset + 1px frame) keeps the BACK content at 886:1489. */aspect-ratio:166 / 273.63;height:auto;transform-origin:center}
+.revealPage .revealHeroFlipped{/* Same shell calculation for the FRONT visual bounds (805:1280). */aspect-ratio:166 / 259.23}
+.revealPage .revealHeroFace{display:grid;box-sizing:border-box;place-items:center;padding:var(--destiny-card-inset);overflow:hidden}
+.revealPage .revealHeroFace .tarotArt{width:100%;height:100%}
+.cardFlight{display:grid;box-sizing:border-box;place-items:center;padding:3px;transform-origin:center}
+
+/* The card's resting state is centered.  Hover and flight transforms are
+   intentionally transient and retain the browser default center origin. */
+.horizontalDeckCard{transform-origin:center}
+
+/* Chat composer: one complete, quiet surface instead of directional gold rules. */
+.composer{border-color:rgba(204,189,236,.38);background:linear-gradient(135deg,rgba(10,15,51,.78),rgba(54,42,104,.62));transition:border-color .2s ease,box-shadow .2s ease}
+.composer:focus-within{border-color:rgba(222,202,247,.62);box-shadow:inset 0 1px rgba(255,255,255,.07),0 0 0 1px rgba(208,184,242,.1),0 0 18px rgba(155,120,221,.2),0 8px 21px rgba(0,0,25,.3)}
+.composer>div{border-top:0;padding:7px 3px 0 7px}
+.composer button{border-color:rgba(207,190,241,.52);background:linear-gradient(120deg,rgba(118,92,182,.9),rgba(62,50,136,.92));box-shadow:inset 0 1px rgba(255,255,255,.12),0 3px 9px rgba(9,7,39,.24)}
+
+@media (max-width:359px){.spreadSelection .gridDeck{grid-template-columns:repeat(auto-fill,minmax(62px,1fr))}}
