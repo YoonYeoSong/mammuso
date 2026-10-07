@@ -17,12 +17,12 @@
 .deck-grid-card{aspect-ratio:2/3}
 .draw-slot.selected .tarot-card{width:54px;height:81px}
 .reveal-card{height:auto;aspect-ratio:2/3}
-.shuffle-deck span,.reading-loader span{border:0;border-radius:9%;background:url('/tarot/back/today-tarot-card-back.png') center/contain no-repeat;box-shadow:none}
+.shuffle-deck span,.reading-loader span{border:0;border-radius:9%;background:url('/tarot/back/today-tarot-card-back.png') center/100% 100% no-repeat;box-shadow:none}
 
 /* Preserve the complete card art inside its rounded silhouette at every size. */
 .tarot-card-inner{border-radius:9%}
 .tarot-card-back,.tarot-card-front{border-radius:9%}
-.tarot-card-back{background-size:contain}
+.tarot-card-back{background-size:100% 100%}
 
 /* Let five cards fan, cross, and settle over a complete 2.4-second shuffle. */
 .shuffle-deck{width:132px;height:184px;margin-bottom:39px}
