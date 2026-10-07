@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import styles from "./DestinyTarotExperience.module.css";
 import { createDestinyReadingInput, createFallbackDestinyReading, isValidDestinyReading, selectedCardsByPosition } from "@/lib/destiny-tarot/reading";
@@ -15,6 +15,8 @@ type Props = {
   onRestart: () => void;
 };
 
+const tarotArtSizes = "(max-width: 359px) 27vw, (max-width: 480px) 24vw, 120px";
+
 function orientationLabel(orientation: "upright" | "reversed") {
   return orientation === "reversed" ? "역방향" : "정방향";
 }
@@ -23,10 +25,10 @@ function CardBack() {
   return <span className={styles.destinyCardBack} aria-hidden="true"><i>✦</i></span>;
 }
 
-function TarotArt({ cardId, orientation, alt, priority = false }: { cardId: string; orientation: "upright" | "reversed"; alt: string; priority?: boolean }) {
+function TarotArt({ cardId, orientation, alt, eager = false }: { cardId: string; orientation: "upright" | "reversed"; alt: string; eager?: boolean }) {
   const card = getTarotAsset(cardId);
   if (!card?.imageReady) return <span className={styles.cardUnavailable} aria-label={alt}>✦</span>;
-  return <span className={`${styles.tarotArt} ${orientation === "reversed" ? styles.tarotArtReversed : ""}`}><Image src={card.image} alt={alt} fill sizes="(max-width: 359px) 27vw, (max-width: 480px) 24vw, 120px" priority={priority} /></span>;
+  return <span className={`${styles.tarotArt} ${orientation === "reversed" ? styles.tarotArtReversed : ""}`}><Image src={card.image} alt={alt} fill sizes={tarotArtSizes} loading={eager ? "eager" : "lazy"} /></span>;
 }
 
 function Spread({ session, revealedCount, flippingPositionId }: { session: DestinyTarotSessionDraft; revealedCount: number; flippingPositionId?: string }) {
@@ -44,7 +46,7 @@ function Spread({ session, revealedCount, flippingPositionId }: { session: Desti
         <div className={`${styles.slotCard} ${styles.revealSlotCard}`}>
           {isFlipping ? <div className={`${styles.cardFlip} ${isRevealed ? styles.cardFlipRevealed : ""}`}>
             <span className={`${styles.cardFlipFace} ${styles.cardFlipBack}`}><CardBack /></span>
-            <span className={`${styles.cardFlipFace} ${styles.cardFlipFront}`}><TarotArt cardId={selected.cardId} orientation={selected.orientation} alt={`${position.label} · ${getTarotAsset(selected.cardId)?.nameKo ?? "선택한"} 카드`} priority /></span>
+            <span className={`${styles.cardFlipFace} ${styles.cardFlipFront}`}><TarotArt cardId={selected.cardId} orientation={selected.orientation} alt={`${position.label} · ${getTarotAsset(selected.cardId)?.nameKo ?? "선택한"} 카드`} eager /></span>
           </div> : isRevealed ? <TarotArt cardId={selected.cardId} orientation={selected.orientation} alt={`${position.label} · ${getTarotAsset(selected.cardId)?.nameKo ?? "선택한"} 카드`} /> : <CardBack />}
         </div>
         <p><b>{position.order}</b><span>{position.label}</span></p>
@@ -65,7 +67,7 @@ function RevealCard({ session, index, flipped, message }: { session: DestinyTaro
     <p className={styles.revealDescription}>{position.description}</p>
     <div className={`${styles.revealHeroFlip} ${flipped ? styles.revealHeroFlipped : ""}`}>
       <span className={`${styles.revealHeroFace} ${styles.revealHeroBack}`}><CardBack /></span>
-      <span className={`${styles.revealHeroFace} ${styles.revealHeroFront}`}><TarotArt cardId={selected.cardId} orientation={selected.orientation} alt={`${asset?.nameKo ?? "선택한"} 카드`} priority /></span>
+      <span className={`${styles.revealHeroFace} ${styles.revealHeroFront}`}><TarotArt cardId={selected.cardId} orientation={selected.orientation} alt={`${asset?.nameKo ?? "선택한"} 카드`} eager /></span>
     </div>
     {flipped ? <div className={styles.revealCardCopy}>
       <h2>{asset?.nameKo ?? "선택한 카드"}</h2>
@@ -125,6 +127,23 @@ export function DestinyTarotReveal({ session, onRestart }: Props) {
   const [loadingTransitionComplete, setLoadingTransitionComplete] = useState(false);
   const input = useMemo(() => createDestinyReadingInput(session), [session]);
   const positions = useMemo(() => [...(session.spreadPositions ?? [])].sort((left, right) => left.order - right.order), [session.spreadPositions]);
+  const cardImageSources = useMemo(() => positions.flatMap((position) => {
+    const selected = (session.selectedCards ?? []).find((card) => card.spreadPositionId === position.id);
+    const asset = selected ? getTarotAsset(selected.cardId) : undefined;
+    return asset?.imageReady ? [asset.image] : [];
+  }), [positions, session.selectedCards]);
+
+  useEffect(() => {
+    if (stage !== "intro" && stage !== "reveal") return;
+    const firstIndex = stage === "intro" ? 0 : revealIndex;
+    for (const source of cardImageSources.slice(firstIndex, firstIndex + 2)) {
+      const { props } = getImageProps({ src: source, alt: "", fill: true, sizes: tarotArtSizes });
+      const image = new window.Image();
+      if (props.srcSet) image.srcset = props.srcSet;
+      image.sizes = tarotArtSizes;
+      image.src = props.src;
+    }
+  }, [cardImageSources, revealIndex, stage]);
 
   const requestReading = useCallback(async () => {
     if (!input) { setReadingStatus("error"); return; }
