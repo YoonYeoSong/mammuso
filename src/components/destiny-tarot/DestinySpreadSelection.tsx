@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from "react";
+import { useMemo, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from "react";
 import styles from "./DestinyTarotExperience.module.css";
 import { selectDestinyOrientation } from "@/lib/destiny-tarot/spread";
 import type { DestinySelectedCard, DestinyTarotSessionDraft } from "@/lib/destiny-tarot/types";
@@ -20,15 +20,18 @@ function CardBack({ compact = false }: { compact?: boolean }) {
 export function DestinySpreadSelection({ session, setSession, onMessageCheck }: Props) {
   const [isSelecting, setIsSelecting] = useState(false);
   const [flight, setFlight] = useState<Flight | null>(null);
-  const [rollingBackFrom, setRollingBackFrom] = useState<number | null>(null);
+  const [rollingBackFrom, setRollingBackFrom] = useState<string | null>(null);
   const slotRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const selectedCards = session.selectedCards ?? [];
-  const positions = session.spreadPositions ?? [];
+  const positions = useMemo(() => [...(session.spreadPositions ?? [])].sort((left, right) => left.order - right.order), [session.spreadPositions]);
   const cardCount = session.cardCount ?? 0;
-  const currentPosition = positions[selectedCards.length];
+  const currentPosition = positions.find((position) => !selectedCards.some((card) => card.spreadPositionId === position.id));
   const selectedByCardId = new Map(selectedCards.map((card) => [card.cardId, card]));
   const selectedByPositionId = new Map(selectedCards.map((card) => [card.spreadPositionId, card]));
-  const isComplete = selectedCards.length === cardCount && cardCount > 0;
+  const isComplete = cardCount > 0
+    && selectedCards.length === cardCount
+    && positions.length === cardCount
+    && positions.every((position) => selectedByPositionId.has(position.id));
 
   function selectCard(cardId: string, source: HTMLButtonElement) {
     if (isSelecting || rollingBackFrom !== null || isComplete || !currentPosition || selectedByCardId.has(cardId) || !session.orientationMode) return;
@@ -39,7 +42,9 @@ export function DestinySpreadSelection({ session, setSession, onMessageCheck }: 
     const nextCard: DestinySelectedCard = {
       cardId,
       spreadPositionId: currentPosition.id,
-      selectedOrder: selectedCards.length + 1,
+      // Selection order is only a history record. Spread position order drives
+      // every visual and reading order, including after a card is replaced.
+      selectedOrder: Math.max(0, ...selectedCards.map((card) => card.selectedOrder)) + 1,
       orientation,
     };
 
@@ -58,15 +63,15 @@ export function DestinySpreadSelection({ session, setSession, onMessageCheck }: 
     window.setTimeout(() => { setFlight(null); setIsSelecting(false); }, 420);
   }
 
-  function rollbackFrom(selectedOrder: number) {
+  function cancelCard(spreadPositionId: string) {
     if (isSelecting || rollingBackFrom !== null) return;
-    setRollingBackFrom(selectedOrder);
+    setRollingBackFrom(spreadPositionId);
     window.setTimeout(() => {
       setSession((current) => current ? {
         ...current,
-        // Removing the selected-card records also returns their ids to the
-        // unchanged deck order and drops the orientations picked for them.
-        selectedCards: (current.selectedCards ?? []).filter((card) => card.selectedOrder < selectedOrder),
+        // A selected-card record owns its orientation, so removing this one
+        // card also removes only this card's orientation from the session.
+        selectedCards: (current.selectedCards ?? []).filter((card) => card.spreadPositionId !== spreadPositionId),
       } : current);
       setRollingBackFrom(null);
     }, 240);
@@ -83,22 +88,22 @@ export function DestinySpreadSelection({ session, setSession, onMessageCheck }: 
         {positions.map((position) => {
           const selected = selectedByPositionId.get(position.id);
           const active = currentPosition?.id === position.id && !isComplete;
-          const isRollingBack = Boolean(selected && rollingBackFrom !== null && selected.selectedOrder >= rollingBackFrom);
+          const isRollingBack = selected?.spreadPositionId === rollingBackFrom;
           return <div className={`${styles.spreadSlot} ${active ? styles.spreadSlotActive : ""} ${selected ? styles.spreadSlotFilled : ""} ${isRollingBack ? styles.spreadSlotRollingBack : ""}`} key={position.id} ref={(node) => { slotRefs.current[position.id] = node; }}>
-            {selected ? <button className={`${styles.slotCard} ${styles.selectedSlotCard}`} type="button" onClick={() => rollbackFrom(selected.selectedOrder)} disabled={rollingBackFrom !== null} aria-label={`${position.order}번 ${position.label} 선택 취소, 이 자리부터 다시 선택`}><CardBack compact /></button> : <div className={styles.slotCard}><span className={styles.slotPlaceholder} aria-hidden="true">✦</span></div>}
+            {selected ? <button className={`${styles.slotCard} ${styles.selectedSlotCard}`} type="button" onClick={() => cancelCard(selected.spreadPositionId)} disabled={rollingBackFrom !== null} aria-label={`${position.order}번 ${position.label} 선택 취소`}><CardBack compact /></button> : <div className={styles.slotCard}><span className={styles.slotPlaceholder} aria-hidden="true">✦</span></div>}
             <p><b>{position.order}</b><span>{position.label}</span></p>
           </div>;
         })}
       </section>
 
       {!isComplete && currentPosition && <section className={styles.currentPosition} aria-live="polite">
-        <p className={styles.selectionProgress}>{selectedCards.length + 1} / {cardCount}</p>
+        <p className={styles.selectionProgress}>{currentPosition.order} / {cardCount}</p>
         <h2>{currentPosition.label}</h2>
         <p>{currentPosition.description}</p>
         <small>이 의미를 생각하며 카드를 한 장 선택해 주세요.</small>
       </section>}
 
-      {selectedCards.length > 0 && <p className={styles.rollbackHint}>선택한 카드를 누르면 그 자리부터 다시 고를 수 있어요.</p>}
+      {selectedCards.length > 0 && <p className={styles.rollbackHint}>선택한 카드를 누르면 다시 고를 수 있어요.</p>}
 
       {!isComplete ? <>
         <div className={styles.viewToggle} role="group" aria-label="카드 배열 방식">
@@ -109,12 +114,14 @@ export function DestinySpreadSelection({ session, setSession, onMessageCheck }: 
         {session.viewMode === "fan" ? <div className={styles.horizontalDeck} aria-label="78장 카드 가로 덱">
           {session.deckOrder?.map((cardId, index) => {
             const selected = selectedByCardId.get(cardId);
-            return <button className={`${styles.deckCardButton} ${styles.horizontalDeckCard} ${selected ? styles.deckCardSelected : ""}`} type="button" key={cardId} disabled={Boolean(selected) || isSelecting || rollingBackFrom !== null} aria-label={selected ? `덱의 ${index + 1}번째 카드, ${selected.selectedOrder}번 선택됨` : `덱의 ${index + 1}번째 카드 선택`} onClick={(event) => selectCard(cardId, event.currentTarget)}><CardBack /></button>;
+            const positionOrder = selected ? positions.find((position) => position.id === selected.spreadPositionId)?.order : undefined;
+            return <button className={`${styles.deckCardButton} ${styles.horizontalDeckCard} ${selected ? styles.deckCardSelected : ""}`} type="button" key={cardId} disabled={Boolean(selected) || isSelecting || rollingBackFrom !== null} aria-label={selected ? `덱의 ${index + 1}번째 카드, ${positionOrder}번 자리에 선택됨` : `덱의 ${index + 1}번째 카드 선택`} onClick={(event) => selectCard(cardId, event.currentTarget)}><CardBack /></button>;
           })}
         </div> : <div className={styles.gridDeck} aria-label="78장 카드 배열">
           {session.deckOrder?.map((cardId, index) => {
             const selected = selectedByCardId.get(cardId);
-            return <button className={`${styles.deckCardButton} ${styles.gridDeckCard} ${selected ? styles.deckCardSelected : ""}`} type="button" key={cardId} disabled={Boolean(selected) || isSelecting || rollingBackFrom !== null} aria-label={selected ? `덱의 ${index + 1}번째 카드, ${selected.selectedOrder}번 선택됨` : `덱의 ${index + 1}번째 카드 선택`} onClick={(event) => selectCard(cardId, event.currentTarget)}><CardBack />{selected && <em aria-hidden="true">{selected.selectedOrder}</em>}</button>;
+            const positionOrder = selected ? positions.find((position) => position.id === selected.spreadPositionId)?.order : undefined;
+            return <button className={`${styles.deckCardButton} ${styles.gridDeckCard} ${selected ? styles.deckCardSelected : ""}`} type="button" key={cardId} disabled={Boolean(selected) || isSelecting || rollingBackFrom !== null} aria-label={selected ? `덱의 ${index + 1}번째 카드, ${positionOrder}번 자리에 선택됨` : `덱의 ${index + 1}번째 카드 선택`} onClick={(event) => selectCard(cardId, event.currentTarget)}><CardBack />{selected && <em aria-hidden="true">{positionOrder}</em>}</button>;
           })}
         </div>}
       </> : <section className={styles.spreadCompletion} aria-live="polite">
