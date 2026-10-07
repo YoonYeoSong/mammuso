@@ -11,7 +11,7 @@ import type { DestinyCardCount, DestinyChatReply, DestinyConversationMessage, De
 type Phase = "intro" | "chat" | "review" | "orientation" | "cardCount" | "spreadLoading" | "spreadSelection" | "reveal";
 type RecommendationStatus = "idle" | "loading" | "ready" | "unavailable";
 
-const welcomeMessage = "안녕하세요.\n저는 달빛 안내자예요.\n\n지금 마음에 가장 걸리는 이야기를 편하게 들려주세요.\n\n이야기를 듣고, 타로에 필요한 질문을 함께 정리해드릴게요.";
+const welcomeMessage = "안녕하세요 :) 달빛 안내자예요.\n오늘은 어떤 게 궁금해서 찾아오셨어요?\n편하게 말씀해 주세요.";
 const cardCountOptions: Array<{ count: DestinyCardCount; title: string; description: string; traits: string }> = [
   { count: 3, title: "3장 · 핵심 리딩", description: "질문의 핵심 흐름을 간결하게 살펴봐요.", traits: "빠름 · 핵심 중심 · 단순한 질문에 적합" },
   { count: 5, title: "5장 · 심층 리딩", description: "현재 상황과 여러 변수를 조금 더 깊게 살펴봐요.", traits: "균형 잡힌 깊이 · 선택/관계/고민에 적합" },

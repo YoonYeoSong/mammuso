@@ -9,27 +9,39 @@ function compactConcern(messages: string[]) {
   return concern.length > 170 ? `${concern.slice(0, 167)}…` : concern;
 }
 
+function isClearTarotQuestion(text: string) {
+  const compact = text.replace(/\s+/g, " ").trim();
+  return compact.length >= 10 && /(궁금|어떨|될까|될지|좋을까|봐줘|알고 싶|맞을까|가능|운)/.test(compact);
+}
+
+function periodQuestion(text: string) {
+  if (/(재물|금전|돈)/.test(text)) return "가까운 시기의 돈 흐름이 궁금한가요, 아니면 올해 전체 재물운을 볼까요?";
+  if (/(이직|취업|직장)/.test(text)) return "지금 이직 자체의 흐름이 궁금한가요, 아니면 지금 직장과 옮길 곳 중 어디가 나을지 볼까요?";
+  return "가까운 시기 흐름이 궁금한가요, 아니면 올해 전체 흐름을 볼까요?";
+}
+
 /** Keeps the first phase usable when an AI provider is unavailable or malformed. */
 export function createDestinyChatFallback(conversation: DestinyConversationMessage[], forceReady = false): DestinyChatReply {
   const messages = userMessages(conversation);
   const latest = messages.at(-1) ?? "";
   const followUpCount = Math.max(0, messages.length - 1);
-  const hasSpecificContext = latest.length >= 36 || messages.join(" ").length >= 75;
+  const firstConcern = messages[0] ?? latest;
+  const hasSpecificContext = isClearTarotQuestion(firstConcern) || latest.length >= 36 || messages.join(" ").length >= 75;
 
   if (!forceReady && followUpCount < MAX_DESTINY_FOLLOW_UPS && !hasSpecificContext) {
     return {
       status: "ASK",
-      acknowledgement: "말씀해주신 고민이 마음에 오래 남아 있으신 것 같아요. 조금 더 잘 살펴볼 수 있도록 하나만 여쭤볼게요.",
-      question: "지금 가장 궁금한 건 어떤 부분에 가까우세요?",
-      quickReplies: ["언제쯤 변화가 있을지 궁금해요", "상대의 마음이 궁금해요", "어떤 선택이 좋을지 고민돼요"],
+      acknowledgement: "좋아요, 그쪽 운을 봐드릴게요. 딱 하나만 정하면 카드가 더 또렷해져요.",
+      question: periodQuestion(latest),
+      quickReplies: ["가까운 시기가 궁금해요", "올해 전체 흐름을 보고 싶어요"],
     };
   }
 
   const concern = compactConcern(messages) || "지금 마음에 걸리는 고민";
   return {
     status: "READY",
-    assistantMessage: "이야기를 충분히 들었어요. 지금의 마음을 살펴볼 수 있는 질문으로 정리해볼게요.",
-    summary: `${concern}에 대해, 지금의 상황과 선택의 기준을 차분히 살펴보고 싶어 해요.`,
-    finalQuestion: "이 고민을 나에게 맞는 방향으로 정리하기 위해, 지금 가장 살펴봐야 할 흐름과 선택의 기준은 무엇일까?",
+    assistantMessage: "좋아요. 이 질문이면 바로 카드를 펼쳐볼 수 있어요 :)",
+    summary: `“${concern}”에 대해 카드가 보여주는 방향과 흐름을 보고 싶어 해요.`,
+    finalQuestion: concern.endsWith("?") ? concern : `${concern}의 흐름은 어떨까?`,
   };
 }
