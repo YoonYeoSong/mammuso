@@ -1,4 +1,5 @@
 import { getTarotAsset } from "@/lib/tarot/assets";
+import { isDestinyReadingType } from "./profiles";
 import type { DestinyFinalReading, DestinyReadingInput, DestinyReadingResponse, DestinySelectedCard, DestinySpreadPosition, DestinyTarotSessionDraft } from "./types";
 
 const cardCounts = [3, 5, 10] as const;
@@ -41,6 +42,7 @@ export function createDestinyReadingInput(session: DestinyTarotSessionDraft): De
   if (cards.some((card) => card === null)) return null;
 
   return {
+    readingType: session.readingType,
     concernSummary: session.concernSummary || session.summary,
     finalQuestion: session.finalQuestion,
     cardCount: session.cardCount,
@@ -53,7 +55,7 @@ export function createDestinyReadingInput(session: DestinyTarotSessionDraft): De
 export function isValidDestinyReadingInput(value: unknown): value is DestinyReadingInput {
   if (!value || typeof value !== "object") return false;
   const input = value as Partial<DestinyReadingInput>;
-  if (!cardCounts.includes(input.cardCount as (typeof cardCounts)[number]) || !templates.includes(input.spreadTemplate as (typeof templates)[number]) || !isText(input.concernSummary, 2, 300) || !isText(input.finalQuestion, 8, 320) || !Array.isArray(input.positions) || !Array.isArray(input.cards)) return false;
+  if (!isDestinyReadingType(input.readingType) || !cardCounts.includes(input.cardCount as (typeof cardCounts)[number]) || !templates.includes(input.spreadTemplate as (typeof templates)[number]) || !isText(input.concernSummary, 2, 300) || !isText(input.finalQuestion, 8, 320) || !Array.isArray(input.positions) || !Array.isArray(input.cards)) return false;
   if (input.positions.length !== input.cardCount || input.cards.length !== input.cardCount) return false;
   const ids = new Set(input.positions.map((position) => position.id));
   return ids.size === input.cardCount && input.positions.every((position, index) => position.id === `position-${index + 1}` && position.order === index + 1 && isText(position.label, 1, 40) && isText(position.description, 1, 220))

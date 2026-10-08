@@ -7,11 +7,11 @@ import { DestinyTarotReveal } from "./DestinyTarotReveal";
 import { DestinySpreadSelection } from "./DestinySpreadSelection";
 import { createDestinyDeckOrder, createFallbackDestinySpread, hasStableDestinyDeckOrder, normalizeDestinySpread } from "@/lib/destiny-tarot/spread";
 import type { DestinyCardCount, DestinyChatReply, DestinyConversationMessage, DestinyOrientationMode, DestinyTarotSessionDraft } from "@/lib/destiny-tarot/types";
+import { getDestinyReadingProfile, type DestinyReadingType } from "@/lib/destiny-tarot/profiles";
 
 type Phase = "intro" | "chat" | "review" | "orientation" | "cardCount" | "spreadLoading" | "spreadSelection" | "reveal";
 type RecommendationStatus = "idle" | "loading" | "ready" | "unavailable";
 
-const welcomeMessage = "안녕하세요 :) 달빛 안내자예요.\n오늘은 어떤 게 궁금해서 찾아오셨어요?\n편하게 말씀해 주세요.";
 const cardCountOptions: Array<{ count: DestinyCardCount; title: string; description: string; traits: string }> = [
   { count: 3, title: "3장 · 핵심 리딩", description: "질문의 핵심 흐름을 간결하게 살펴봐요.", traits: "빠름 · 핵심 중심 · 단순한 질문에 적합" },
   { count: 5, title: "5장 · 심층 리딩", description: "현재 상황과 여러 변수를 조금 더 깊게 살펴봐요.", traits: "균형 잡힌 깊이 · 선택/관계/고민에 적합" },
@@ -36,7 +36,8 @@ function CardGlyph({ reversed = false }: { reversed?: boolean }) {
   return <span className={`${styles.cardGlyph} ${reversed ? styles.cardGlyphReversed : ""}`} aria-hidden="true"><i>✦</i></span>;
 }
 
-export function DestinyTarotExperience() {
+export function DestinyTarotExperience({ readingType = "general" }: { readingType?: DestinyReadingType }) {
+  const profile = getDestinyReadingProfile(readingType);
   const [phase, setPhase] = useState<Phase>("intro");
   const [conversation, setConversation] = useState<DestinyConversationMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -66,7 +67,7 @@ export function DestinyTarotExperience() {
     void fetch("/api/destiny-tarot/card-count-recommendation", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ summary: session.summary, finalQuestion: session.finalQuestion }),
+      body: JSON.stringify({ readingType: session.readingType, summary: session.summary, finalQuestion: session.finalQuestion }),
       signal: controller.signal,
     })
       .then(async (response) => {
@@ -92,7 +93,7 @@ export function DestinyTarotExperience() {
   }
 
   function beginChat() {
-    setConversation([createMessage("assistant", welcomeMessage)]);
+    setConversation([createMessage("assistant", profile.greeting)]);
     setDraft("");
     setError("");
     setPhase("chat");
@@ -113,7 +114,7 @@ export function DestinyTarotExperience() {
       const response = await fetch("/api/destiny-tarot/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversation: nextConversation }),
+        body: JSON.stringify({ readingType, conversation: nextConversation }),
       });
       const payload = await response.json() as { reply?: DestinyChatReply; message?: string };
       if (!response.ok || !payload.reply) throw new Error(payload.message ?? "대화를 이어가지 못했어요.");
@@ -125,6 +126,7 @@ export function DestinyTarotExperience() {
 
       if (reply.status === "READY") {
         setSession({
+          readingType,
           originalConcern: nextConversation.find((message) => message.role === "user")?.content ?? trimmed,
           conversation: completedConversation,
           summary: reply.summary,
@@ -164,7 +166,7 @@ export function DestinyTarotExperience() {
       const response = await fetch("/api/destiny-tarot/spread", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ concernSummary: session.concernSummary || session.summary, finalQuestion: session.finalQuestion, cardCount }),
+        body: JSON.stringify({ readingType: session.readingType, concernSummary: session.concernSummary || session.summary, finalQuestion: session.finalQuestion, cardCount }),
         signal: controller.signal,
       });
       const payload = await response.json() as { spread?: unknown };
@@ -202,9 +204,9 @@ export function DestinyTarotExperience() {
     <section className={`${styles.surface} ${styles.intro}`} aria-labelledby="destiny-intro-title">
       <Link className={styles.backLink} href="/">← 운명타로 홈</Link>
       <div className={styles.introSymbol} aria-hidden="true"><Avatar /></div>
-      <p className={styles.eyebrow}>DESTINY TAROT · DEEP READING</p>
-      <h1 id="destiny-intro-title">마음속 이야기를<br />카드와 함께<br />천천히 읽어볼까요?</h1>
-      <p className={styles.introCopy}>당신의 고민을 들은 뒤, 필요한 만큼만 함께 질문을 정리하고 그 마음에 맞는 타로 리딩을 준비해요.</p>
+      <p className={styles.eyebrow}>{profile.displayName} · DEEP READING</p>
+      <h1 id="destiny-intro-title">{profile.displayName}로<br />마음속 이야기를<br />읽어볼까요?</h1>
+      <p className={styles.introCopy}>{profile.description} {profile.chatGuide}</p>
       <button className={styles.primaryButton} type="button" onClick={beginChat}>이야기 시작하기 <span>→</span></button>
       <p className={styles.notice}>운명타로는 가벼운 재미와 자기성찰을 위한 리딩이에요.</p>
     </section>
@@ -303,13 +305,13 @@ export function DestinyTarotExperience() {
 
   return <main className={styles.page}>
     <section className={`${styles.surface} ${styles.chat}`} aria-labelledby="destiny-chat-title">
-      <header className={styles.chatHeader}><button className={styles.textButton} type="button" onClick={() => setPhase("intro")}>← 처음으로</button><div><Avatar /><span id="destiny-chat-title">달빛 안내자</span></div></header>
-      <p className={styles.chatGuide}>천천히 이야기해 주세요. 필요한 만큼만 함께 질문을 정리할게요.</p>
+      <header className={styles.chatHeader}><button className={styles.textButton} type="button" onClick={() => setPhase("intro")}>← 처음으로</button><div><Avatar /><span id="destiny-chat-title">{profile.guideName}</span></div></header>
+      <p className={styles.chatGuide}>{profile.chatGuide}</p>
       <div className={styles.messages} aria-live="polite">
         {conversation.map((message) => <div className={`${styles.messageRow} ${message.role === "user" ? styles.userRow : styles.assistantRow}`} key={message.id}>
           {message.role === "assistant" && <Avatar />}
           <div>
-            {message.role === "assistant" && <span className={styles.sender}>달빛 안내자</span>}
+            {message.role === "assistant" && <span className={styles.sender}>{profile.guideName}</span>}
             <p className={`${styles.bubble} ${message.role === "user" ? styles.userBubble : styles.assistantBubble}`}>{message.content}</p>
             {message.role === "assistant" && message.quickReplies && <div className={styles.quickReplies}>{message.quickReplies.map((reply) => <button key={reply} type="button" onClick={() => void sendMessage(reply)} disabled={isSending}>{reply}</button>)}</div>}
           </div>

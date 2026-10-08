@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAIProvider } from "@/lib/ai/provider";
 import { apiError } from "@/lib/http";
+import { createProfileCardCountRecommendation, destinyReadingTypes, type DestinyReadingType } from "@/lib/destiny-tarot/profiles";
 
 const inputSchema = z.object({
+  readingType: z.enum(destinyReadingTypes),
   summary: z.string().trim().min(16).max(260),
   finalQuestion: z.string().trim().min(8).max(300),
 });
@@ -18,10 +20,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const recommendation = await getAIProvider().generateDestinyCardCountRecommendation(input);
+    const recommendation = await getAIProvider().generateDestinyCardCountRecommendation({ ...input, readingType: input.readingType as DestinyReadingType });
     return NextResponse.json({ recommendation });
   } catch (error) {
-    console.error("Destiny tarot card-count recommendation failed.", error);
-    return NextResponse.json({ error: "RECOMMENDATION_UNAVAILABLE", message: "추천을 준비하지 못했어요." }, { status: 503 });
+    console.error("Destiny tarot card-count recommendation failed; returning profile guidance.", error);
+    return NextResponse.json({ recommendation: createProfileCardCountRecommendation(input.readingType, input.finalQuestion), fallback: true });
   }
 }

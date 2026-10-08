@@ -4,8 +4,10 @@ import { getAIProvider } from "@/lib/ai/provider";
 import { createDestinyChatFallback } from "@/lib/destiny-tarot/fallback";
 import { MAX_DESTINY_FOLLOW_UPS, type DestinyConversationMessage } from "@/lib/destiny-tarot/types";
 import { apiError } from "@/lib/http";
+import { destinyReadingTypes, type DestinyReadingType } from "@/lib/destiny-tarot/profiles";
 
 const inputSchema = z.object({
+  readingType: z.enum(destinyReadingTypes),
   conversation: z.array(z.object({
     id: z.string().min(1).max(80),
     role: z.enum(["assistant", "user"]),
@@ -28,13 +30,13 @@ export async function POST(request: NextRequest) {
 
   const followUpCount = Math.max(0, userTurns - 1);
   try {
-    const reply = await getAIProvider().generateDestinyTarotChat({ conversation, followUpCount });
+    const reply = await getAIProvider().generateDestinyTarotChat({ conversation, followUpCount, readingType: input.readingType as DestinyReadingType });
     if (reply.status === "ASK" && followUpCount >= MAX_DESTINY_FOLLOW_UPS) {
-      return NextResponse.json({ reply: createDestinyChatFallback(conversation, true), fallback: true });
+      return NextResponse.json({ reply: createDestinyChatFallback(conversation, input.readingType, true), fallback: true });
     }
     return NextResponse.json({ reply });
   } catch (error) {
     console.error("Destiny tarot chat failed; returning a guided fallback.", error);
-    return NextResponse.json({ reply: createDestinyChatFallback(conversation, followUpCount >= MAX_DESTINY_FOLLOW_UPS), fallback: true });
+    return NextResponse.json({ reply: createDestinyChatFallback(conversation, input.readingType, followUpCount >= MAX_DESTINY_FOLLOW_UPS), fallback: true });
   }
 }

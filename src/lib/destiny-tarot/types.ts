@@ -13,6 +13,7 @@ export type DestinyChatReply =
 
 export type DestinyOrientationMode = "uprightOnly" | "mixed";
 export type DestinyCardCount = 3 | 5 | 10;
+export type DestinyReadingType = "love" | "money" | "choice" | "career" | "reunion" | "general";
 export type DestinyDeckViewMode = "fan" | "grid";
 export type DestinySpreadTemplate = "linear" | "choice" | "relationship" | "cross" | "deep";
 
@@ -50,6 +51,7 @@ export type DestinyReadingCard = {
 };
 
 export type DestinyReadingInput = {
+  readingType: DestinyReadingType;
   concernSummary: string;
   finalQuestion: string;
   cardCount: DestinyCardCount;
@@ -86,6 +88,7 @@ export type DestinyReadingResponse = {
  * stable hand-off contract for the later spread, selection, and reveal phases.
  */
 export type DestinyTarotSessionDraft = {
+  readingType: DestinyReadingType;
   originalConcern: string;
   conversation: DestinyConversationMessage[];
   summary: string;
