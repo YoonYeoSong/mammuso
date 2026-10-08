@@ -5,9 +5,9 @@ import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
 import styles from "./DestinyTarotExperience.module.css";
 import { DestinyTarotReveal } from "./DestinyTarotReveal";
 import { DestinySpreadSelection } from "./DestinySpreadSelection";
-import { createDestinyDeckOrder, createFallbackDestinySpread, hasStableDestinyDeckOrder, normalizeDestinySpread } from "@/lib/destiny-tarot/spread";
+import { createDestinyDeckOrder, hasStableDestinyDeckOrder, normalizeDestinySpread } from "@/lib/destiny-tarot/spread";
 import type { DestinyCardCount, DestinyChatReply, DestinyConversationMessage, DestinyOrientationMode, DestinyTarotSessionDraft } from "@/lib/destiny-tarot/types";
-import { getDestinyReadingProfile, type DestinyReadingType } from "@/lib/destiny-tarot/profiles";
+import { createProfileDestinySpread, getDestinyReadingProfile, type DestinyReadingType } from "@/lib/destiny-tarot/profiles";
 
 type Phase = "intro" | "chat" | "review" | "orientation" | "cardCount" | "spreadLoading" | "spreadSelection" | "reveal";
 type RecommendationStatus = "idle" | "loading" | "ready" | "unavailable";
@@ -157,7 +157,7 @@ export function DestinyTarotExperience({ readingType = "general" }: { readingTyp
   async function startSpread() {
     if (!session || !session.cardCount || !session.orientationMode || !session.finalQuestion.trim()) return;
     const cardCount = session.cardCount;
-    const fallback = createFallbackDestinySpread(cardCount);
+    const fallback = createProfileDestinySpread(session.readingType, session.finalQuestion, cardCount);
     setPhase("spreadLoading");
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), 8000);
@@ -170,7 +170,7 @@ export function DestinyTarotExperience({ readingType = "general" }: { readingTyp
         signal: controller.signal,
       });
       const payload = await response.json() as { spread?: unknown };
-      if (response.ok) spread = normalizeDestinySpread(payload.spread, cardCount);
+      if (response.ok) spread = normalizeDestinySpread(payload.spread, cardCount, fallback);
     } catch {
       // The local fallback deliberately keeps the ritual moving when AI is unavailable.
     } finally {

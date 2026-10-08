@@ -79,8 +79,8 @@ export function isValidDestinySpread(value: unknown, cardCount: DestinyCardCount
   });
 }
 
-export function normalizeDestinySpread(value: unknown, cardCount: DestinyCardCount): DestinySpread {
-  if (!isValidDestinySpread(value, cardCount)) return createFallbackDestinySpread(cardCount);
+export function normalizeDestinySpread(value: unknown, cardCount: DestinyCardCount, fallback: DestinySpread = createFallbackDestinySpread(cardCount)): DestinySpread {
+  if (!isValidDestinySpread(value, cardCount)) return fallback;
   return {
     template: value.template,
     positions: value.positions.map((position) => ({
