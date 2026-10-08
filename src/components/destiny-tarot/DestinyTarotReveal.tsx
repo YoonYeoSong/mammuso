@@ -21,6 +21,12 @@ function orientationLabel(orientation: "upright" | "reversed") {
   return orientation === "reversed" ? "역방향" : "정방향";
 }
 
+function firstSentence(text: string) {
+  const trimmed = text.trim();
+  const boundary = trimmed.search(/[.!?]/);
+  return boundary >= 0 ? trimmed.slice(0, boundary + 1) : trimmed;
+}
+
 function CardBack() {
   return <span className={styles.destinyCardBack} aria-hidden="true"><i>✦</i></span>;
 }
@@ -88,12 +94,12 @@ function FinalResult({ session, reading, onRestart }: { session: DestinyTarotSes
   const positions = [...(session.spreadPositions ?? [])].sort((left, right) => left.order - right.order);
   const selectedByPosition = selectedCardsByPosition(session.selectedCards ?? []);
   const interpretations = new Map(reading.reading.positions.map((item) => [item.spreadPositionId, item.interpretation]));
+  const conclusion = firstSentence(reading.reading.coreConclusion);
   return <main className={styles.page}>
     <section className={`${styles.surface} ${styles.finalResult}`} aria-labelledby="destiny-result-title">
       <p className={styles.eyebrow}>DESTINY TAROT · YOUR READING</p>
-      <h1 id="destiny-result-title">카드들이 들려주는<br />당신의 흐름</h1>
-      <section className={styles.resultQuestion}><span>이번에 살펴본 질문</span><strong>“{session.finalQuestion}”</strong></section>
-      <section className={styles.overallReading}><p>전체 흐름</p><h2>{reading.reading.overallSummary}</h2></section>
+      <h1 id="destiny-result-title">운명타로</h1>
+      <p className={styles.resultConclusion}>{conclusion}</p>
       <section className={styles.resultSpreadSection} aria-label="완성된 스프레드"><p className={styles.eyebrow}>THE COMPLETED SPREAD</p><Spread session={session} revealedCount={positions.length} /></section>
       <section className={styles.resultDetails} aria-labelledby="destiny-position-details"><h2 id="destiny-position-details">자리별 상세 해석</h2>
         {positions.map((position) => {
