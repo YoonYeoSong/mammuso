@@ -159,6 +159,12 @@ html:has(.today-tarot-intro-page), body:has(.today-tarot-intro-page) { width: 10
 .today-tarot-result { padding-top: 27px; }
 .today-tarot-result h2 { font-size: 22px; line-height: 1.3; }
 .today-tarot-result-conclusion { margin: 8px 0 17px; color: #e4deec; font-size: 15px; line-height: 1.6; text-shadow: 0 2px 8px rgba(0, 0, 14, .92); word-break: keep-all; }
+.reading-highlight { font-weight: 600; }
+.reading-highlight--conclusion { color: #f0d39d; }
+.reading-highlight--positive { color: #d5c3f3; }
+.reading-highlight--romance { color: #efb7cb; }
+.reading-highlight--caution { color: #efa99a; }
+.reading-highlight--action { color: #b9e2cd; }
 
 /* Keep the complete supplied card visible. Scaling the artwork to hide its
    export matte also removed the gold border and made the card look clipped. */

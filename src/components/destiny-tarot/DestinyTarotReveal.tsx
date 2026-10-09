@@ -7,6 +7,8 @@ import { createDestinyReadingInput, createFallbackDestinyReading, isValidDestiny
 import { getTarotAsset } from "@/lib/tarot/assets";
 import type { DestinyReadingResponse, DestinyTarotSessionDraft } from "@/lib/destiny-tarot/types";
 import { getDestinyReadingProfile } from "@/lib/destiny-tarot/profiles";
+import { HighlightedText } from "@/components/tarot/HighlightedText";
+import { actionAdviceHighlights, firstSentenceHighlight, positionHighlight } from "@/lib/tarot/reading-highlights";
 
 type RevealStage = "intro" | "reveal" | "complete" | "loading" | "result";
 type ReadingStatus = "idle" | "loading" | "success" | "error";
@@ -101,7 +103,7 @@ function FinalResult({ session, reading, onRestart }: { session: DestinyTarotSes
     <section className={`${styles.surface} ${styles.finalResult}`} aria-labelledby="destiny-result-title">
       <p className={styles.eyebrow}>{profile.displayName} · YOUR READING</p>
       <h1 id="destiny-result-title">{profile.displayName}</h1>
-      <p className={styles.resultConclusion}>{conclusion}</p>
+      <p className={styles.resultConclusion}><HighlightedText text={conclusion} highlights={firstSentenceHighlight(conclusion, "conclusion")} className={styles.readingHighlight} /></p>
       <section className={styles.resultSpreadSection} aria-label="완성된 스프레드"><p className={styles.eyebrow}>THE COMPLETED SPREAD</p><Spread session={session} revealedCount={positions.length} /></section>
       <section className={styles.resultDetails} aria-labelledby="destiny-position-details"><h2 id="destiny-position-details">자리별 상세 해석</h2>
         {positions.map((position) => {
@@ -111,14 +113,14 @@ function FinalResult({ session, reading, onRestart }: { session: DestinyTarotSes
           return <article className={styles.positionReading} key={position.id}>
             <div className={styles.positionReadingHeading}><p><b>{position.order}</b>{position.label}</p><span>{position.description}</span></div>
             <div className={styles.positionReadingBody}><div className={styles.positionThumbnail}><TarotArt cardId={selected.cardId} orientation={selected.orientation} alt={`${asset?.nameKo ?? "선택한"} 카드`} /></div><div><h3>{asset?.nameKo ?? "선택한 카드"}</h3><em>{orientationLabel(selected.orientation)}</em></div></div>
-            <p className={styles.positionInterpretation}>{interpretations.get(position.id)}</p>
+            <p className={styles.positionInterpretation}><HighlightedText text={interpretations.get(position.id) ?? ""} highlights={positionHighlight(interpretations.get(position.id) ?? "", position)} className={styles.readingHighlight} /></p>
           </article>;
         })}
       </section>
       <section className={styles.resultAccordions}>
         <DetailAccordion title="카드들이 함께 말하는 것"><p>{reading.reading.connections}</p></DetailAccordion>
-        <DetailAccordion title="이번 리딩의 핵심"><p>{reading.reading.coreConclusion}</p></DetailAccordion>
-        <DetailAccordion title="지금 나에게 필요한 방향"><p>{reading.reading.actionAdvice}</p></DetailAccordion>
+        <DetailAccordion title="이번 리딩의 핵심"><p><HighlightedText text={reading.reading.coreConclusion} highlights={firstSentenceHighlight(reading.reading.coreConclusion, "conclusion")} className={styles.readingHighlight} /></p></DetailAccordion>
+        <DetailAccordion title="지금 나에게 필요한 방향"><p><HighlightedText text={reading.reading.actionAdvice} highlights={actionAdviceHighlights(reading.reading.actionAdvice)} className={styles.readingHighlight} /></p></DetailAccordion>
       </section>
       <button className={`${styles.primaryButton} ${styles.resultRestart}`} type="button" onClick={onRestart}>새로운 고민으로 시작하기 <span>→</span></button>
     </section>
