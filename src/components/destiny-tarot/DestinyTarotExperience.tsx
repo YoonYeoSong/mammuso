@@ -47,6 +47,13 @@ export function DestinyTarotExperience({ readingType = "general" }: { readingTyp
   const [recommendationStatus, setRecommendationStatus] = useState<RecommendationStatus>("idle");
   const [spreadLoadingMessage, setSpreadLoadingMessage] = useState("당신의 질문을 다시 살펴보고 있어요.");
 
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("destiny-mobile-navigation-visibility", { detail: { hidden: phase === "spreadSelection" || phase === "reveal" } }));
+    return () => {
+      window.dispatchEvent(new CustomEvent("destiny-mobile-navigation-visibility", { detail: { hidden: false } }));
+    };
+  }, [phase]);
+
   const canSend = draft.trim().length >= 2 && !isSending;
   const reviewQuestion = session?.finalQuestion ?? "";
   useEffect(() => {

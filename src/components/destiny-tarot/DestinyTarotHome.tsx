@@ -77,14 +77,6 @@ function RecentReading({ reading = mockReading }: { reading?: ReadingPreview | n
   </section>;
 }
 
-function BottomNavigation() {
-  return <nav className="destiny-bottom-navigation" aria-label="주요 메뉴">
-    <button type="button" className="destiny-nav-item is-active" aria-current="page"><CrystalSymbol name="home" /><span>홈</span></button>
-    <button type="button" className="destiny-nav-item" data-destination="/readings"><CrystalSymbol name="history" /><span>리딩 기록</span></button>
-    <button type="button" className="destiny-nav-item" data-destination="/profile"><CrystalSymbol name="profile" /><span>내 정보</span></button>
-  </nav>;
-}
-
 export function DestinyTarotHome({ theme = "a" }: { theme?: "a" | "b" }) {
   return <main id="destiny-home" className="destiny-home" data-theme={theme}>
     <div className="destiny-app-surface">
@@ -99,6 +91,5 @@ export function DestinyTarotHome({ theme = "a" }: { theme?: "a" | "b" }) {
       <DestinyTarotFooter />
       </div>
     </div>
-    <BottomNavigation />
   </main>;
 }

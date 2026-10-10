@@ -6,6 +6,7 @@ import "./retro-ui.css";
 import "./tarot-ui.css";
 import "./destiny-tarot.css";
 import "./today-tarot.css";
+import { MobileFloatingNavigation } from "@/components/destiny-tarot/MobileFloatingNavigation";
 
 const maruBuri = localFont({
   src: [
@@ -25,4 +26,4 @@ const pretendard = localFont({
 });
 
 export const metadata: Metadata = { title: "운명타로 | DESTINY TAROT", description: "달빛이 스며드는 밤, 당신의 이야기를 만나는 운명타로" };
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="ko" className={`${maruBuri.variable} ${pretendard.variable}`}><body>{children}</body></html>; }
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="ko" className={`${maruBuri.variable} ${pretendard.variable}`}><body>{children}<MobileFloatingNavigation /></body></html>; }
