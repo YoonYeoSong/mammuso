@@ -48,10 +48,11 @@ export function DestinyTarotExperience({ readingType = "general" }: { readingTyp
   const [spreadLoadingMessage, setSpreadLoadingMessage] = useState("당신의 질문을 다시 살펴보고 있어요.");
 
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent("destiny-mobile-navigation-visibility", { detail: { hidden: phase === "spreadSelection" || phase === "reveal" } }));
-    return () => {
-      window.dispatchEvent(new CustomEvent("destiny-mobile-navigation-visibility", { detail: { hidden: false } }));
-    };
+    // All outer phases are focused reading steps. The nested reveal component
+    // releases the navigation only after it reaches its final result stage.
+    if (phase !== "reveal") {
+      window.dispatchEvent(new CustomEvent("destiny-mobile-navigation-visibility", { detail: { hidden: true } }));
+    }
   }, [phase]);
 
   const canSend = draft.trim().length >= 2 && !isSending;

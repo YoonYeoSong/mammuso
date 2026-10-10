@@ -6,8 +6,6 @@ import { usePathname } from "next/navigation";
 
 type IconName = "home" | "tarot" | "history" | "profile";
 
-const focusedTodayTarotPaths = ["/today-tarot/prepare", "/today-tarot/select", "/today-tarot/reveal"];
-
 function NavigationIcon({ name }: { name: IconName }) {
   const props = { fill: "none", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, viewBox: "0 0 24 24", "aria-hidden": true };
   if (name === "home") return <svg {...props}><path d="m3.5 10 8.5-7 8.5 7v9.5a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5Z" /><path d="M9 21v-6h6v6" /></svg>;
@@ -23,9 +21,11 @@ function isActive(pathname: string, href: string) {
 export function MobileFloatingNavigation() {
   const pathname = usePathname();
   const [isReadingNoticeOpen, setIsReadingNoticeOpen] = useState(false);
-  const [isFocusedReading, setIsFocusedReading] = useState(false);
-  const isInNavigationScope = pathname === "/" || pathname === "/tarot" || pathname === "/destiny-tarot" || pathname.startsWith("/today-tarot");
-  const isHiddenForRoute = focusedTodayTarotPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  // A Destiny reading progresses inside one URL, so its own step events decide
+  // when the navigation can appear. Start hidden to prevent an intro-screen flash.
+  const [isFocusedReading, setIsFocusedReading] = useState(pathname === "/destiny-tarot");
+  const isTodayTarotResult = pathname === "/today-tarot/result";
+  const isInNavigationScope = pathname === "/" || pathname === "/login" || isTodayTarotResult || pathname === "/destiny-tarot";
 
   useEffect(() => {
     const updateVisibility = (event: Event) => setIsFocusedReading(Boolean((event as CustomEvent<{ hidden?: boolean }>).detail?.hidden));
@@ -35,10 +35,10 @@ export function MobileFloatingNavigation() {
 
   useEffect(() => {
     setIsReadingNoticeOpen(false);
-    setIsFocusedReading(false);
+    setIsFocusedReading(pathname === "/destiny-tarot");
   }, [pathname]);
 
-  if (!isInNavigationScope || isHiddenForRoute || isFocusedReading) return null;
+  if (!isInNavigationScope || isFocusedReading) return null;
   const isTarotActive = isActive(pathname, "/destiny-tarot") || isActive(pathname, "/today-tarot") || isActive(pathname, "/tarot");
 
   return <nav className="mobile-floating-navigation" aria-label="빠른 메뉴">

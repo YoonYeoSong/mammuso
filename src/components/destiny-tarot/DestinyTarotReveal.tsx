@@ -100,7 +100,7 @@ function FinalResult({ session, reading, onRestart }: { session: DestinyTarotSes
   const interpretations = new Map(reading.reading.positions.map((item) => [item.spreadPositionId, item.interpretation]));
   const conclusion = firstSentence(reading.reading.coreConclusion);
   return <main className={styles.page}>
-    <section className={`${styles.surface} ${styles.finalResult}`} aria-labelledby="destiny-result-title">
+    <section className={`${styles.surface} ${styles.finalResult} destiny-tarot-result-surface`} aria-labelledby="destiny-result-title">
       <p className={styles.eyebrow}>{profile.displayName} · YOUR READING</p>
       <h1 id="destiny-result-title">{profile.displayName}</h1>
       <p className={styles.resultConclusion}><HighlightedText text={conclusion} highlights={firstSentenceHighlight(conclusion, "conclusion")} className={styles.readingHighlight} /></p>
@@ -142,6 +142,12 @@ export function DestinyTarotReveal({ session, onRestart }: Props) {
     const asset = selected ? getTarotAsset(selected.cardId) : undefined;
     return asset?.imageReady ? [asset.image] : [];
   }), [positions, session.selectedCards]);
+
+  useEffect(() => {
+    // Reveal, loading, and final result share one URL. This stage is the
+    // authoritative visibility signal for the floating navigation.
+    window.dispatchEvent(new CustomEvent("destiny-mobile-navigation-visibility", { detail: { hidden: stage !== "result" } }));
+  }, [stage]);
 
   useEffect(() => {
     if (stage !== "intro" && stage !== "reveal") return;
