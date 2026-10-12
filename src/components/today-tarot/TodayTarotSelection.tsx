@@ -9,7 +9,9 @@ import { todayTarotRoutes, type TodayTarotSession } from "@/lib/today-tarot/flow
 import { FULL_TAROT_DECK_SIZE, getTodayTarotCard } from "@/lib/today-tarot/deck";
 
 const CARD_COUNT = FULL_TAROT_DECK_SIZE;
-const OFFSETS = [-2, -1, 0, 1, 2] as const;
+// Keep invisible edge cards mounted. They can then fade in and out while the
+// user drags instead of popping away when the five visible cards shift.
+const OFFSETS = [-3, -2, -1, 0, 1, 2, 3] as const;
 const SWIPE_THRESHOLD = 36, INTENT_THRESHOLD = 6, DIRECTION_LOCK_RATIO = 1.15;
 const SAMPLE_WINDOW_MS = 120, MAX_RELEASE_VELOCITY = 2.4;
 const STRONG_FLICK_DISTANCE = 108, STRONG_FLICK_VELOCITY = .82, STRONG_FLICK_MAX_MS = 520;
