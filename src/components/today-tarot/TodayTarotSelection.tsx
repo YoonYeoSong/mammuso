@@ -15,7 +15,7 @@ const SAMPLE_WINDOW_MS = 120, MAX_RELEASE_VELOCITY = 2.4;
 const STRONG_FLICK_DISTANCE = 108, STRONG_FLICK_VELOCITY = .82, STRONG_FLICK_MAX_MS = 520;
 const CARD_STEP = 68, FRICTION = 4.8, MOMENTUM_STOP_SPEED = .18, MAX_MOMENTUM_SPEED = 31, SNAP_MS = 320;
 type Sample = { x: number; time: number };
-type PointerState = { id: number; startX: number; startY: number; startTime: number; samples: Sample[]; intent: "pending" | "horizontal" | "vertical" };
+type PointerState = { id: number; startX: number; startY: number; startTime: number; startPosition: number; samples: Sample[]; intent: "pending" | "horizontal" | "vertical" };
 type Flight = { left: number; top: number; width: number; height: number; x: number; y: number };
 const depth = [{ scale: 1, opacity: 1, y: 0, rotation: 0 }, { scale: .93, opacity: .9, y: 22, rotation: 5 }, { scale: .85, opacity: .72, y: 58, rotation: 9.5 }] as const;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -101,20 +101,26 @@ export function TodayTarotSelection({ clarifierMode = false }: { clarifierMode?:
   };
   const onDown = (event: PointerEvent<HTMLDivElement>) => {
     if (isConfirming || (event.target instanceof Element && event.target.closest(".today-tarot-deck-arrow"))) return; stopMotion(); ignoreTap.current = false;
-    pointer.current = { id: event.pointerId, startX: event.clientX, startY: event.clientY, startTime: event.timeStamp, samples: [{ x: event.clientX, time: event.timeStamp }], intent: "pending" };
+    pointer.current = { id: event.pointerId, startX: event.clientX, startY: event.clientY, startTime: event.timeStamp, startPosition: positionRef.current, samples: [{ x: event.clientX, time: event.timeStamp }], intent: "pending" };
   };
   const sample = (event: PointerEvent<HTMLDivElement>, state: PointerState) => { const next = { x: event.clientX, time: event.timeStamp }; state.samples = [...state.samples, next].filter((item) => item.time >= next.time - SAMPLE_WINDOW_MS); };
   const onMove = (event: PointerEvent<HTMLDivElement>) => {
     const state = pointer.current; if (!state || state.id !== event.pointerId || isConfirming) return; const x = event.clientX - state.startX, y = event.clientY - state.startY;
     if (state.intent === "pending") { if (Math.abs(x) < INTENT_THRESHOLD && Math.abs(y) < INTENT_THRESHOLD) return; if (Math.abs(y) > Math.abs(x) * DIRECTION_LOCK_RATIO) { state.intent = "vertical"; return; } if (Math.abs(x) <= Math.abs(y) * DIRECTION_LOCK_RATIO) return; state.intent = "horizontal"; event.currentTarget.setPointerCapture(event.pointerId); setIsDragging(true); }
-    if (state.intent === "horizontal") { sample(event, state); setDragOffset(clamp(x * .14, -30, 30)); }
+    if (state.intent === "horizontal") {
+      sample(event, state);
+      // Follow the finger continuously so the five visible cards flow as one deck
+      // instead of waiting to swap only the center card after the swipe ends.
+      updatePosition(clamp(state.startPosition - x / CARD_STEP, 0, CARD_COUNT - 1));
+      setDragOffset(0);
+    }
   };
   const finish = (event: PointerEvent<HTMLDivElement>) => {
     const state = pointer.current; if (!state || state.id !== event.pointerId) return; const offset = event.clientX - state.startX, horizontal = state.intent === "horizontal"; if (horizontal) sample(event, state); pointer.current = null;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); if (horizontal) setIsDragging(false); setDragOffset(0); if (!horizontal || Math.abs(offset) < SWIPE_THRESHOLD) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); if (horizontal) setIsDragging(false); setDragOffset(0); if (!horizontal) return;
     const first = state.samples[0], last = state.samples.at(-1), velocity = first && last && last.time - first.time >= 12 ? clamp((last.x - first.x) / (last.time - first.time), -MAX_RELEASE_VELOCITY, MAX_RELEASE_VELOCITY) : 0;
     suppressTap(); setSelectedCardId(null); setSelectionNotice(null); const strong = Math.abs(offset) >= STRONG_FLICK_DISTANCE && Math.abs(velocity) >= STRONG_FLICK_VELOCITY && event.timeStamp - state.startTime <= STRONG_FLICK_MAX_MS;
-    if (strong) startMomentum(velocity); else snapTo(activeRef.current + (offset < 0 ? 1 : -1));
+    if (strong) startMomentum(velocity); else snapTo(Math.round(positionRef.current));
   };
   const cancel = (event: PointerEvent<HTMLDivElement>) => { if (!pointer.current || pointer.current.id !== event.pointerId) return; pointer.current = null; if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); setIsDragging(false); setDragOffset(0); };
   const confirm = () => {
